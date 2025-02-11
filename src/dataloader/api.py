@@ -9,7 +9,6 @@ import dataloader.mongodb as mongodb
 import dataloader.solr as solr
 
 from fastapi import FastAPI
-from pprint import pprint
 import dataloader.merge as merge
 
 api = FastAPI()
