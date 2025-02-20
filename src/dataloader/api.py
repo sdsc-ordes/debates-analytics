@@ -1,96 +1,36 @@
 import logging
+from datetime import datetime
 from fastapi import FastAPI
-from pydantic import BaseModel
-from enum import Enum
-from typing import List
-
+from pydantic import BaseModel, Field
+from typing import List, Optional
 from dataloader.s3 import s3Manager
 import dataloader.mongodb as mongodb
 import dataloader.solr as solr
-
-from fastapi import FastAPI
+import dataloader.helpers as helpers
 import dataloader.merge as merge
+import dataloader.models as models
 
 api = FastAPI()
-
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
 class S3MediaUrlRequest(BaseModel):
-    prefix: str
-    objectKeys: list[str]
-    mediaKey: str
-
-
-class S3MediaUrls(BaseModel):
-    url: str
-    label: str
-
+    prefix: str = Field(..., description="S3 prefix", examples=["HRC_20220328T10000"])
+    objectKeys: list[str] = Field(..., description="List of S3 object keys", examples=[["HRC_20220328T10000-files.json"]])
+    mediaKey: str = Field(..., description="Object key for main media file", examples=["HRC_20220328T10000.mp4"])
 
 class S3MediaUrlResponse(BaseModel):
-    signedUrls: List[S3MediaUrls]
-    signedMediaUrl: str
+    signedUrls: List[models.S3MediaUrls] = Field(..., description="List of presigned URLs")
+    signedMediaUrl: str = Field(..., description="Presigned URL for the main media file")
 
 
-class S3MetadataRequest(BaseModel):
-    prefix: str
-
-
-class Speaker(BaseModel):
-    speaker_id: str
-    name: str
-    role_tag: str
-
-
-class Subtitle(BaseModel):
-    index: int
-    start: float
-    end: float
-    content: str
-    speaker_id: str
-    segment_nr: int
-
-
-class Segment(BaseModel):
-    speaker_id: str
-    start: float
-    end: float
-    segment_nr: int
-
-
-class UpdateSpeakersRequest(BaseModel):
-    prefix: str
-    speakers: List[Speaker]
-
-
-class EnumSubtitleType(str, Enum):
-    transcript = "Transcript"
-    translation = "Translation"
-
-
-class UpdateSubtitlesRequest(BaseModel):
-    prefix: str
-    segmentNr: int
-    subtitles: List[Subtitle]
-    subtitleType: EnumSubtitleType
-
-
-class FacetFilter(BaseModel):
-    facetField: str
-    facetValue: str
-
-
-class SolrRequest(BaseModel):
-    queryTerm: str
-    sortBy: str
-    facetFields: List[str]
-    facetFilters: List[FacetFilter]
-
-
-@api.post("/get-media-urls")
+@api.post("/get-media-urls", response_model=S3MediaUrlResponse)
 async def get_media_urls(request: S3MediaUrlRequest):
+    """
+    Get signed media urls for a debate: these urls allow to directly access objects on S3
+    """
     try:
         s3_client = s3Manager()
         presigned_urls = []
@@ -122,46 +62,111 @@ async def get_media_urls(request: S3MediaUrlRequest):
         return {"error": f"Error retrieving signed urls for {request.prefix}"}
 
 
-@api.post("/mongo-metadata")
-async def mongo_metadata(request: S3MetadataRequest):
-    """
-    Get Metadata for Debates Object
-    """
+class MongoMetadataRequest(BaseModel):
+    prefix: str = Field(..., description="S3 prefix", examples=["HRC_20220328T0000"])
+
+
+class MongoMetadataResponse(BaseModel):
+    debate: Optional[models.DebateDocument] = None
+    speakers: Optional[models.SpeakersDocument] = None
+    segments: Optional[models.SegmentsDocument] = None
+    subtitles: Optional[models.SubtitlesDocument] = None
+    subtitles_en: Optional[models.SubtitlesDocument] = None
+
+
+@api.post("/mongo-metadata", response_model=MongoMetadataResponse)
+async def mongo_metadata(request: MongoMetadataRequest):
     try:
         debate = mongodb.mongodb_find_one_document(
-            { "s3_prefix": request.prefix }, mongodb.MONGO_DEBATES_COLLECTION
+            {"s3_prefix": request.prefix}, mongodb.MONGO_DEBATES_COLLECTION
         )
+
         if not debate:
             logger.warning(f"No debate found for prefix: {request.prefix}")
-            return {"error": "Debate not found"}  # Return an error response
+            return MongoMetadataResponse(debate=None)
+
+        debate_document = helpers.clean_document(debate)
+
+        debate_document['created_at'] = datetime.fromisoformat(
+            debate_document['created_at'].replace('Z', '+00:00'))
+        debate_document['schedule'] = datetime.fromisoformat(
+            debate_document['schedule'].replace('Z', '+00:00'))
+
+        debate_obj = models.DebateDocument(**debate_document)
+
         debate_id = debate["_id"]
+
         speakers = mongodb.mongodb_find_one_document(
             { "debate_id": debate_id }, mongodb.MONGO_SPEAKERS_COLLECTION
         )
+        speakers_document = helpers.clean_document(speakers)
+        speakers_obj = models.SpeakersDocument(**speakers_document)
+
         segments = mongodb.mongodb_find_one_document(
             { "debate_id": debate_id }, mongodb.MONGO_SEGMENTS_COLLECTION
         )
+        segments_document = helpers.clean_document(segments)
+        segments_obj = models.SegmentsDocument(**segments_document)
+
         subtitles = mongodb.mongodb_find_one_document(
             { "debate_id": debate_id, "type": merge.SUBTITLE_TYPE_TRANSCRIPT }, mongodb.MONGO_SUBTITLE_COLLECTION
         )
+        subtitle_keys_to_clean = keys=["type", "language"]
+        subtitles_document = helpers.clean_document(subtitles, keys=subtitle_keys_to_clean)
+        subtitles_obj = models.SubtitlesDocument(**subtitles_document)
+
         subtitles_en = mongodb.mongodb_find_one_document(
             { "debate_id": debate_id, "type": merge.SUBTITLE_TYPE_TRANSLATION }, mongodb.MONGO_SUBTITLE_COLLECTION
         )
-        logger.info(f"Retrieved metadata for prefix: {request.prefix}")
-        return {
-            "debate": _clean_document(debate),
-            "speakers": _clean_document(speakers),
-            "segments": _clean_document(segments),
-            "subtitles": _clean_document(subtitles),
-            "subtitles_en": _clean_document(subtitles_en),
-        }
+        subtitles_en_document = helpers.clean_document(subtitles_en, keys=subtitle_keys_to_clean)
+        subtitles_en_obj = models.SubtitlesDocument(**subtitles_en_document)
+
+        response = MongoMetadataResponse(
+            debate=debate_obj,
+            speakers=speakers_obj,
+            segments=segments_obj,
+            subtitles=subtitles_obj,
+            subtitles_en=subtitles_en_obj,
+        )
+        return response
+
     except Exception as e:
         logger.error(f"Error retrieving metadata for prefix {request.prefix}: {e}")
-        return {"error": "Error retrieving metadata"}
+        return {"error": "Error retrieving metadata"}  # For errors, return a dict
 
 
-@api.post("/update-speakers")
-async def mongo_metadata(request: UpdateSpeakersRequest):
+class SolrRequest(BaseModel):
+    queryTerm: str = Field(..., description="Solr query term can be empty", examples=["honor"])
+    sortBy: str = Field(..., description="Solr sort option", examples=["start asc"])
+    facetFields: List[str] = Field(
+        ..., description="Solr facet field to return",
+        examples = [["debate_schedule", "statement_type"]]
+    )
+    facetFilters: List[models.FacetFilter]  = Field(
+        ..., description="Solr facet filters with set values"
+    )
+
+
+@api.post("/search-solr")
+async def search_solr(request: SolrRequest):
+    """Fetch search results from Solr"""
+    try:
+        solr_response = solr.search_solr(solr_request=request)
+        logger.info(f"Solr search request: {request}")
+        logger.debug(f"Solr response: {solr_response}")
+        return solr_response
+    except Exception as e:
+        logger.error(f"Error in Solr search: {e}")
+        return {"error": "Solr search error"}
+
+
+class UpdateSpeakersRequest(BaseModel):
+    prefix: str
+    speakers: List[models.Speaker]
+
+
+@api.post("/update-speakers", include_in_schema=False)
+async def update_speakers(request: UpdateSpeakersRequest):
     """
     Update speakers
     """
@@ -184,8 +189,15 @@ async def mongo_metadata(request: UpdateSpeakersRequest):
         return {"error": "Error updating speakers"}
 
 
-@api.post("/update-subtitles")
-async def mongo_metadata(request: UpdateSubtitlesRequest):
+class UpdateSubtitlesRequest(BaseModel):
+    prefix: str
+    segmentNr: int
+    subtitles: List[models.Subtitle]
+    subtitleType: models.EnumSubtitleType
+
+
+@api.post("/update-subtitles", include_in_schema=False)
+async def update_subtitles(request: UpdateSubtitlesRequest):
     """
     Update subtitles
     """
@@ -197,13 +209,13 @@ async def mongo_metadata(request: UpdateSubtitlesRequest):
         )
         debate_id = debate["_id"]
         subtitles_as_dicts = [subtitle.dict() for subtitle in request.subtitles]
-        if request.subtitleType == EnumSubtitleType.transcript:
+        if request.subtitleType == models.EnumSubtitleType.transcript:
             values = { "subtitles": subtitles_as_dicts }
         else:
             values = { "subtitles_en": subtitles_as_dicts }
-        if request.subtitleType == EnumSubtitleType.transcript:
+        if request.subtitleType == models.EnumSubtitleType.transcript:
             subtitle_type = merge.SUBTITLE_TYPE_TRANSCRIPT
-        elif request.subtitleType == EnumSubtitleType.translation:
+        elif request.subtitleType == models.EnumSubtitleType.translation:
             subtitle_type = merge.SUBTITLE_TYPE_TRANSLATION
         mongodb.update_document(
             query={ "debate_id": debate_id, "type": subtitle_type },
@@ -221,24 +233,3 @@ async def mongo_metadata(request: UpdateSubtitlesRequest):
     except Exception as e:
         logger.error(f"Error updating subtitles for {request.prefix}: {e}")
         return {"error": "Error updating subtitles"}
-
-
-@api.post("/search-solr")
-async def search_solr(request: solr.SolrRequest):
-    """Fetch search results from Solr"""
-    try:
-        solr_response = solr.search_solr(solr_request=request)
-        logger.info(f"Solr search request: {request}") # Log the request
-        logger.debug(f"Solr response: {solr_response}") # Log the full response in debug mode
-        return solr_response
-    except Exception as e:
-        logger.error(f"Error in Solr search: {e}")
-        return {"error": "Solr search error"}
-
-
-def _clean_document(document):
-    if "_id" in document.keys():
-        document["_id"] = str(document["_id"])
-    if "debate_id" in document.keys():
-        document["debate_id"] = str(document["debate_id"])
-    return document
