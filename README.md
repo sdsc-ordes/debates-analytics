@@ -1,6 +1,10 @@
 # debates-dataloader
 
-Dataloader for videos transcriptions
+## About
+
+The dataloader serves as backend for the [debates-app](https://github.com/sdsc-ordes/debates-app). See there for a more detailed documentation.
+
+Dataloader for media transcriptions
 
 ## Install
 
@@ -16,35 +20,7 @@ source .venv/bin/activate
 
 ## Environment Variables
 
-```
-# External Service settings:
-# must match the docker compose settings for the services
-SOLR_URL=http://localhost:8010/solr/debates/
-MONGO_DB=debates
-S3_BUCKET_NAME=debates
-S3_ACCESS_KEY=[your-S3-access-key]
-S3_SECRET_KEY=[your-S3-secret-key]
-
-# Use this for local
-API_HOST="127.0.0.1"
-MONGO_URL=mongodb://localhost:27017/
-S3_SERVER=http://localhost:9000
-FRONTEND_SERVER=http://localhost:5173
-
-# Use this for compose
-API_HOST="0.0.0.0"
-
-# this is for the PROD S3
-PROD_S3_BUCKET_NAME=[your-prod-S3-bucket-name]
-PROD_S3_ACCESS_KEY=[your-prod-S3-access-key]
-PROD_S3_SECRET_KEY=[your-prod-S3-secret-key]
-PROD_S3_REGION_NAME=[your-prod-S3-region-name]
-
-# suffixes for S3 Pathes
-SUFFIX_SRT_ORIG=transcription_original.srt
-SUFFIX_SRT_EN=translation_original_english.srt
-SUFFIX_METADATA=metadata.yml
-```
+See `env.dist` for a description of the environment variables
 
 ## Use
 
