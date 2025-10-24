@@ -4,7 +4,7 @@ from pysolr import Solr
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import List
-import dataloader.merge as merge
+from dataloader import merge
 
 load_dotenv()
 
@@ -84,7 +84,7 @@ def update_segment(s3_prefix, segment_nr, subtitles, subtitle_type):
                 "id": doc["id"],
                 "statement": {"set": statement},
             }
-            result = solr.add([updated_doc])
+            solr.add([updated_doc])
 
 
 def search_solr(solr_request: SolrRequest):

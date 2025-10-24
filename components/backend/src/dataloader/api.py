@@ -4,11 +4,11 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from dataloader.s3 import s3Manager
-import dataloader.mongodb as mongodb
-import dataloader.solr as solr
-import dataloader.helpers as helpers
-import dataloader.merge as merge
-import dataloader.models as models
+from dataloader import mongodb
+from dataloader import solr
+from dataloader import helpers
+from dataloader import merge
+from dataloader import models
 
 api = FastAPI()
 
@@ -111,7 +111,7 @@ async def mongo_metadata(request: MongoMetadataRequest):
         subtitles = mongodb.mongodb_find_one_document(
             { "debate_id": debate_id, "type": merge.SUBTITLE_TYPE_TRANSCRIPT }, mongodb.MONGO_SUBTITLE_COLLECTION
         )
-        subtitle_keys_to_clean = keys=["type", "language"]
+        subtitle_keys_to_clean = ["type", "language"]
         subtitles_document = helpers.clean_document(subtitles, keys=subtitle_keys_to_clean)
         subtitles_obj = models.SubtitlesDocument(**subtitles_document)
 

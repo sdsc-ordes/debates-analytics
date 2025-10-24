@@ -28,8 +28,7 @@ for suffix in "${file_suffixes[@]}"; do
     file="${base_path}/${base_path}${suffix}"
     local_filename=$(basename "$file")
     echo "Downloading $file to $local_filename..."
-    python src/debates.py s3-admin --prod --download "$file" --file "$local_filename"
-    if [ $? -ne 0 ]; then
+    if ! python src/debates.py s3-admin --prod --download "$file" --file "$local_filename"; then
         echo "Failed to download $file"
         exit 1
     fi

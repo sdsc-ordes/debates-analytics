@@ -2,7 +2,9 @@
 
 ## About
 
-The dataloader serves as backend for the [debates-app](https://github.com/sdsc-ordes/debates-app). See there for a more detailed documentation.
+The dataloader serves as backend for the
+[debates-app](https://github.com/sdsc-ordes/debates-app). See there for a more
+detailed documentation.
 
 Dataloader for media transcriptions
 
@@ -28,7 +30,6 @@ The dataloader includes the following parts:
 
 - cli commands to manage S3, Solr and MongoDB
 - fastapi route to serve media urls from S3
-
 
 ### Start Fast API Server
 

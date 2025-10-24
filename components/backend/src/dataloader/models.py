@@ -27,12 +27,6 @@ class Speaker(BaseModel):
     role_tag: str
 
 
-class Speaker(BaseModel):
-    speaker_id: str
-    name: str
-    role_tag: str
-
-
 class Subtitle(BaseModel):
     index: int
     start: float

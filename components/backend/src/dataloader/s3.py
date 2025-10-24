@@ -1,7 +1,6 @@
 import boto3
 import os
 from botocore.exceptions import NoCredentialsError, DataNotFoundError
-from botocore.client import Config
 
 from dotenv import load_dotenv
 

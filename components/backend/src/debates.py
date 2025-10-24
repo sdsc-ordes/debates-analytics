@@ -115,8 +115,8 @@ def parse(
 
 @cli.command()
 def mongo_get(
-    version_id: Annotated[str, typer.Option(help="version_id of debate data")] = None,
-    s3_prefix: Annotated[str, typer.Option(help="s3 prefix of debate data")] = None,
+    version_id: Annotated[str | None, typer.Option(help="version_id of debate data")] = None,
+    s3_prefix: Annotated[str | None, typer.Option(help="s3 prefix of debate data")] = None,
     all: Annotated[bool, typer.Option(help="List all debates in the debate collection")] = False,
     debug: Annotated[bool, typer.Option(help="Print traceback on exception")] = False,
 ):
@@ -127,7 +127,7 @@ def mongo_get(
             if debate_data:
                 pprint(debate_data)
             else:
-                print(f"No debate item has not been found.")
+                print("No debate item has not been found.")
         if s3_prefix and version_id:
             debate_data = dl_mongo.mongodb_find_one_document(s3_prefix, version_id)
             if debate_data:
@@ -190,7 +190,7 @@ def solr_admin(
 
 
 @cli.command()
-def s3_admin(
+def s3_admin( # noqa: PLR0913
     test: Annotated[bool, typer.Option(help="Test S3 Connection")] = False,
     list: Annotated[bool, typer.Option(help="List S3 objects")] = False,
     prefix: Annotated[str, typer.Option(help="List Objects for a prefix")] = "",
@@ -226,7 +226,7 @@ def s3_admin(
             _print_traceback(debug)
     if download:
         if not file:
-            print(f"please provide output file name with --file")
+            print("please provide output file name with --file")
         try:
             s3 = s3Manager(prod)
             s3.download_s3_data(download, file)
