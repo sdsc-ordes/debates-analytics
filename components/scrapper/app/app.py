@@ -5,6 +5,10 @@ import jsonlines
 import os
 import argparse
 import json
+import zipfile
+import tarfile
+from http import HTTPStatus
+
 
 def fetch_meetings(date_start, date_end, organization="UNHRC", meeting_type="", keywords=""):
     org_code = "60.0051"  # Code for UNHRC, can be expanded for other organizations
@@ -37,7 +41,7 @@ def fetch_meetings(date_start, date_end, organization="UNHRC", meeting_type="", 
 
     response = requests.get(full_url, headers=headers)
 
-    if response.status_code == 200:
+    if response.status_code == HTTPStatus.OK:
         root = ET.fromstring(response.content)
         meetings = []
         for meeting in root.findall(".//Meeting"):
@@ -86,7 +90,7 @@ def fetch_session_info(meeting_id, suffix):
     }
     
     response = requests.get(url, headers=headers)
-    if response.status_code == 200:
+    if response.status_code == HTTPStatus.OK:
         root = ET.fromstring(response.content)
         session_data = {}
         session_element = root.find(".//session")
@@ -169,7 +173,7 @@ def fetch_transcription_availability(meeting_id, suffix):
     for language in languages:
         transcription_url = f"{base_url}{language}.ts.json"
         response = requests.head(transcription_url)  # Use HEAD request to check if the file exists
-        if response.status_code == 200:
+        if response.status_code == HTTPStatus.OK:
             available_transcriptions[language] = transcription_url
         else:
           available_transcriptions[language] = ""
@@ -199,7 +203,7 @@ def download_and_uncompress_recording(recording_url, output_path):
         os.makedirs(output_dir)
     
     response = requests.get(recording_url, headers=headers)
-    if response.status_code == 200:
+    if response.status_code == HTTPStatus.OK:
         with open(output_path, "wb") as f:
             f.write(response.content)
     else:
@@ -207,17 +211,15 @@ def download_and_uncompress_recording(recording_url, output_path):
 
     # Uncompress the downloaded file
     if output_path.endswith(".zip"):
-        import zipfile
         with zipfile.ZipFile(output_path, 'r') as zip_ref:
             zip_ref.extractall(output_path.replace(".zip", ""))
     elif output_path.endswith(".tar.gz"):
-        import tarfile
         with tarfile.open(output_path, 'r:gz') as tar_ref:
             tar_ref.extractall(output_path.replace(".tar.gz", ""))
     else:
         print("Unknown file format for uncompression.")
 
-def fetch_and_save_meetings(start_date, end_date, output_file, output_folder, organization="UNHRC", meeting_type="", keywords="", download=False):
+def fetch_and_save_meetings(start_date, end_date, output_file, output_folder, organization="UNHRC", meeting_type="", keywords="", download=False):  #noqa: PGH004
     start_date = datetime.strptime(start_date, "%Y-%m-%d")
     end_date = datetime.strptime(end_date, "%Y-%m-%d")
 

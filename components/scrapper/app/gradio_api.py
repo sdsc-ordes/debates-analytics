@@ -2,7 +2,7 @@ import gradio as gr
 import json
 import subprocess
 
-def scrape_unog(start_date, end_date, output_file, organization=None, meeting_type=None, keywords=None):
+def scrape_unog(start_date, end_date, output_file, organization=None, meeting_type=None, keywords=None): #noqa: PGH004
     # Build command
     cmd = ["./api_task.sh", "-s", start_date, "-e", end_date, "-o", output_file]
     
@@ -27,9 +27,9 @@ def scrape_unog(start_date, end_date, output_file, organization=None, meeting_ty
         return results[:10], output_file
         
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Script execution failed: {str(e)}")
+        raise RuntimeError(f"Script execution failed: {e}")
     except json.JSONDecodeError as e:
-        raise RuntimeError(f"Error parsing output file: {str(e)}")
+        raise RuntimeError(f"Error parsing output file: {e}")
     except FileNotFoundError:
         raise RuntimeError(f"Output file {output_file} not found")
 
