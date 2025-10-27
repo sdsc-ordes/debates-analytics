@@ -7,13 +7,13 @@ def seconds_to_hms(seconds):
     td = timedelta(seconds=seconds)
     return str(td).split(".")[0].zfill(8)  # Ensures HH:MM:SS format
 
-def merge_annotations(annotations_file, host_file, output_file, annotation_type, origin_channel, custom_id):
+def merge_annotations(annotations_file, host_file, output_file, annotation_type, origin_channel, custom_id): # noqa: PLR0913
     # Load the JSON files
     with open(annotations_file, 'r', encoding='utf-8') as ann_file:
         annotations_data = json.load(ann_file)
 
-    with open(host_file, 'r', encoding='utf-8') as host_file:
-        host_data = json.load(host_file)
+    with open(host_file, 'r', encoding='utf-8') as f:
+        host_data = json.load(f)
 
     # Prepare the new annotations
     new_annotations = []

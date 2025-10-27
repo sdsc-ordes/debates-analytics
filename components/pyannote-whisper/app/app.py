@@ -2,14 +2,11 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, TextIO, List
 import whisper
 from whisper import Whisper
-import torch
 from math import floor, ceil
 
 from transformers import pipeline
-import numpy as np
 import librosa
 import torch
-from math import floor, ceil
 
 import os
 import argparse
@@ -17,7 +14,6 @@ from pyannote.audio import Pipeline, Audio
 from whisper.utils import WriteSRT, WriteVTT
 
 import soundfile as sf
-import librosa
 import json
 from dataclasses import dataclass, asdict
 from jsonschema import validate, ValidationError
@@ -28,11 +24,8 @@ import paragraphs_creator
 from pydub import AudioSegment
 import yt_dlp
 
-from slugify import slugify
-import uuid
-import yaml
-
-
+import subprocess
+import shutil
 
 
 class ASRFacade(ABC):
@@ -62,7 +55,7 @@ class WhisperFacade(ASRFacade):
     def __init__(self, model: str, *, quantize=False) -> None:
         print("Initialize Whisper")
         whisper_model = whisper.load_model(model)
-        if quantize == True:
+        if quantize:
             print("Quantize active")
             DTYPE = torch.qint8
             qmodel: Whisper = torch.quantization.quantize_dynamic(
@@ -285,7 +278,7 @@ class WriteSRTIncremental(AppendResultsMixin, WriteSRT):
         self.extension = '.srt'
         self.srt_index = 1  # Move to instance variable
 
-    def __call__(
+    def __call__( # noqa: PLR0913
         self,
         result: dict,
         audio_path: str,
@@ -329,7 +322,7 @@ class WriteVTTIncremental(AppendResultsMixin, WriteVTT):
     """Incrementally create a VTT file with multiple calls appending new entries
       to the file.
     """
-    def __call__(
+    def __call__( # noqa: PLR0913
         self,
         result: dict,
         audio_path: str,
@@ -517,9 +510,6 @@ def download_youtube_video(url, filename, output_path='/tmp'):
         new_file = base + '-original.wav'
         return new_file
 
-import subprocess
-import shutil
-
 def convert_video_to_wav(input_file, output_file):
     """
     Convert a .rm file to .wav using FFmpeg.
@@ -555,11 +545,10 @@ def convert_video_to_wav(input_file, output_file):
         print(f"Error during conversion: {e}")
 
 
-def main(args):
+def main(args): # noqa: PLR0912, PLR0915
     # TODO: Take out the file_path from ODTP here
     if args.input_file.startswith('/odtp/odtp-input/http://') or args.input_file.startswith('/odtp/odtp-input/https://'):
         file_path = download_youtube_video(args.input_file.replace("/odtp/odtp-input/",""), filename=os.path.basename(args.output_file) , output_path=os.path.dirname(args.output_file))
-        base_slug = slugify(file_path, separator='_')
     elif args.input_file.lower().endswith('.mp3'):
         file_path = convert_mpx_to_wav(args.input_file)
         shutil.copy(file_path, os.path.join("/odtp/odtp-output", os.path.basename(file_path).replace('.wav', '-original.mp3')))
@@ -617,11 +606,12 @@ def main(args):
     current_speaker = None
     current_start   = None
     current_end     = None
+    TURN_THRESHOLD = 0.5  # seconds
 
     for turn, _, speaker in diarization.itertracks(yield_label=True):
         if args.verbose:
             print(speaker)
-        if turn.end - turn.start < 0.5:
+        if turn.end - turn.start < TURN_THRESHOLD:
             # ignore short utterances
             continue
         if speaker == current_speaker:

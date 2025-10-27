@@ -65,7 +65,8 @@ def process_paragraphs(input_file, output_file, min_gap):
         json.dump(result, f, indent=4)
 
 def main():
-    if len(sys.argv) != 4:
+    NUM_ARGUMENTS = 4
+    if len(sys.argv) != NUM_ARGUMENTS:
         print("Usage: python paragraphsCreator.py <input_json_file> <output_json_file> <min_gap>")
         sys.exit(1)
 

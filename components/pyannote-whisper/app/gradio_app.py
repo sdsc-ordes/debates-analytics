@@ -24,7 +24,7 @@ def cleanup_temp(temp_dir):
     """Remove temporary folder structure"""
     shutil.rmtree(temp_dir)
 
-def process_audio(audio_file, 
+def process_audio(audio_file, # noqa: PLR0913
                   youtube_link, 
                   model, 
                   task, 
