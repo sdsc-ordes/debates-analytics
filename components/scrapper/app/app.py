@@ -219,7 +219,7 @@ def download_and_uncompress_recording(recording_url, output_path):
     else:
         print("Unknown file format for uncompression.")
 
-def fetch_and_save_meetings(start_date, end_date, output_file, output_folder, organization="UNHRC", meeting_type="", keywords="", download=False):  #noqa: PGH004
+def fetch_and_save_meetings(start_date, end_date, output_file, output_folder, organization="UNHRC", meeting_type="", keywords="", download=False):  #noqa: PLR0913
     start_date = datetime.strptime(start_date, "%Y-%m-%d")
     end_date = datetime.strptime(end_date, "%Y-%m-%d")
 

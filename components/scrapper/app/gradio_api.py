@@ -2,7 +2,7 @@ import gradio as gr
 import json
 import subprocess
 
-def scrape_unog(start_date, end_date, output_file, organization=None, meeting_type=None, keywords=None): #noqa: PGH004
+def scrape_unog(start_date, end_date, output_file, organization=None, meeting_type=None, keywords=None): #noqa: PLR0913
     # Build command
     cmd = ["./api_task.sh", "-s", start_date, "-e", end_date, "-o", output_file]
     
