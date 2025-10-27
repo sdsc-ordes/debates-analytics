@@ -1,0 +1,106 @@
+# Schema version for tracking updates to the schema format
+schema-version: "v0.5.0"
+
+# Component Information
+component-name: odtp-unog-digitalrecordings-scrapper
+component-version: "v1.0.0"
+component-license: Apache 2.0
+component-type: ephemeral
+component-description: This tool scrapes the [UNOG Digital Recordings](https://conf.unog.ch/digitalrecordings/en) page to extract all available meetings and creates a JSON Lines file with all the information.
+component-authors:
+  - name: Carlos Vivar Rios
+    orcid: null
+component-repository:
+  url: "https://github.com/sdsc-ordes/odtp-unog-digitalrecordings-scrapper"
+  doi: null
+component-docker-image: "dockeruser/odtp-unog-digitalrecordings-scrapper:latest"
+tags:
+  - scraping
+  - UNOG
+  - JSONL
+
+# Tool Information
+tools: []
+
+# Secrets (ENV variables)
+secrets: []
+
+# Build Arguments (if any)
+build-args: []
+
+# Exposed Ports
+ports: []
+
+# Parameters for the Component
+parameters:
+  - name: start_date
+    default-value: "01/07/2014"
+    datatype: str
+    description: Start date in DD/MM/YYYY format
+    parameter-bounds: null
+    options: null
+    allow-custom-value: true
+
+  - name: end_date
+    default-value: null
+    datatype: str
+    description: End date in DD/MM/YYYY format
+    parameter-bounds: null
+    options: null
+    allow-custom-value: true
+
+  - name: output_file
+    default-value: "meetings.jsonl"
+    datatype: str
+    description: Output JSONL file
+    parameter-bounds: null
+    options: null
+    allow-custom-value: true
+
+  - name: organization
+    default-value: "UNHRC"
+    datatype: str
+    description: Organization code
+    parameter-bounds: null
+    options: null
+    allow-custom-value: true
+
+  - name: meeting_type
+    default-value: ""
+    datatype: str
+    description: Type of meeting
+    parameter-bounds: null
+    options: null
+    allow-custom-value: true
+
+  - name: keywords
+    default-value: ""
+    datatype: str
+    description: Keywords for filtering
+    parameter-bounds: null
+    options: null
+    allow-custom-value: true
+
+# Data Inputs
+data-inputs: []
+
+# Data Outputs
+data-outputs:
+  - name: output_file
+    type: .jsonl
+    path: /meetings.jsonl
+    description: JSON Lines file containing the fetched UNHRC meetings data
+    naming-convention: "meetings.jsonl"
+
+  - name: meetings_folder
+    type: folder
+    path: /
+    description: A folder containing all downloaded recordings and a metadata.json
+    naming-convention: "HRC_YYYYMMDDTHHMM"
+
+# Validation Schemas (Future Development)
+schema-input: null
+schema-output: null
+
+# Device Requirements
+devices: []
