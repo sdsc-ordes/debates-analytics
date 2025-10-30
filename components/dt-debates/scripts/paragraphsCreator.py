@@ -1,6 +1,9 @@
 import json
 import sys
 
+EXPECTED_NUMBER_OF_ARGS = 4
+
+
 def seconds_to_hhmmss(seconds):
     hours = seconds // 3600
     minutes = (seconds % 3600) // 60
@@ -65,7 +68,7 @@ def process_paragraphs(input_file, output_file, min_gap):
         json.dump(result, f, indent=4)
 
 def main():
-    if len(sys.argv) != 4:
+    if len(sys.argv) != EXPECTED_NUMBER_OF_ARGS:
         print("Usage: python paragraphsCreator.py <input_json_file> <output_json_file> <min_gap>")
         sys.exit(1)
 
