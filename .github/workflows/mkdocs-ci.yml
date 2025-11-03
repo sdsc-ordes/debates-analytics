@@ -13,6 +13,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          # Cache Python packages installed by uv
+          cache: 'uv'
+          cache-dependency-path: 'docs/requirements.txt' # Or pyproject.toml if you use that
+
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v6
 
