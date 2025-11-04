@@ -2,16 +2,17 @@
 _src_path: src/python
 module_name: mymodule
 project_authors:
--   email: sabine.maennel@sdsc.ethz.ch
+  - email: sabine.maennel@sdsc.ethz.ch
     first_name: Sabine
     last_name: Maennel
--   email: carlos.vivarrios@epfl.ch
+  - email: carlos.vivarrios@epfl.ch
     first_name: Carlos
     last_name: Vivar Rios
--   email: hannah.casey@sdsc.ethz.ch
+  - email: hannah.casey@sdsc.ethz.ch
     first_name: Hannah
     last_name: Casey
-project_description: Machine-Learning pipeline to transcribe and analyze political
-    debates.
+project_description:
+  Machine-Learning pipeline to transcribe and analyze political
+  debates.
 project_url: https://github.com/sdsc-ordes/debates-analytics
 project_version: 1.0.0
