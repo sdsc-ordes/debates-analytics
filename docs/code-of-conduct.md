@@ -57,8 +57,9 @@ further defined and clarified by project maintainers.
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported by contacting any of the following people:
 
-- [Alice Wonderland](mailto:alice.wonderland@sdsc.ethz.ch)
-- [Bob Wonderland](mailto:bob.wonderland@sdsc.ethz.ch)
+- [Sabine Maennel](mailto:sabine.maennel@sdsc.ethz.ch)
+- [Carlos Vivar Rios](mailto:carlos.vivarrios@epfl.ch)
+- [Hannah Casey](mailto:hannah.casey@sdsc.ethz.ch)
 
 All complaints will be reviewed and investigated and will result in a response
 that is deemed necessary and appropriate to the circumstances. The project team

@@ -2,12 +2,16 @@
 _src_path: src/python
 module_name: mymodule
 project_authors:
-  - email: alice.wonderland@sdsc.ethz.ch
-    first_name: Alice
-    last_name: Wonderland
-  - email: bob.wonderland@sdsc.ethz.ch
-    first_name: Bob
-    last_name: Wonderland
-project_description: This a repository from a repository template.
-project_url: https://github.com/swissdatasciencecenter/my-project
-project_version: 0.0.1
+-   email: sabine.maennel@sdsc.ethz.ch
+    first_name: Sabine
+    last_name: Maennel
+-   email: carlos.vivarrios@epfl.ch
+    first_name: Carlos
+    last_name: Vivar Rios
+-   email: hannah.casey@sdsc.ethz.ch
+    first_name: Hannah
+    last_name: Casey
+project_description: Machine-Learning pipeline to transcribe and analyze political
+    debates.
+project_url: https://github.com/sdsc-ordes/debates-analytics
+project_version: 1.0.0

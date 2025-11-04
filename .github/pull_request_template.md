@@ -27,7 +27,7 @@ help! This is simply a reminder of what we are going to look for before merging
 your code._
 
 - [ ] I have read the
-      [CONTRIBUTING](https://github.com/swissdatasciencecenter/my-project/tree/main/CONTRIBUTING.md)
+      [CONTRIBUTING](https://github.com/sdsc-ordes/debates-analytics/tree/main/CONTRIBUTING.md)
       guidelines.
 
 ## Further Comments

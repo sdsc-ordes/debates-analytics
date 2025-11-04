@@ -6,6 +6,7 @@ output_dir := root_dir / ".output"
 build_dir := output_dir / "build"
 
 mod nix "./tools/just/nix.just"
+mod container "./tools/just/container.just"
 
 # Default target if you do not specify a target.
 default:
@@ -24,26 +25,24 @@ format *args:
 setup *args:
     cd "{{root_dir}}" && ./tools/scripts/setup.sh
 
+[parallel]
+image: image-backend image-frontend image-solr
+
+[private]
+[group("image")]
+image-backend:
+    cd components/backend && just image
+
+[private]
+[group("image")]
+image-frontend:
+    cd components/frontend && just image
+
+[private]
+[group("image")]
+image-solr:
+    cd components/solr && just image
+
 # Run commands over the ci development shell.
 ci *args:
     just nix::develop "ci" "$@"
-
-# Lint the project.
-lint *args:
-    ruff check
-
-# Build the project.
-build *args:
-    uv build --out-dir "{{build_dir}}" "$@"
-
-# Test the project.
-test *args:
-    echo "TODO: Not implemented"
-
-# Run an executable.
-run *args:
-    uv run cli "$@"
-
-# Run the Jupyter notebook.
-notebook *args:
-    uv run python -m notebook "$@"

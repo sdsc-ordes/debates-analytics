@@ -1,26 +1,24 @@
-> [!WARNING]
->
-> This is a demo rendering of the
-> [`python` template here](https://github.com/sdsc-ordes/repository-template#python-template)
-
 <p align="center">
   <img src="./docs/assets/logo.svg" alt="project logo" width="250">
 </p>
 
 <h1 align="center">
-  my-project
+  debates-analytics
 </h1>
 <p align="center">
 </p>
 
-[![Current Release](https://img.shields.io/github/release/swissdatasciencecenter/my-project.svg?label=release)](https://github.com/swissdatasciencecenter/my-project/releases/latest)
-[![Pipeline Status](https://img.shields.io/github/actions/workflow/status/swissdatasciencecenter/my-project/normal.yaml?label=ci)](https://github.com/swissdatasciencecenter/my-project/actions/workflows/normal.yaml)
+
+[![Current Release](https://img.shields.io/github/release/sdsc-ordes/debates-analytics.svg?label=release)](https://github.com/sdsc-ordes/debates-analytics/releases/latest)
+[![Pipeline Status](https://img.shields.io/github/actions/workflow/status/sdsc-ordes/debates-analytics/normal.yaml?label=ci)](https://github.com/sdsc-ordes/debates-analytics/actions/workflows/normal.yaml)
 [![License label](https://img.shields.io/badge/License-Apache2.0-blue.svg?)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
 **Authors:**
 
-- [Alice Wonderland](mailto:alice.wonderland@sdsc.ethz.ch)
-- [Bob Wonderland](mailto:bob.wonderland@sdsc.ethz.ch)
+- [Sabine Maennel](mailto:sabine.maennel@sdsc.ethz.ch)
+- [Carlos Vivar Rios](mailto:carlos.vivarrios@epfl.ch)
+- [Hannah Casey](mailto:hannah.casey@sdsc.ethz.ch)
+
 
 ## Installation
 
