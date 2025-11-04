@@ -1,0 +1,19 @@
+set positional-arguments
+set fallback := true
+set shell := ["bash", "-cue"]
+root_dir := `git rev-parse --show-toplevel`
+comp_dir := justfile_directory()
+
+
+
+# Install/sync dependencies from pyproject.toml
+install:
+    uv sync
+
+# Build the static site into the `site/` directory
+build *args:
+    uv run mkdocs build {{args}}
+
+# Serve the docs locally
+serve *args:
+    uv run mkdocs serve {{args}}
