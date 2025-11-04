@@ -1,6 +1,6 @@
 export interface TimeUpdateParameters {
-    displaySubtitleIndex: number,
-    displaySubtitleEnIndex: number,
-    displaySegmentNr: number,
-    displaySpeakerId: number,
+  displaySubtitleIndex: number
+  displaySubtitleEnIndex: number
+  displaySegmentNr: number
+  displaySpeakerId: number
 }
