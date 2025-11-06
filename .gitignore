@@ -30,3 +30,5 @@ __pycache*
 .prettierrc.yaml
 .yamllint.yaml
 .typos.toml
+
+solr/data/
