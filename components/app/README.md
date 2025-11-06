@@ -2,7 +2,8 @@
 
 ## About
 
-This app allows to load and correct transcripts for media such as video or audio.
+This app allows to load and correct transcripts for media such as video or
+audio.
 
 The transcript that the app was made for where AI derived: the AI provides both:
 
@@ -28,7 +29,8 @@ The `dataloader` component:
 The `frontend` component:
 
 - has a search page to search in the speakers statements
-- offers a media player page to compare transcript and translation with the media and annotate or correct
+- offers a media player page to compare transcript and translation with the
+  media and annotate or correct
 
 ## Setup
 
