@@ -103,10 +103,13 @@ services:
     volumes:
       - ./video-input:/app/input
       - ./audio-to-process:/app/output
+      - ./transcripts:/app/transcripts
     # Make it dependent on Minio
     depends_on:
       minio-setup:
         condition: service_completed_successfully
+      whisper-diarize:
+        condition: service_started
 
   dataloader:
       build:
