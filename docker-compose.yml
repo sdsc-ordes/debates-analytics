@@ -103,13 +103,32 @@ services:
     volumes:
       - ./video-input:/app/input
       - ./audio-to-process:/app/output
-      - ./transcripts:/app/transcripts
     # Make it dependent on Minio
     depends_on:
       minio-setup:
         condition: service_completed_successfully
       whisper-diarize:
         condition: service_started
+
+  transcriber:
+    build: ./components/transcriber
+    networks:
+      - debates_network
+    environment:
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - HF_TOKEN=${HF_TOKEN}
+      - WHISPER_MODEL=${WHISPER_MODEL:-base}
+    volumes:
+      # This service needs access to the .wav files for the API call
+      - ./audio-to-process:/app/audio
+      # And it needs to save the final JSON
+      - ./transcripts:/app/transcripts
+    depends_on:
+      whisper-diarize:
+        condition: service_started # Use the "service_started" fix from before
 
   dataloader:
       build:
