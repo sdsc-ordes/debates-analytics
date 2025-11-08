@@ -43,8 +43,8 @@ image-frontend:
 image-solr:
     cd components/solr && just image
 
-up:
-    docker compose --env-file config/.env.test up --build -d
+up *args:
+    docker compose --env-file config/.env.secret --env-file config/.env.test up -d
 
 down:
     docker-compose down

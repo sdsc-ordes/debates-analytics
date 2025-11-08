@@ -85,6 +85,20 @@ services:
         - mongodb-instance
         - solr
 
+  whisper-diarize:
+    image: registry.hf.space/katospiegel-odtp-pyannote-whisper:latest
+    platform: linux/amd64
+    ports:
+      - "7860:7860" # This will be available at http://localhost:7860
+    environment:
+      - ODTP_API_MODE=TRUE
+      - HF_TOKEN=${HF_TOKEN}
+    networks:
+      - debates_network
+    # You might also need these, which are the equivalent of '-it'
+    stdin_open: true
+    tty: true
+
 networks:
   debates_network:
     driver: bridge
