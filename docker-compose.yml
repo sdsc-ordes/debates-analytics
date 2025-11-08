@@ -11,9 +11,36 @@ services:
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     command: server --address 0.0.0.0:9000 --console-address :9001 /data
     networks:
       - debates_network
+
+  # This service runs once to create the bucket, then exits.
+  minio-setup:
+    image: minio/mc
+    depends_on:
+      minio-instance:
+        condition: service_healthy # Waits for Minio to be ready
+    networks:
+      - debates_network
+    environment:
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+    entrypoint: /bin/sh
+    command: -c "
+      echo 'Waiting for Minio...';
+      /usr/bin/mc alias set myminio http://minio-instance:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY;
+      echo 'Alias set.';
+      /usr/bin/mc mb myminio/$$S3_BUCKET_NAME || echo 'Bucket already exists.';
+      echo 'Bucket setup complete.';
+      exit 0;
+      "
 
   solr:
     build:
@@ -62,6 +89,24 @@ services:
       - debates_network
     depends_on:
       - mongodb-instance
+
+  converter:
+    build: ./components/converter
+    networks:
+      - debates_network
+    # Pass in the S3 credentials from your .env files
+    environment:
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+    volumes:
+      - ./video-input:/app/input
+      - ./audio-to-process:/app/output
+    # Make it dependent on Minio
+    depends_on:
+      minio-setup:
+        condition: service_completed_successfully
 
   dataloader:
       build:
