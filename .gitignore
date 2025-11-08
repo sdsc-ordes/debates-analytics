@@ -46,3 +46,6 @@ config/.env.*
 !*.env.example
 
 example/
+video-input/
+audio-to-process/
+transcripts/
