@@ -44,3 +44,5 @@ config/.env.*
 
 # Also good practice to allow template/example files
 !*.env.example
+
+example/
