@@ -43,6 +43,12 @@ image-frontend:
 image-solr:
     cd components/solr && just image
 
+up:
+    docker compose --env-file config/.env.test up --build -d
+
+down:
+    docker-compose down
+
 # Run commands over the ci development shell.
 ci *args:
     just nix::develop "ci" "$@"
