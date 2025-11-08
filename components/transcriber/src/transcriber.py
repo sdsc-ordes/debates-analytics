@@ -101,23 +101,23 @@ def process_job(job_key):
         # Since we mapped /app/audio in transcriber to /app/audio in whisper, 
         # let's try mapping the path as /app/audio/input.wav and hoping the API resolves it.
         # The simplest way to fix the whisper crash is to just send the path that *it* can read.
-        
+
         # We must align with the whisper container's internal view of the shared volume!
         # Your docker-compose.yml maps:
         # transcriber: ./audio-to-process:/app/audio
         # whisper-diarize: ./audio-to-process:/app/audio
-        
+
         # Let's assume the Gradio function takes the *actual* path to the audio file on the shared volume.
-        
+
         # Re-reading the crash log:
         # Command '['python3', '/odtp/odtp-app/app.py', ..., '--input-file', '/tmp/odtp_86661bo_/odtp-input/input.wav', ...]'
         # This confirms the Whisper app *internally* copies the file to a temp folder.
         # But the Gradio API call should just take the input path, which is shared.
-        
+
         # Let's try to send the parameters that the *shell command* requires, NOT just the audio path.
         # This is a common pattern for Gradio interfaces that wrap shell scripts.
         # The arguments are sent as a list of data fields.
-        
+
         api_payload = {
             "data": [
                 model_name, # 1. MODEL
