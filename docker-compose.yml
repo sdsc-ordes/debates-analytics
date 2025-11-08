@@ -63,6 +63,28 @@ services:
     depends_on:
       - mongodb-instance
 
+  dataloader:
+      build:
+        context: ./components/dataloader
+        dockerfile: Dockerfile
+      networks:
+        - debates_network
+      environment:
+        SOLR_URL: http://solr:8983/solr/debates/
+        MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
+        MONGO_DB: debates
+        S3_SERVER: http://minio-instance:9000
+        S3_FRONTEND_BASE_URL: http://localhost:80
+        S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+        S3_SECRET_KEY: ${S3_SECRET_KEY}
+        API_HOST: "0.0.0.0"
+      ports:
+        - 8000:8000
+      depends_on:
+        - minio-instance
+        - mongodb-instance
+        - solr
+
 networks:
   debates_network:
     driver: bridge
