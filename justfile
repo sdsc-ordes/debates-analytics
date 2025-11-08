@@ -46,8 +46,11 @@ image-solr:
 up *args:
     docker compose --env-file config/.env.secret --env-file config/.env.test up -d
 
+logs *args:
+    docker compose --env-file config/.env.secret --env-file config/.env.test logs -f {{args}}
+
 down:
-    docker-compose down
+    docker compose --env-file config/.env.secret --env-file config/.env.test down
 
 # Run commands over the ci development shell.
 ci *args:
