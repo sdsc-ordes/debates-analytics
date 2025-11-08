@@ -8,11 +8,12 @@ output_dir := comp_dir / ".output"
 build_dir := output_dir / "build"
 
 export CONTAINER_MGR := env("CONTAINER_MGR", "docker")
+export BACKEND_PATH := env("BACKEND_PATH", "data")
 
 # Default target if you do not specify a target.
 default:
     just --list --unsorted
 
 image *args:
-    just container::mgr build -f Containerfile . \
+    just container::mgr build -f Dockerfile . \
         -t "github.com/sdsc-ordes/debates-analytics/backend:latest"

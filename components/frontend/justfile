@@ -14,5 +14,5 @@ default:
     just --list --unsorted
 
 image *args:
-    just container::mgr build -f Containerfile . \
+    just container::mgr build -f Dockerfile . \
         -t "github.com/sdsc-ordes/debates-analytics/frontend:latest"
