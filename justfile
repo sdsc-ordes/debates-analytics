@@ -44,7 +44,7 @@ image-solr:
     cd components/solr && just image
 
 up *args:
-    docker compose --env-file config/.env.secret --env-file config/.env.test up -d
+    docker compose --env-file config/.env.secret --env-file config/.env.test up -d {{args}}
 
 logs *args:
     docker compose --env-file config/.env.secret --env-file config/.env.test logs -f {{args}}
