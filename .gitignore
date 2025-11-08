@@ -31,4 +31,16 @@ __pycache*
 .yamllint.yaml
 .typos.toml
 
-solr/data/
+data/
+
+# Ignore all .env files by default
+.env
+.env.*
+config/.env.*
+
+# --- EXCEPTIONS ---
+# But, *allow* our shared test config file
+!config/.env.test
+
+# Also good practice to allow template/example files
+!*.env.example
