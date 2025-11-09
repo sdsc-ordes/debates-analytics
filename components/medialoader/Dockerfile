@@ -8,7 +8,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# 2. Set up venv (good practice, matches dataloader)
+# 2. Set up venv (good practice, matches medialoader)
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
