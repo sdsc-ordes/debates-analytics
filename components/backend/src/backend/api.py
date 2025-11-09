@@ -3,12 +3,16 @@ from datetime import datetime
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from dataloader.s3 import s3Manager
-from dataloader import mongodb
-from dataloader import solr
-from dataloader import helpers
-from dataloader import merge
-from dataloader import models
+from backend.s3 import s3Manager
+from backend import mongodb
+from backend import solr
+from backend import helpers
+from backend import models
+
+SUBTITLE_TYPE_TRANSCRIPT = "transcript"
+SUBTITLE_TYPE_TRANSLATION = "translation"
+SUBTITLE_TYPE_TRANSCRIPT_EDITED = "transcript_edited"
+SUBTITLE_TYPE_TRANSLATION_EDITED = "translation_edited"
 
 api = FastAPI()
 
