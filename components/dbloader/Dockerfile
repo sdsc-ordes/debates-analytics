@@ -26,4 +26,4 @@ RUN uv sync --frozen --no-cache
 EXPOSE 8000
 
 # Now 'python' will automatically use the .venv
-CMD ["python", "debates.py", "serve"]
+#CMD ["python", "debates.py", "serve"]
