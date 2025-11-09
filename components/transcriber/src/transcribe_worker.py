@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.INFO,
 # Environment Variables from Docker Compose
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 TRANSCRIPTION_QUEUE = 'transcription_jobs' # Queue this consumer listens to
+DBLOADER_QUEUE = 'dbloader_jobs'
 
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
 S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
@@ -45,14 +46,14 @@ def upload_transcript_files(job_id: str):
     logging.info(f"--- Processing Transcription Job ID: {job_id} ---")
 
     # Define the S3 destination path based on the job ID
-    s3_prefix = f"transcripts/{job_id}/"
+    s3_prefix = f"{job_id}/transcripts"
 
     files_to_find = os.listdir(LOCAL_TRANSCRIPT_DIR)
     uploaded_count = 0
 
     for filename in files_to_find:
         local_path = os.path.join(LOCAL_TRANSCRIPT_DIR, filename)
-        s3_key = s3_prefix + filename
+        s3_key = f"{s3_prefix}/{filename}"
 
         if os.path.exists(local_path):
             try:
@@ -79,8 +80,7 @@ def upload_transcript_files(job_id: str):
         logging.warning(f"--- Transcription job {job_id} completed with missing files ({uploaded_count}/{len(files_to_find)} uploaded). ---")
         return False
 
-
-def process_job(ch, method, properties, body):
+def process_job(ch, method, properties, body, connection: pika.BlockingConnection):
     """
     Callback function executed when a message is received.
     """
@@ -97,6 +97,11 @@ def process_job(ch, method, properties, body):
 
         if success:
             ch.basic_ack(delivery_tag=method.delivery_tag)
+            dbupload_payload = {
+                "job_id": job_id,
+                "status": "UPLOAD_COMPLETE"
+            }
+            send_to_dbloader_queue(dbupload_payload, connection)
         else:
             # If files were missing or failed to upload, reject/requeue for potential manual fix
             # For simplicity, we acknowledge here to prevent endless retries on missing files
@@ -109,6 +114,27 @@ def process_job(ch, method, properties, body):
         logging.error(f" [!] An error occurred during transcription processing: {e}")
         # Reject and requeue on unexpected errors (e.g., network failure)
         ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
+
+
+def send_to_dbloader_queue(job_payload: Dict[str, Any], connection: pika.BlockingConnection):
+    """Publishes a new message to the dbloader queue for the next worker."""
+
+    # Use the same connection (if possible) or establish a new channel for publishing
+    channel = connection.channel()
+    channel.queue_declare(queue=DBLOADER_QUEUE, durable=True)
+
+    message = json.dumps(job_payload)
+
+    channel.basic_publish(
+        exchange='',
+        routing_key=DBLOADER_QUEUE,
+        body=message,
+        properties=pika.BasicProperties(delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE)
+    )
+    logging.info(f" [->] Sent dbload job for {job_payload['job_id']} to {DBLOADER_QUEUE}")
+
+    # NOTE: We keep the channel open if we reuse the connection, but for simplicity
+    # in a worker setup, we might close it if the connection wasn't passed in.
 
 
 def start_worker():
@@ -127,11 +153,16 @@ def start_worker():
             channel = connection.channel()
 
             channel.queue_declare(queue=TRANSCRIPTION_QUEUE, durable=True)
+            channel.queue_declare(queue=DBLOADER_QUEUE, durable=True)
 
             logging.info("RabbitMQ connection successful. Listening for jobs...")
             print(' [*] Waiting for transcription jobs. To exit press CTRL+C')
 
             channel.basic_qos(prefetch_count=1) # One job at a time
+            callback_with_connection = lambda ch, method, properties, body: process_job(
+                ch, method, properties, body, connection
+            )
+
             channel.basic_consume(
                 queue=TRANSCRIPTION_QUEUE,
                 on_message_callback=process_job
