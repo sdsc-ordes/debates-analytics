@@ -25,8 +25,8 @@ CONVERSION_QUEUE = 'video_conversion_jobs'  # Queue this producer sends to
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
 S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "debates")
-S3_BASE_PREFIX = "media"
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+S3_MEDIA_PATH = os.getenv("S3_MEDIA_PATH")
 
 # Initialize S3 Client
 try:
@@ -61,11 +61,12 @@ def produce_conversion_job(video_path: str, connection: pika.BlockingConnection)
     NOTE: We now check the connection status and handle channel lifecycle robustly.
     """
     job_id = str(uuid.uuid4())
-    filename = os.path.basename(video_path)
-    s3_prefix = f"{S3_BASE_PREFIX}/{job_id}"
-    s3_video_key = f"{s3_prefix}/{filename}"
+    file = os.path.basename(video_path)
+    file_name, file_ext = file.split(".")
+    s3_prefix = f"{job_id}/{S3_MEDIA_PATH}"
+    s3_video_key = f"{s3_prefix}/{file}"
 
-    logging.info(f"Processing new file: {filename}. Assigned Job ID: {job_id}")
+    logging.info(f"Processing new file: {file}. Assigned Job ID: {job_id}")
 
     # --- MinIO Upload ---
     try:
@@ -92,7 +93,9 @@ def produce_conversion_job(video_path: str, connection: pika.BlockingConnection)
         job_payload = {
             "job_id": job_id,
             "s3_path": s3_video_key, # CRITICAL data for Converter
-            "original_filename": filename
+            "s3_prefix": s3_prefix,
+            "file_name": file_name,
+            "file_ext": file_ext
         }
         message = json.dumps(job_payload)
 
@@ -107,7 +110,7 @@ def produce_conversion_job(video_path: str, connection: pika.BlockingConnection)
 
         # 4. Clean up the local file ONLY after successful S3 upload AND RabbitMQ publish
         os.remove(video_path)
-        logging.info(f"Local file cleaned up: {filename}")
+        logging.info(f"Local file cleaned up: {file}")
 
     except pika.exceptions.AMQPConnectionError as e:
         logging.error(f" [!!!] Fatal RabbitMQ Error: Connection lost during publish. Job {job_id} failed to queue. File kept locally. Details: {e}")
