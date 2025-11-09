@@ -18,7 +18,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 # Using "src/ ." copies the *contents* of src to /app,
 # so debates.py ends up at /app/debates.py
 COPY src/ .
-COPY pyproject.toml README.md uv.lock ./
+COPY pyproject.toml uv.lock ./
 
 # Install dependencies into the environment set up above
 RUN uv sync --frozen --no-cache
@@ -26,4 +26,4 @@ RUN uv sync --frozen --no-cache
 EXPOSE 8000
 
 # Now 'python' will automatically use the .venv
-#CMD ["python", "debates.py", "serve"]
+CMD ["python", "db_worker.py"]

@@ -3,15 +3,15 @@ import traceback
 import uvicorn
 import os
 from pprint import pprint
-import dataloader.srt_parser as dl_parse_srt
-import dataloader.yml_parser as dl_parse_yml
-import dataloader.mongodb as dl_mongo
-import dataloader.file as dl_file
-import dataloader.solr as dl_solr
+import dbloader.srt_parser as dl_parse_srt
+import dbloader.yml_parser as dl_parse_yml
+import dbloader.mongodb as dl_mongo
+import dbloader.file as dl_file
+import dbloader.solr as dl_solr
 from typing_extensions import Annotated
-from dataloader.s3 import s3Manager, SUFFIX_METADATA, SUFFIX_SRT_EN, SUFFIX_SRT_ORIG
-from dataloader.api import api
-from dataloader.merge import (
+from dbloader.s3 import s3Manager, SUFFIX_METADATA, SUFFIX_SRT_EN, SUFFIX_SRT_ORIG
+from dbloader.api import api
+from dbloader.merge import (
     merge_and_segment, get_speakers_from_segments,
     assign_segments_to_subtitles)
 from dotenv import load_dotenv

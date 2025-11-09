@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import pytz
 from pymongo import MongoClient
 from dotenv import load_dotenv
-from dataloader import merge
+from dbloader import merge
 
 load_dotenv()
 
@@ -21,28 +21,8 @@ ZURICH_TZ = pytz.timezone('Europe/Zurich')
 LANGUAGE_ENGLISH = "en"
 
 
-
 class DataloaderMongoException(Exception):
     pass
-
-
-def _get_schema():
-    with resources.open_text("dataloader", "schema_mongo_validator.json") as file:
-        schema = json.load(file)
-        return schema
-
-
-def mongodb_test_connection():
-    with MongoClient(MONGO_URL, serverSelectionTimeoutMS = 2000) as client:
-        print(client.server_info())
-
-
-def mongodb_create_debate_collection_with_schema():
-    with MongoClient(MONGO_URL) as client:
-        db = client[MONGO_DB]
-        schema = _get_schema()
-        result = db.create_collection(schema["collection"], validator=schema["validator"])
-        print(result)
 
 
 def mongodb_insert_debate(subtitles_orig, subtitles_en, metadata, segments, speakers):
@@ -82,32 +62,6 @@ def mongodb_insert_debate(subtitles_orig, subtitles_en, metadata, segments, spea
     }
 
 
-def mongodb_find_debates():
-    """Find debates in MongoDB and return s3_prefix and version_id."""
-    with MongoClient(MONGO_URL) as client:
-        db = client[MONGO_DB]
-        query = {}
-        projection = {"s3_prefix", "version_id"}
-        result = db[MONGO_DEBATES_COLLECTION].find(query, projection)
-        return _get_list_from_cursor(result)
-
-
-def mongodb_find_one_document(query, collection):
-    """Find debates in MongoDB and return s3_prefix and version_id."""
-    with MongoClient(MONGO_URL) as client:
-        db = client[MONGO_DB]
-        document = db[collection].find_one(query)
-        return document
-
-
-def mongodb_find_one_debate(s3_prefix, version=None):
-    """Find debates in MongoDB and return s3_prefix and version_id."""
-    with MongoClient(MONGO_URL) as client:
-        db = client[MONGO_DB]
-        document = db[MONGO_DEBATES_COLLECTION].find_one()
-        return document
-
-
 def _mongodb_insert_one_document(document, collection):
     with MongoClient(MONGO_URL) as client:
         db = client[MONGO_DB]
@@ -115,25 +69,6 @@ def _mongodb_insert_one_document(document, collection):
             document
         ).inserted_id
         return document_id
-
-
-def update_document(query, values, collection):
-    with MongoClient(MONGO_URL) as client:
-        db = client[MONGO_DB]
-        result = db[collection].update_one(
-            query,
-            values,
-        )
-        print(result)
-
-
-def mongodb_delete_debates():
-    with MongoClient(MONGO_URL) as client:
-        db = client[MONGO_DB]
-        db.drop_collection(MONGO_DEBATES_COLLECTION)
-        db.drop_collection(MONGO_SPEAKERS_COLLECTION)
-        db.drop_collection(MONGO_SUBTITLE_COLLECTION)
-        db.drop_collection(MONGO_SEGMENTS_COLLECTION)
 
 
 def _prepare_speakers(speakers):
@@ -155,13 +90,6 @@ def _prepare_debate_data(metadata):
         "session": metadata["context"]["session"],
     }
     return debate
-
-
-def _get_list_from_cursor(cursor):
-    document_list = []
-    for document in cursor:
-        document_list.append(document)
-    return document_list
 
 
 def _format_debate_schedule(schedule):
