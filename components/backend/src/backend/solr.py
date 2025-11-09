@@ -4,7 +4,6 @@ from pysolr import Solr
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import List
-from dataloader import merge
 
 load_dotenv()
 
