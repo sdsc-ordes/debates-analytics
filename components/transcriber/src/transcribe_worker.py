@@ -21,7 +21,7 @@ S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "debates")
 
 # Local directory where placeholder transcription files are expected
-LOCAL_TRANSCRIPT_DIR = "/app/example"
+LOCAL_TRANSCRIPT_DIR = "/app/input"
 
 # Initialize S3 Client
 try:
@@ -47,7 +47,7 @@ def upload_transcript_files(job_id: str):
     # Define the S3 destination path based on the job ID
     s3_prefix = f"transcripts/{job_id}/"
 
-    files_to_find = [f"{job_id}.json", f"{job_id}.srt"]
+    files_to_find = os.listdir(LOCAL_TRANSCRIPT_DIR)
     uploaded_count = 0
 
     for filename in files_to_find:

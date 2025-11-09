@@ -17,4 +17,4 @@ RUN uv sync --frozen --no-cache
 COPY src/ .
 
 # Run the script
-# CMD ["python", "transcribe_worker.py"]
+CMD ["python", "transcribe_worker.py"]
