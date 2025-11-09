@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO,
 
 INPUT_DIR = "/app/input"
 TEMP_DIR = "/tmp"
-VIDEO_EXTENSIONS = ('.mp4', '.mov', '.mkv', '.avi')
+VIDEO_EXTENSIONS = ('.mp4')
 
 # S3 Configuration
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
