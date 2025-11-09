@@ -25,7 +25,7 @@ TRANSCRIPTION_QUEUE = 'transcription_jobs'  # Queue this worker produces to
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
 S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "debates")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
 # S3 client initialization
 try:
@@ -118,17 +118,16 @@ def process_conversion_job(ch, method, properties, body, connection: pika.Blocki
         job_data = json.loads(body)
         job_id = job_data['job_id']
         s3_video_key = job_data['s3_path']
-        s3_prefix = os.path.dirname(s3_video_key) # e.g., media/job-uuid
+        file_name = job_data['file_name']
+        file_ext = job_data['file_ext']
+        s3_prefix = os.path.dirname(s3_video_key) # e.g., job-uuid
 
         logging.info(f" [x] Received job {job_id}. S3 Path: {s3_video_key}")
 
         # 2. Define local paths
-        filename = os.path.basename(s3_video_key)
-        base_filename = os.path.splitext(filename)[0]
-
-        local_video_path = os.path.join(TEMP_DIR, filename)
-        local_wav_path = os.path.join(TEMP_DIR, f"{base_filename}.wav")
-        s3_wav_key = f"{s3_prefix}/audio.wav"
+        local_video_path = os.path.join(TEMP_DIR, file_name)
+        local_wav_path = os.path.join(TEMP_DIR, f"{file_name}.wav")
+        s3_wav_key = f"{s3_prefix}/{file_name}.wav"
 
         # 3. Execute Workflow Steps
 
