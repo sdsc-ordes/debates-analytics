@@ -10,6 +10,7 @@ services:
       - "15672:15672"
     environment:
       # Default user and password (Change these in production!)
+      RABBITMQ_HOST: '%'
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     volumes:
@@ -36,8 +37,7 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
     volumes:
-      - ./video-input:/app/input
-    # Make it dependent on Minio
+      - ./inputs/media:/app/input
     depends_on:
       minio-setup:
         condition: service_completed_successfully
@@ -80,7 +80,8 @@ services:
       # This service needs access to the .wav files for the API call
       - ./audio-to-process:/app/audio
       # And it needs to save the final JSON
-      - ./transcripts:/app/transcripts
+      - ./inputs/transcripts:/app/transcripts
+      - ./transcriber-input:/app/example
     depends_on:
       whisper-diarize:
         condition: service_started # Use the "service_started" fix from before
