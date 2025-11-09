@@ -1,0 +1,20 @@
+name: debates
+
+# Global networks used by all services
+networks:
+  debates_network:
+    driver: bridge
+
+# Global volumes used for persistence
+volumes:
+  rabbitmq_data:
+  rabbitmq_log:
+  minio_data:
+  solr_data:
+  mongo_data:
+
+# Use 'include' to pull in services from other files
+# This drastically improves readability and organization.
+include:
+  - compose.data.yml
+  - compose.workers.yml
