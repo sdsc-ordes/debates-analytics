@@ -202,7 +202,9 @@ def start_worker():
 
             # 4. Start consuming (listening)
             # Use a lambda to pass the connection object into the callback function
-            callback_with_connection = lambda ch, method, properties, body: process_conversion_job(ch, method, properties, body, connection)
+            callback_with_connection = lambda ch, method, properties, body: process_conversion_job(
+                ch, method, properties, body, connection
+            )
 
             channel.basic_consume(
                 queue=CONVERSION_QUEUE,
