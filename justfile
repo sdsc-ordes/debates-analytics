@@ -55,6 +55,9 @@ down:
 stop *args:
     docker compose --env-file config/.env.secret --env-file config/.env.test stop {{args}}
 
+ps *args:
+    docker compose --env-file config/.env.secret --env-file config/.env.test ps {{args}}
+
 # Run commands over the ci development shell.
 ci *args:
     just nix::develop "ci" "$@"
