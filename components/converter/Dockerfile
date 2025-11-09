@@ -24,4 +24,4 @@ RUN uv sync --frozen --no-cache
 COPY src/ .
 
 # 6. Run the script (this command is the same as before)
-CMD ["python", "conversion-worker.py"]
+CMD ["python", "conversion_worker.py"]
