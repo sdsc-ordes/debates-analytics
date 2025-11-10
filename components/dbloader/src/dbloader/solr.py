@@ -2,7 +2,6 @@ import os
 import json
 from pysolr import Solr
 from dotenv import load_dotenv
-from pydantic import BaseModel
 from typing import List
 from dbloader import merge
 
@@ -11,17 +10,6 @@ load_dotenv()
 
 SOLR_URL = os.getenv("SOLR_URL")
 SOLR_SELECT_URL = f"{SOLR_URL}select"
-
-class FacetFilter(BaseModel):
-    facetField: str
-    facetValue: str
-
-
-class SolrRequest(BaseModel):
-    queryTerm: str
-    sortBy: str
-    facetFields: List[str]
-    facetFilters: List[FacetFilter]
 
 
 class DataloaderSolrException(Exception):

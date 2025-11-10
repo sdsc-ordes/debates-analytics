@@ -15,7 +15,7 @@ S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
 S3_SERVER = os.getenv("S3_SERVER")
 S3_FRONTEND_BASE_URL = os.getenv("S3_FRONTEND_BASE_URL")
 
-S3_BUCKET_NAME="debates"
+S3_BUCKET_NAME=os.getenv("S3_BUCKET_NAME")
 SUFFIX_SRT_ORIG="transcription_original.srt"
 SUFFIX_SRT_EN="translation_original_english.srt"
 SUFFIX_METADATA="metadata.yml"
