@@ -45,6 +45,25 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  workflows:
+    build: ./components/workflows
+    networks:
+      - debates_network
+    # Pass in the S3 credentials from your .env files
+    environment:
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_MEDIA_PATH=${S3_MEDIA_PATH}
+    volumes:
+      - ./inputs/media:/app/input
+    depends_on:
+      minio-setup:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+
   converter:
     build: ./components/converter
     networks:
