@@ -8,11 +8,23 @@ output_dir := comp_dir / ".output"
 build_dir := output_dir / "build"
 
 export CONTAINER_MGR := env("CONTAINER_MGR", "docker")
+export SOLR_PATH := env("SOLR_PATH", "../data/solr")
 
 # Default target if you do not specify a target.
 default:
     just --list --unsorted
 
 image *args:
-    just container::mgr build -f Containerfile . \
+    just container::mgr build -f Dockerfile . \
         -t "github.com/sdsc-ordes/debates-analytics/solr:latest"
+
+# Run the solr container standalone for testing
+run:
+    @echo "==> 🏃 Running Solr container..."
+    @echo "==> 💾 Data will be stored in: {{SOLR_PATH}}"
+    @${CONTAINER_MGR} run -it --rm -d \
+        -p 8983:8983 \
+        -v "{{SOLR_PATH}}:/var/solr" \
+        "github.com/sdsc-ordes/debates-analytics/solr:latest" \
+        solr-precreate debates /opt/solr/server/solr/configsets/debates
+    @echo "==> 🚀 Solr is running at: http://localhost:8983/solr/#/debates/core-overview"

@@ -1,0 +1,36 @@
+name: debates
+
+services:
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    # Access Dozzle in your browser at http://localhost:8080
+    ports:
+      - "8080:8080"
+    volumes:
+      # This is the crucial part: Dozzle needs access to the Docker socket
+      # to read logs from all other running containers.
+      - /var/run/docker.sock:/var/run/docker.sock
+    # This allows Dozzle to restart automatically
+    restart: unless-stopped
+
+# Global networks used by all services
+networks:
+  debates_network:
+    driver: bridge
+
+# Global volumes used for persistence
+volumes:
+  rabbitmq_data:
+  rabbitmq_log:
+  minio_data:
+  solr_data:
+  mongo_data:
+
+# Use 'include' to pull in services from other files
+# This drastically improves readability and organization.
+include:
+  - compose.data.yml
+  - compose.workers.yml
+  - compose.app.yml
+

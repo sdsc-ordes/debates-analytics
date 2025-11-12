@@ -22,7 +22,7 @@
 
   export let data: PageData;
 
-  const s3Prefix: string = data?.prefix;
+  const job_id: string = data?.job_id;
   const debate: Debate = data?.debate;
 
   let subtitles: Subtitle[] = data?.subtitles;
@@ -43,6 +43,7 @@
   );
 
   let mediaElement: HTMLVideoElement;
+  console.log("page data", data);
 
 </script>
 
@@ -64,7 +65,7 @@
   </div>
 
   <div class="col-md-3 speaker-container">
-    <SpeakerDisplay bind:speakers {timeUpdateParameters} {s3Prefix} />
+    <SpeakerDisplay bind:speakers {timeUpdateParameters} {job_id} />
   </div>
 
   <div class="col-md-6 video-container">
@@ -85,7 +86,7 @@
 
 <DebateToolBar {downloadUrls} />
 
-<SegmentDisplay {subtitles} {subtitles_en} {timeUpdateParameters} {s3Prefix} {mediaElement} />
+<SegmentDisplay {subtitles} {subtitles_en} {timeUpdateParameters} {job_id} {mediaElement} />
 
 <style>
 .video-layout {
@@ -102,7 +103,7 @@
   flex: 1;
   max-width: 25%;
   max-height: 100%;
-  overflow: hidden; 
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }

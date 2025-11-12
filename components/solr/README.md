@@ -3,11 +3,13 @@
 ## About
 
 This is the Solr setup for https://github.com/sdsc-ordes/political-debates-ui.
-It provides the custom schema for the video transcript data. 
+It provides the custom schema for the video transcript data.
 
 ## Schema
 
-The video transcripts are stored as segments of the video. Each segments consists of one speaker and all the subtitles that belongs to his `statement`, before it is another speakers turn.
+The video transcripts are stored as segments of the video. Each segments
+consists of one speaker and all the subtitles that belongs to his `statement`,
+before it is another speakers turn.
 
 Example Document: not all fields are mentioned in this example:
 
@@ -31,14 +33,19 @@ The schema started with Solr provided managed schema.
 
 ### How Solr schema started
 
-The repos was build by running first the standard Solr image and then copying out the schema from `/opt/solr/server/solr/configsets/debates` with `docker cp`: see setup section on how to run the docker container.
+The repos was build by running first the standard Solr image and then copying
+out the schema from `/opt/solr/server/solr/configsets/debates` with `docker cp`:
+see setup section on how to run the docker container.
 
 ### How Solr schema is customized
 
-All fields in the documents that need search functionality should be added to the Solr schema: for changing the schema there are two options:
+All fields in the documents that need search functionality should be added to
+the Solr schema: for changing the schema there are two options:
 
 - the schema can be changed directly on `schema/managed-schema.xml
-- mount Solr with Docker as described in the set up section. Then add the field on the Solr UI and copy the field from `/opt/solr/server/solr/configsets/debates
+- mount Solr with Docker as described in the set up section. Then add the field
+  on the Solr UI and copy the field from
+  `/opt/solr/server/solr/configsets/debates
 
 ## Setup
 

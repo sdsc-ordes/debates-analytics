@@ -22,16 +22,30 @@
     facetFields: Record<string, Array<string | number>>,
   ) => {
     let fields = [];
+
+    // Iterate over each facet field (e.g., 'category', 'brand')
     for (const [key, values] of Object.entries(facetFields)) {
       let facets = [];
+
+      // Step 1: Create the 'facets' array with {label, count} objects
       for (let i = 0; i < values.length; i += 2) {
-        facets.push({ label: values[i], count: values[i + 1] });
+        facets.push({
+          label: values[i],
+          count: values[i + 1] as number // Cast 'count' to number for comparison
+        });
       }
-      fields.push({ key, facets });
+
+      // Step 2: Check if any facet in this field has a count > 0
+      const hasPositiveCount = facets.some(facet => facet.count > 0);
+
+      // Step 3: Only push the field if at least one facet has a positive count
+      if (hasPositiveCount) {
+        fields.push({ key, facets });
+      }
     }
+
     return fields;
   };
-
   function handleFacetAddClick(facetField: string, facetValue: string) {
     if (!solrQuery.facetFieldValues) {
             solrQuery.facetFieldValues = [];

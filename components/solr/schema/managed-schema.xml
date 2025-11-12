@@ -460,6 +460,8 @@
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="original" type="boolean" uninvertible="true" indexed="true" stored="true"/>
   <field name="s3_prefix" type="string" uninvertible="false" docValues="true" indexed="true" stored="true"/>
+  <field name="job_id" type="string" uninvertible="false" docValues="true" multiValued="false" indexed="true" stored="true"/>
+  <field name="media" type="string" uninvertible="false" docValues="true" multiValued="false" indexed="true" stored="true"/>
   <field name="segment_language" type="text_general"/>
   <field name="segment_nr" type="pint" uninvertible="false" docValues="false" multiValued="false" indexed="true" stored="true"/>
   <field name="segment_type" type="string" uninvertible="true" docValues="true" multiValued="false" indexed="true" stored="true"/>

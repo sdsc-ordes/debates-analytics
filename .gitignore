@@ -30,3 +30,20 @@ __pycache*
 .prettierrc.yaml
 .yamllint.yaml
 .typos.toml
+
+data/
+
+# Ignore all .env files by default
+.env
+.env.*
+config/.env.*
+
+# --- EXCEPTIONS ---
+# But, *allow* our shared test config file
+!config/.env.test
+
+# Also good practice to allow template/example files
+!*.env.example
+
+example/
+inputs/

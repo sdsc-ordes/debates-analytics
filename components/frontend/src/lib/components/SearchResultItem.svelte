@@ -11,7 +11,7 @@
     export let doc: SolrDocument;
 
     const navigateToVideoPlayer = () => {
-        goto(`/mediaplayer/${encodeURIComponent(doc.s3_prefix)}?start=${encodeURIComponent(doc.start)}`);
+        goto(`/mediaplayer/${encodeURIComponent(doc.job_id)}?start=${encodeURIComponent(doc.start)}`);
     };
 </script>
 
@@ -19,15 +19,15 @@
     <!-- <hr /> -->
     <div
         class="card"
-        on:click={() => navigateToVideoPlayer(doc.s3_prefix)}
+        on:click={() => navigateToVideoPlayer()}
         role="button"
         tabindex="0"
         on:keydown={(e) =>
             (e.key === "Enter" || e.key === " ") &&
-            navigateToVideoPlayer(doc.s3_prefix)}
+            navigateToVideoPlayer()}
     >
         <div class="card-body">
-            <div class="card-title-large">{doc.debate_type} {doc.debate_session}</div>
+            <div class="card-title-large">{doc.media}</div>
             <p class="card-body-large truncated">
                 {#if highlighting}
                     {@html replaceWithHighlightedVersion(
@@ -40,10 +40,7 @@
             </p>
             <div class="datetime-container">
                 <div class="date-time-item">
-                    <i class="fa fa-calendar" aria-hidden="true"></i>
-                    <small class="card-subtle"
-                        >{displayIsoDate(doc.debate_schedule)}</small
-                    >
+                     {doc.job_id}
                 </div>
                 <div class="date-time-item">
                     <i class="fa fa-clock" aria-hidden="true"></i>

@@ -1,0 +1,88 @@
+services:
+  minio-instance:
+    image: minio/minio
+    volumes:
+      - ${MINIO_PATH}:/data
+    ports:
+      - 127.0.0.1:9000:9000
+      - 9001:9001
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: server --address 0.0.0.0:9000 --console-address :9001 /data
+    networks:
+      - debates_network
+
+  # This service runs once to create the bucket, then exits.
+  minio-setup:
+    image: minio/mc
+    depends_on:
+      minio-instance:
+        condition: service_healthy # Waits for Minio to be ready
+    networks:
+      - debates_network
+    environment:
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+    entrypoint: /bin/sh
+    command: -c "
+      echo 'Waiting for Minio...';
+      /usr/bin/mc alias set myminio http://minio-instance:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY;
+      echo 'Alias set.';
+      /usr/bin/mc mb myminio/$$S3_BUCKET_NAME || echo 'Bucket already exists.';
+      echo 'Bucket setup complete.';
+      exit 0;"
+
+  solr:
+    build:
+      context: ./components/solr
+    ports:
+      - 8983:8983
+    networks:
+      - debates_network
+    healthcheck:
+      test: curl --max-time 10 -f http://localhost:8983 || exit 1
+      start_period: 60s
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - ${SOLR_PATH}:/var/solr
+    command:
+      - solr-precreate
+      - debates
+      - /opt/solr/server/solr/configsets/debates
+
+  mongodb-instance:
+    image: mongo:7.0.8
+    ports:
+      - 127.0.0.1:27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: debates
+    networks:
+      - debates_network
+    volumes:
+      - ${MONGO_PATH}:/data/db
+
+  mongodb-express:
+    image: mongo-express:1.0.2-18
+    ports:
+      - 127.0.0.1:8081:8081
+    environment:
+      ME_CONFIG_OPTIONS_EDITORTHEME: "ambiance"
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: true
+    networks:
+      - debates_network
+    depends_on:
+      - mongodb-instance
