@@ -39,8 +39,6 @@ setup *args:
     @echo "Running project setup script..."
     @cd "{{root_dir}}" && ./tools/scripts/setup.sh "$@"
 
----
-
 ## 📦 Container Management Targets
 
 # Build all container images in parallel.
