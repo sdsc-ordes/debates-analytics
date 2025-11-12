@@ -4,6 +4,9 @@ from pysolr import Solr
 from dotenv import load_dotenv
 from typing import List
 from dbloader import merge
+from dbloader import utils
+from pprint import pprint
+import logging
 
 load_dotenv()
 
@@ -16,43 +19,44 @@ class DataloaderSolrException(Exception):
     pass
 
 
-def update_solr(debate_data):
+def delete_all_documents_in_solr():
     solr = Solr(SOLR_URL, always_commit=True)
-    documents = _map_debate_data(debate_data)
-    solr.add(documents)
-    print(f"Successfully inserted {len(documents)} documents into solr")
+    solr.delete(q='*:*')
 
 
-def _map_debate_data(debate_data):
-    subtitles = debate_data.get("subtitles")
-    subtitles_en = debate_data.get("subtitles_en")
-    segments = debate_data.get("segments")
-    debate_extras = {
-        "s3_prefix": debate_data["debate"]["s3_prefix"],
-        "debate_type": debate_data["debate"]["type"],
-        "debate_session": debate_data["debate"]["session"],
-        "debate_public": debate_data["debate"]["public"],
-        "debate_schedule": _map_to_solr_date(debate_data["debate"]["schedule"]),
-    }
+def update_solr(
+    job_id,
+    subtitles_orig,
+    subtitles_en,
+    metadata,
+    segments,
+    speakers
+):
+    solr = Solr(SOLR_URL, always_commit=True)
+    logging.info(f"Metadata: {metadata} for {job_id}")
     documents = []
     for segment in segments:
         document_orig = _map_segment(
             segment=segment,
-            subtitles=subtitles,
-            debate_extras=debate_extras,
+            subtitles=subtitles_orig,
+            debate_extras=metadata,
             segment_type=merge.SUBTITLE_TYPE_TRANSCRIPT
         )
         if document_orig:
             documents.append(document_orig)
+
         document_en = _map_segment(
             segment=segment,
             subtitles=subtitles_en,
-            debate_extras=debate_extras,
+            debate_extras=metadata,
             segment_type=merge.SUBTITLE_TYPE_TRANSLATION
         )
         if document_en:
             documents.append(document_en)
-    return documents
+
+    pprint(documents)
+    solr.add(documents)
+    logging.info(f"Successfully inserted {len(documents)} documents into solr for {job_id}")
 
 
 def _map_segment(segment, subtitles, debate_extras, segment_type):
