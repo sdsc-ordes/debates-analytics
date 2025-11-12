@@ -1,15 +1,13 @@
 import boto3
 import os
+import logging
 from botocore.exceptions import NoCredentialsError, DataNotFoundError
+from typing import List, Dict, Union
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-PROD_S3_ACCESS_KEY = os.getenv("PROD_S3_ACCESS_KEY")
-PROD_S3_SECRET_KEY = os.getenv("PROD_S3_SECRET_KEY")
-PROD_S3_BUCKET_NAME = os.getenv("PROD_S3_BUCKET_NAME")
-PROD_S3_REGION_NAME = os.getenv("PROD_S3_REGION_NAME")
 S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
 S3_SERVER = os.getenv("S3_SERVER")
@@ -23,22 +21,13 @@ SUFFIX_METADATA="metadata.yml"
 
 class s3Manager:
     def __init__(self, prod=False):
-        if prod:
-            self.s3 = boto3.client(
-                's3',
-                aws_access_key_id=PROD_S3_ACCESS_KEY,
-                aws_secret_access_key=PROD_S3_SECRET_KEY,
-                region_name=PROD_S3_REGION_NAME
-            )
-            self.bucket_name = PROD_S3_BUCKET_NAME
-        else:
-            self.s3 = boto3.client(
-                's3',
-                endpoint_url=S3_SERVER,
-                aws_access_key_id=S3_ACCESS_KEY,
-                aws_secret_access_key=S3_SECRET_KEY,
-            )
-            self.bucket_name = "debates"
+        self.s3 = boto3.client(
+            's3',
+            endpoint_url=S3_SERVER,
+            aws_access_key_id=S3_ACCESS_KEY,
+            aws_secret_access_key=S3_SECRET_KEY,
+        )
+        self.bucket_name = "debates"
 
     def get_presigned_url(self, prefix, key, expiration=3600):
         """
@@ -63,3 +52,34 @@ class s3Manager:
         except NoCredentialsError:
             print("Credentials not available.")
             return None
+
+    def list_objects_by_prefix(self, prefix: str) -> List[str]:
+        """
+        Lists object keys starting with the given prefix.
+        Optimized for small results (< 1000 keys) by avoiding the paginator.
+
+        Args:
+            prefix: The S3 key prefix (e.g., 'path/to/directory/').
+
+        Returns:
+            A list of full object keys (paths).
+        """
+        keys = []
+        # Use list_objects_v2 directly without the paginator
+        response = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix)
+
+        if response.get('IsTruncated'):
+             logging.warning(
+                 f"S3 returned more than 1000 results for prefix '{prefix}'. "
+                 "The current function is optimized for small lists and may be incomplete. "
+                 "Consider switching back to the paginator."
+             )
+
+        if 'Contents' in response:
+            # Filter out the 'directory' entry if it exists (which has a size of 0)
+            for obj in response['Contents']:
+                # Optional: You can add further checks here if needed, like obj['Size'] > 0
+                keys.append(obj['Key'])
+
+        logging.info(f"Found {len(keys)} objects with prefix '{prefix}' in bucket '{self.bucket_name}': {keys}")
+        return keys

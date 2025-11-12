@@ -76,11 +76,5 @@ class Media(BaseModel):
     format: str
 
 class DebateDocument(BaseModel):
-    s3_prefix: str
-    created_at: datetime
-    s3_keys: List[S3Key]
-    media: Media
-    schedule: datetime
-    public: bool
-    type: str
-    session: str
+    job_id: str
+    media: str

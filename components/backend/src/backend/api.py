@@ -6,8 +6,10 @@ from typing import List, Optional
 from backend.s3 import s3Manager
 from backend import mongodb
 from backend import solr
+from backend import s3
 from backend import helpers
 from backend import models
+
 
 SUBTITLE_TYPE_TRANSCRIPT = "transcript"
 SUBTITLE_TYPE_TRANSLATION = "translation"
@@ -16,58 +18,78 @@ SUBTITLE_TYPE_TRANSLATION_EDITED = "translation_edited"
 
 api = FastAPI()
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Configure basic logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - [%(levelname)s] - (%(filename)s:%(lineno)d) - %(funcName)s - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
 
 
 class S3MediaUrlRequest(BaseModel):
-    prefix: str = Field(..., description="S3 prefix", examples=["HRC_20220328T10000"])
-    objectKeys: list[str] = Field(..., description="List of S3 object keys", examples=[["HRC_20220328T10000-files.json"]])
-    mediaKey: str = Field(..., description="Object key for main media file", examples=["HRC_20220328T10000.mp4"])
+    job_id: str = Field(..., description="job_id", examples=["df2afc83-7e69-4868-ba4c-b7c4afed6218"])
 
 class S3MediaUrlResponse(BaseModel):
     signedUrls: List[models.S3MediaUrls] = Field(..., description="List of presigned URLs")
     signedMediaUrl: str = Field(..., description="Presigned URL for the main media file")
 
 
-@api.post("/get-media-urls", response_model=S3MediaUrlResponse)
+@api.post("/get-signed-urls", response_model=S3MediaUrlResponse)
 async def get_media_urls(request: S3MediaUrlRequest):
     """
     Get signed media urls for a debate: these urls allow to directly access objects on S3
     """
-    try:
-        s3_client = s3Manager()
-        presigned_urls = []
-        for object_key in request.objectKeys:
-            url = s3_client.get_presigned_url(request.prefix, object_key)
-            presigned_urls.append({
-                "url": url,
-                "label": object_key,
-            })
+    logging.info(f"request: {request}")
+    s3_client = s3.s3Manager()
 
-        response = {}
-        response["signedUrls"] = presigned_urls
+    # Get transcript keys for job_id
+    transcript_keys = s3_client.list_objects_by_prefix(f"{request.job_id}/transcripts")
+    logging.info(f"Retrieved transcript keys: {transcript_keys}")
 
-        filter_media_url = [item["url"]
-                            for item in presigned_urls
-                            if item["label"] == request.mediaKey]
-        if filter_media_url:
-            media_url = filter_media_url[0]
-        else:
-            media_url = s3_client.get_presigned_url(request.prefix, object_key)
-        response["signedMediaUrl"] = media_url
+    # Get media keys for job_id
+    media_keys = s3_client.list_objects_by_prefix(f"{request.job_id}/media")
+    logging.info(f"Retrieved media keys: {media_keys}")
 
-        logger.info(f"Generated media URLs for prefix: {request.prefix}, keys: {request.objectKeys}, media key: {request.mediaKey}")
-        logger.debug(f"Response: {response}")
+    # Initialize variables
+    media_url: str = ""
+    download_urls: List[Dict[str, str]] = []
+    job_id = request.job_id
 
-        return response
-    except Exception as e:
-        logger.error(f"Error retrieving signed urls for prefix {request.prefix}: {e}")
-        return {"error": f"Error retrieving signed urls for {request.prefix}"}
+    # Process Media Keys to find the .mp4 file
+    for key in media_keys:
+        if key.lower().endswith(".mp4"):
+            # Get the presigned URL for the primary media file
+            media_url = s3_client.get_presigned_url(job_id, key)
+            # Assuming only one main media file is needed, break the loop
+            break
+
+    if not media_url:
+        logging.warning(f"No .mp4 media file found for job_id: {job_id}")
+
+    # Process Transcript Keys for download links
+    for key in transcript_keys:
+        # The label is the filename (the part after the last '/')
+        filename = key.split('/')[-1]
+
+        # Generate the presigned URL
+        url = s3_client.get_presigned_url(job_id, key)
+
+        # Append the structured dictionary to the list
+        download_urls.append({
+            "url": url,
+            "label": filename
+        })
+
+    response = {}
+    response["signedUrls"] = download_urls
+    response["signedMediaUrl"] = media_url
+
+    logging.info(f"Response: {response}")
+
+    return response
 
 
 class MongoMetadataRequest(BaseModel):
-    prefix: str = Field(..., description="S3 prefix", examples=["HRC_20220328T0000"])
+    job_id: str = Field(..., description="job_id", examples=["df2afc83-7e69-4868-ba4c-b7c4afed6218"])
 
 
 class MongoMetadataResponse(BaseModel):
@@ -78,65 +100,59 @@ class MongoMetadataResponse(BaseModel):
     subtitles_en: Optional[models.SubtitlesDocument] = None
 
 
-@api.post("/mongo-metadata", response_model=MongoMetadataResponse)
+@api.post("/get-metadata", response_model=MongoMetadataResponse)
 async def mongo_metadata(request: MongoMetadataRequest):
-    try:
-        debate = mongodb.mongodb_find_one_document(
-            {"s3_prefix": request.prefix}, mongodb.MONGO_DEBATES_COLLECTION
-        )
+    logging.info(f"request: {request}")
+    debate = mongodb.mongodb_find_one_document(
+        {"job_id": request.job_id}, mongodb.MONGO_DEBATES_COLLECTION
+    )
+    logging.info(f"debate found for {request.job_id}: {debate}")
 
-        if not debate:
-            logger.warning(f"No debate found for prefix: {request.prefix}")
-            return MongoMetadataResponse(debate=None)
+    if not debate:
+        logger.warning(f"No debate found for job_id: {request.job_id}")
+        return MongoMetadataResponse(debate=None)
 
-        debate_document = helpers.clean_document(debate)
+    debate_document = helpers.clean_document(debate)
+    logging.info(f"debate_document after cleaning: {debate_document}")
 
-        debate_document['created_at'] = datetime.fromisoformat(
-            debate_document['created_at'].replace('Z', '+00:00'))
-        debate_document['schedule'] = datetime.fromisoformat(
-            debate_document['schedule'].replace('Z', '+00:00'))
+    debate_obj = models.DebateDocument(**debate_document)
+    logging.info(f"debate_obj: {debate_obj}")
 
-        debate_obj = models.DebateDocument(**debate_document)
+    debate_id = debate["_id"]
 
-        debate_id = debate["_id"]
+    speakers = mongodb.mongodb_find_one_document(
+        { "debate_id": debate_id }, mongodb.MONGO_SPEAKERS_COLLECTION
+    )
+    speakers_document = helpers.clean_document(speakers)
+    speakers_obj = models.SpeakersDocument(**speakers_document)
 
-        speakers = mongodb.mongodb_find_one_document(
-            { "debate_id": debate_id }, mongodb.MONGO_SPEAKERS_COLLECTION
-        )
-        speakers_document = helpers.clean_document(speakers)
-        speakers_obj = models.SpeakersDocument(**speakers_document)
+    segments = mongodb.mongodb_find_one_document(
+        { "debate_id": debate_id }, mongodb.MONGO_SEGMENTS_COLLECTION
+    )
+    segments_document = helpers.clean_document(segments)
+    segments_obj = models.SegmentsDocument(**segments_document)
 
-        segments = mongodb.mongodb_find_one_document(
-            { "debate_id": debate_id }, mongodb.MONGO_SEGMENTS_COLLECTION
-        )
-        segments_document = helpers.clean_document(segments)
-        segments_obj = models.SegmentsDocument(**segments_document)
+    subtitles = mongodb.mongodb_find_one_document(
+        { "debate_id": debate_id, "type": SUBTITLE_TYPE_TRANSCRIPT }, mongodb.MONGO_SUBTITLE_COLLECTION
+    )
+    subtitle_keys_to_clean = ["type", "language"]
+    subtitles_document = helpers.clean_document(subtitles, keys=subtitle_keys_to_clean)
+    subtitles_obj = models.SubtitlesDocument(**subtitles_document)
 
-        subtitles = mongodb.mongodb_find_one_document(
-            { "debate_id": debate_id, "type": merge.SUBTITLE_TYPE_TRANSCRIPT }, mongodb.MONGO_SUBTITLE_COLLECTION
-        )
-        subtitle_keys_to_clean = ["type", "language"]
-        subtitles_document = helpers.clean_document(subtitles, keys=subtitle_keys_to_clean)
-        subtitles_obj = models.SubtitlesDocument(**subtitles_document)
+    subtitles_en = mongodb.mongodb_find_one_document(
+        { "debate_id": debate_id, "type": SUBTITLE_TYPE_TRANSLATION }, mongodb.MONGO_SUBTITLE_COLLECTION
+    )
+    subtitles_en_document = helpers.clean_document(subtitles_en, keys=subtitle_keys_to_clean)
+    subtitles_en_obj = models.SubtitlesDocument(**subtitles_en_document)
 
-        subtitles_en = mongodb.mongodb_find_one_document(
-            { "debate_id": debate_id, "type": merge.SUBTITLE_TYPE_TRANSLATION }, mongodb.MONGO_SUBTITLE_COLLECTION
-        )
-        subtitles_en_document = helpers.clean_document(subtitles_en, keys=subtitle_keys_to_clean)
-        subtitles_en_obj = models.SubtitlesDocument(**subtitles_en_document)
-
-        response = MongoMetadataResponse(
-            debate=debate_obj,
-            speakers=speakers_obj,
-            segments=segments_obj,
-            subtitles=subtitles_obj,
-            subtitles_en=subtitles_en_obj,
-        )
-        return response
-
-    except Exception as e:
-        logger.error(f"Error retrieving metadata for prefix {request.prefix}: {e}")
-        return {"error": "Error retrieving metadata"}  # For errors, return a dict
+    response = MongoMetadataResponse(
+        debate=debate_obj,
+        speakers=speakers_obj,
+        segments=segments_obj,
+        subtitles=subtitles_obj,
+        subtitles_en=subtitles_en_obj,
+    )
+    return response
 
 
 class SolrRequest(BaseModel):
@@ -154,6 +170,7 @@ class SolrRequest(BaseModel):
 @api.post("/search-solr")
 async def search_solr(request: SolrRequest):
     """Fetch search results from Solr"""
+    logging.info(f"request: {request}")
     try:
         solr_response = solr.search_solr(solr_request=request)
         logger.info(f"Solr search request: {request}")
@@ -165,7 +182,7 @@ async def search_solr(request: SolrRequest):
 
 
 class UpdateSpeakersRequest(BaseModel):
-    prefix: str
+    job_id: str
     speakers: List[models.Speaker]
 
 
@@ -174,9 +191,10 @@ async def update_speakers(request: UpdateSpeakersRequest):
     """
     Update speakers
     """
+    logging.info(f"request: {request}")
     try:
         debate = mongodb.mongodb_find_one_document(
-            { "s3_prefix": request.prefix }, mongodb.MONGO_DEBATES_COLLECTION
+            { "job_id": request.job_id }, mongodb.MONGO_DEBATES_COLLECTION
         )
         debate_id = debate["_id"]
         speakers_as_dicts = [speaker.dict() for speaker in request.speakers]
@@ -185,16 +203,16 @@ async def update_speakers(request: UpdateSpeakersRequest):
             values={ "$set": { "speakers": speakers_as_dicts } },
             collection=mongodb.MONGO_SPEAKERS_COLLECTION
         )
-        logger.info(f"Speakers for {request.prefix} updated successfully.")
-        solr.update_speakers(s3_prefix=request.prefix, speakers=speakers_as_dicts)
-        logger.info(f"Speakers for {request.prefix} updated on Solr.")
+        logger.info(f"Speakers for {request.job_id} updated successfully.")
+        solr.update_speakers(job_id=request.job_id, speakers=speakers_as_dicts)
+        logger.info(f"Speakers for {request.job_id} updated on Solr.")
     except Exception as e:
-        logger.error(f"Error updating speakers for {request.prefix}: {e}")
+        logger.error(f"Error updating speakers for {request.job_id}: {e}")
         return {"error": "Error updating speakers"}
 
 
 class UpdateSubtitlesRequest(BaseModel):
-    prefix: str
+    job_id: str
     segmentNr: int
     subtitles: List[models.Subtitle]
     subtitleType: models.EnumSubtitleType
@@ -205,11 +223,12 @@ async def update_subtitles(request: UpdateSubtitlesRequest):
     """
     Update subtitles
     """
+    logging.info(f"request: {request}")
     try:
         print("in update subtitles")
         print(request)
         debate = mongodb.mongodb_find_one_document(
-            { "s3_prefix": request.prefix }, mongodb.MONGO_DEBATES_COLLECTION
+            { "job_id": request.job_id }, mongodb.MONGO_DEBATES_COLLECTION
         )
         debate_id = debate["_id"]
         subtitles_as_dicts = [subtitle.dict() for subtitle in request.subtitles]
@@ -218,22 +237,22 @@ async def update_subtitles(request: UpdateSubtitlesRequest):
         else:
             values = { "subtitles_en": subtitles_as_dicts }
         if request.subtitleType == models.EnumSubtitleType.transcript:
-            subtitle_type = merge.SUBTITLE_TYPE_TRANSCRIPT
+            subtitle_type = SUBTITLE_TYPE_TRANSCRIPT
         elif request.subtitleType == models.EnumSubtitleType.translation:
-            subtitle_type = merge.SUBTITLE_TYPE_TRANSLATION
+            subtitle_type = SUBTITLE_TYPE_TRANSLATION
         mongodb.update_document(
             query={ "debate_id": debate_id, "type": subtitle_type },
             values={ "$set": values },
             collection=mongodb.MONGO_SUBTITLE_COLLECTION,
         )
-        logger.info(f"Subtitles for {request.prefix} updated successfully.")
+        logger.info(f"Subtitles for {request.job_id} updated successfully.")
         solr.update_segment(
-            s3_prefix=request.prefix,
+            job_id=request.job_id,
             segment_nr=request.segmentNr,
             subtitles=subtitles_as_dicts,
             subtitle_type=subtitle_type,
         )
-        logger.info(f"Subtitles for {request.prefix} updated on Solr.")
+        logger.info(f"Subtitles for {request.job_id} updated on Solr.")
     except Exception as e:
-        logger.error(f"Error updating subtitles for {request.prefix}: {e}")
+        logger.error(f"Error updating subtitles for {request.job_id}: {e}")
         return {"error": "Error updating subtitles"}
