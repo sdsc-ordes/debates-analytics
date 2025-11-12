@@ -5,10 +5,11 @@ import time
 import logging
 import pika
 import boto3
+from typing import Dict, Any
 
 # --- Configuration ---
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(message)s',
+                    format='%(asctime)s - [%(levelname)s] - (%(filename)s:%(lineno)d) - %(funcName)s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 # Environment Variables from Docker Compose
