@@ -9,33 +9,25 @@ import { error } from "@sveltejs/kit" // Import the error function
 
 export const load: PageServerLoad = async ({ params }) => {
   try {
-    const s3Prefix: string = params.id
+    const job_id: string = params.id
 
     // Fetch metadata FIRST.  If it fails, it's a 404.
-    const metadata: ResponseMetadata = await fetchMetadata(s3Prefix) // Await here
+    const metadata: ResponseMetadata = await fetchMetadata(job_id) // Await here
+    console.log(metadata)
 
     // Check if metadata exists. If not, it's a 404
     if (
-      !metadata ||
-      !metadata.debate ||
-      !metadata.debate.s3_keys ||
-      !metadata.debate.media
+      !metadata
     ) {
       throw error(404, "Not Found") // Throw 404 if metadata is missing or incomplete
     }
 
-    const objectKeys: string[] = metadata.debate.s3_keys.map(
-      (item) => item.name,
-    )
-    const mediaKey = metadata.debate.media.key
     const signedUrls: SignedUrls = await fetchMedia(
-      s3Prefix,
-      objectKeys,
-      mediaKey,
+      job_id,
     )
 
     return {
-      prefix: s3Prefix,
+      job_id: job_id,
       media: metadata.debate.media,
       debate: metadata.debate,
       speakers: metadata.speakers.speakers,

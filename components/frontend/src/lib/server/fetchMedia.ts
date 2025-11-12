@@ -1,21 +1,18 @@
-import type { S3Key, SignedUrls } from "$lib/interfaces/metadata.interface"
+import type { SignedUrls } from "$lib/interfaces/metadata.interface"
 import { BackendUrl } from "$lib/config"
 
 export async function fetchMedia(
-  s3Prefix: string,
-  objectKeys: string[],
-  mediaKey: string,
+  job_id: string,
 ): Promise<SignedUrls> {
   try {
     // FastAPI endpoint to retrieve signed URLs
-    const apiUrl = `${BackendUrl}/get-media-urls`
+    const apiUrl = `${BackendUrl}/get-signed-urls`
 
     // Request payload for signed URLs
     const payload = JSON.stringify({
-      prefix: s3Prefix,
-      objectKeys: objectKeys,
-      mediaKey: mediaKey,
+      job_id: job_id,
     })
+    console.log(`API call to ${apiUrl} with paylosd: ${payload}`)
 
     // Fetch signed URL from FastAPI backend
     const response = await fetch(apiUrl, {
@@ -31,6 +28,7 @@ export async function fetchMedia(
 
     // Extract JSON from the response
     const data = await response.json()
+    console.log(data);
     const signedUrls = data
     return signedUrls
   } catch (error) {
