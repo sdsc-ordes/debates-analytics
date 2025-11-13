@@ -14,6 +14,21 @@ services:
     # This allows Dozzle to restart automatically
     restart: unless-stopped
 
+  prefect_server:
+      image: prefecthq/prefect:3-python3.12
+      container_name: prefect_server
+      restart: unless-stopped
+      ports:
+        # Expose the UI and API port
+        - "4200:4200"
+      command: prefect server start --host 0.0.0.0
+      networks:
+        - debates_network # Connect it to your existing network
+      volumes:
+        # CRITICAL: Persist the data (including the internal SQLite DB)
+        # This ensures your flow history is saved across restarts.
+        - prefect_data:/root/.prefect
+
 # Global networks used by all services
 networks:
   debates_network:
@@ -26,6 +41,7 @@ volumes:
   minio_data:
   solr_data:
   mongo_data:
+  prefect_data:
 
 # Use 'include' to pull in services from other files
 # This drastically improves readability and organization.
@@ -33,4 +49,3 @@ include:
   - compose.data.yml
   - compose.workers.yml
   - compose.app.yml
-

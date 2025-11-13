@@ -1,23 +1,28 @@
 # Use the Python version specified in your pyproject.toml
 FROM python:3.11-slim
 
-# Install uv globally for environment management
-RUN pip install uv
+# 1. Install system deps (FFmpeg) and uv in one layer
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    rm -rf /var/lib/apt/lists/* && \
+    pip install uv
 
 WORKDIR /app
 
-# 1. Copy dependency files (pyproject.toml and uv.lock for fast, locked install)
-COPY pyproject.toml uv.lock /app/
+# 2. Set up venv (good practice, matches medialoader)
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# 2. Compile and Install dependencies using uv
-# --no-deps prevents installing transitive dependencies from lock if it's there
-# We install from the lock file for speed and exact reproducibility
-RUN uv pip install --all-features --locked --no-deps -f uv.lock \
-    && rm -rf /root/.cache/uv
+# 3. Copy *only* dependency files
+COPY pyproject.toml uv.lock ./
+
+# 4. Install dependencies
+# This step will be cached as long as uv.lock doesn't change
+RUN uv sync --frozen --no-cache
 
 # 3. Copy the entire source code directory
 # This ensures flows.py is available at /app/src/flows.py
-COPY src /app/src 
+COPY src/ .
 
 # CRITICAL FIX: Add the application directory to the Python path
 # This allows the worker to run: import src.flows
