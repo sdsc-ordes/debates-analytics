@@ -16,7 +16,9 @@
   export let segments: Segment[] = [];
   export let mediaElement: HTMLMediaElement;
   export let mediaUrl: string;
-  export let media;
+  const mediaType = "video"
+  const mediaFormat = "mp4"
+  console.log(mediaUrl);
 
   function handleTimeUpdate() {
     timeUpdateParameters = onMediaTimeUpdate(
@@ -35,7 +37,7 @@
 </script>
 
 <div class="media-container">
-  {#if media.type === "video"}
+  {#if mediaType === "video"}
     <!-- svelte-ignore a11y-media-has-caption -->
     <video
       class="media"
@@ -44,10 +46,10 @@
       controls
       disablePictureInPicture
     >
-      <source src={mediaUrl} type="{media.type}/{media.format}" />
+      <source src={mediaUrl} type="{mediaType}/{mediaFormat}" />
       Your browser does not support the video tag.
     </video>
-  {:else if media.type === "audio"}
+  {:else if mediaType === "audio"}
     <audio
       class="media"
       bind:this={mediaElement}
@@ -55,7 +57,7 @@
       controls
       autoplay
     >
-      <source src={mediaUrl} type="{media.type}/{media.format}" />
+      <source src={mediaUrl} type="{mediaType}/{mediaFormat}" />
       Your browser does not support the audio tag.
     </audio>
   {/if}

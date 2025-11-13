@@ -31,7 +31,6 @@
 
   let speakers: Speaker[] = data?.speakers;
   const mediaUrl: string = data?.signedUrls.signedMediaUrl;
-  const media = data.media;
   const downloadUrls: SignedUrl[] = data?.signedUrls.signedUrls;
 
   let startTime: number = Number($page.url.searchParams.get("start") || 0);
@@ -77,7 +76,6 @@
       {speakers}
       {segments}
       {mediaUrl}
-      {media}
       bind:mediaElement
       bind:timeUpdateParameters
     />

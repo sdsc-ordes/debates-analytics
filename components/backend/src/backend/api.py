@@ -55,10 +55,10 @@ async def get_media_urls(request: S3MediaUrlRequest):
     job_id = request.job_id
 
     # Process Media Keys to find the .mp4 file
-    for key in media_keys:
-        if key.lower().endswith(".mp4"):
+    for object_key in media_keys:
+        if object_key.lower().endswith(".mp4"):
             # Get the presigned URL for the primary media file
-            media_url = s3_client.get_presigned_url(job_id, key)
+            media_url = s3_client.get_presigned_url(object_key)
             # Assuming only one main media file is needed, break the loop
             break
 
@@ -66,12 +66,12 @@ async def get_media_urls(request: S3MediaUrlRequest):
         logging.warning(f"No .mp4 media file found for job_id: {job_id}")
 
     # Process Transcript Keys for download links
-    for key in transcript_keys:
+    for object_key in transcript_keys:
         # The label is the filename (the part after the last '/')
-        filename = key.split('/')[-1]
+        filename = object_key.split('/')[-1]
 
         # Generate the presigned URL
-        url = s3_client.get_presigned_url(job_id, key)
+        url = s3_client.get_presigned_url(object_key)
 
         # Append the structured dictionary to the list
         download_urls.append({

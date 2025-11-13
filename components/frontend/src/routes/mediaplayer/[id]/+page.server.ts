@@ -22,13 +22,10 @@ export const load: PageServerLoad = async ({ params }) => {
       throw error(404, "Not Found") // Throw 404 if metadata is missing or incomplete
     }
 
-    const signedUrls: SignedUrls = await fetchMedia(
-      job_id,
-    )
+    const signedUrls: SignedUrls = await fetchMedia(job_id)
 
     return {
       job_id: job_id,
-      media: metadata.debate.media,
       debate: metadata.debate,
       speakers: metadata.speakers.speakers,
       segments: metadata.segments.segments,
