@@ -29,12 +29,11 @@ class s3Manager:
         )
         self.bucket_name = "debates"
 
-    def get_presigned_url(self, prefix, key, expiration=3600):
+    def get_presigned_url(self, object_key, expiration=3600):
         """
         Generate a presigned URL for an S3 object.
         """
         try:
-            object_key = f"{prefix}/{key}"
             print(f"uploading data for s3 key {object_key}")
             response = self.s3.generate_presigned_url(
                 "get_object",
