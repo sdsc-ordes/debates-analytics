@@ -2,8 +2,12 @@
   import SearchResultItem from "$lib/components/SearchResultItem.svelte";
   import type { SolrDocument, SolrHighlighting } from "$lib/interfaces/search.interface";
 
-  export let docs: SolrDocument[];
-  export let highlighting: SolrHighlighting;
+  interface Props {
+    docs: SolrDocument[];
+    highlighting: SolrHighlighting;
+  }
+
+  let { docs, highlighting }: Props = $props();
 
 </script>
 

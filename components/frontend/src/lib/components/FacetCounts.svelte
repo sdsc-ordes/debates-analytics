@@ -1,10 +1,16 @@
 <script lang="ts">
+  import { handlers } from 'svelte/legacy';
+
   import type { SolrQuery, SolrFacetCounts } from "$lib/interfaces/search.interface";
   import { displayIsoDate } from "$lib/utils/displayUtils";
 
-  export let solrQuery: SolrQuery;
-  export let facetCounts: SolrFacetCounts;
-  export let onSearch: (solrQuery: SolrQuery) => void;
+  interface Props {
+    solrQuery: SolrQuery;
+    facetCounts: SolrFacetCounts;
+    onSearch: (solrQuery: SolrQuery) => void;
+  }
+
+  let { solrQuery = $bindable(), facetCounts, onSearch }: Props = $props();
 
   const displayFunctions: { [key: string]: (label: string) => string } = {
     debate_schedule: (label) => displayIsoDate(label),
@@ -86,8 +92,7 @@
                 class="facet-item {isActive(field.key, facet.label)
                   ? 'active'
                   : ''}"
-                on:click={() => handleFacetAddClick(field.key, facet.label)}
-                on:click={() => handleFacetAddClick(field.key, facet.label)}
+                onclick={handlers(() => handleFacetAddClick(field.key, facet.label), () => handleFacetAddClick(field.key, facet.label))}
               >
                 {getDisplayFunction(field.key)(facet.label)}
               </button>
@@ -96,7 +101,7 @@
                 <button
                   class="option-button"
                   type="button"
-                  on:click={() => handleFacetRemoveClick(field.key, facet.label)}
+                  onclick={() => handleFacetRemoveClick(field.key, facet.label)}
                 >
                   <i class="fa fa-xmark" style="color:var(--primary-dark-color)"></i>
                 </button>

@@ -7,8 +7,12 @@
         displayIsoDate,
     } from "$lib/utils/displayUtils";
 
-    export let highlighting: SolrHighlighting;
-    export let doc: SolrDocument;
+    interface Props {
+        highlighting: SolrHighlighting;
+        doc: SolrDocument;
+    }
+
+    let { highlighting, doc }: Props = $props();
 
     const navigateToVideoPlayer = () => {
         goto(`/mediaplayer/${encodeURIComponent(doc.job_id)}?start=${encodeURIComponent(doc.start)}`);
@@ -19,10 +23,10 @@
     <!-- <hr /> -->
     <div
         class="card"
-        on:click={() => navigateToVideoPlayer()}
+        onclick={() => navigateToVideoPlayer()}
         role="button"
         tabindex="0"
-        on:keydown={(e) =>
+        onkeydown={(e) =>
             (e.key === "Enter" || e.key === " ") &&
             navigateToVideoPlayer()}
     >

@@ -2,7 +2,11 @@
   import type { Debate } from "$lib/interfaces/metadata.interface";
   import { displayIsoDate } from "$lib/utils/displayUtils";
 
-  export let debate: Debate;
+  interface Props {
+    debate: Debate;
+  }
+
+  let { debate }: Props = $props();
 </script>
 
 <div class="card-title-large" style="color: var(--primary-dark-color);">

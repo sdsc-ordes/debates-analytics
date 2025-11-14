@@ -2,7 +2,11 @@
     import FileDownload from "./FileDownload.svelte";
     import type { SignedUrl } from "$lib/interfaces/metadata.interface";
 
-    export let downloadUrls: SignedUrl[] = [];
+    interface Props {
+        downloadUrls?: SignedUrl[];
+    }
+
+    let { downloadUrls = [] }: Props = $props();
 </script>
 
 <div class="toolbar">

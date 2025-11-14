@@ -4,10 +4,14 @@
   import { canEdit } from "$lib/stores/auth";
   let errorMessage: string | null = null;
 
-  export let speakers: Speaker[] = [];
-  export let timeUpdateParameters: TimeUpdateParameters;
-  export let s3Prefix: string;
-  let editSpeakers = false;
+  interface Props {
+    speakers?: Speaker[];
+    timeUpdateParameters: TimeUpdateParameters;
+    s3Prefix: string;
+  }
+
+  let { speakers = [], timeUpdateParameters, s3Prefix }: Props = $props();
+  let editSpeakers = $state(false);
 
   function toggleEditSpeakers() {
     editSpeakers = !editSpeakers;
@@ -96,14 +100,14 @@
         {#if $canEdit}
           <div class="button-group">
             {#if editSpeakers}
-              <button class="secondary-button" on:click={toggleEditSpeakers} aria-label="Cancel">
+              <button class="secondary-button" onclick={toggleEditSpeakers} aria-label="Cancel">
                 Cancel
               </button>
-              <button class="secondary-button" on:click={saveSpeakers} aria-label="Save">
+              <button class="secondary-button" onclick={saveSpeakers} aria-label="Save">
                 Save
               </button>
             {:else}
-              <button class="secondary-button" on:click={toggleEditSpeakers} aria-label="Edit">
+              <button class="secondary-button" onclick={toggleEditSpeakers} aria-label="Edit">
                 Edit
               </button>
             {/if}

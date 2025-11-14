@@ -8,14 +8,27 @@
     Speaker,
     Segment,
   } from "$lib/interfaces/metadata.interface";
-  export let startTime: number;
-  export let timeUpdateParameters: TimeUpdateParameters;
-  export let subtitles: Subtitle[] = [];
-  export let subtitles_en: Subtitle[] = [];
-  export let speakers: Speaker[] = [];
-  export let segments: Segment[] = [];
-  export let mediaElement: HTMLMediaElement;
-  export let mediaUrl: string;
+  interface Props {
+    startTime: number;
+    timeUpdateParameters: TimeUpdateParameters;
+    subtitles?: Subtitle[];
+    subtitles_en?: Subtitle[];
+    speakers?: Speaker[];
+    segments?: Segment[];
+    mediaElement: HTMLMediaElement;
+    mediaUrl: string;
+  }
+
+  let {
+    startTime,
+    timeUpdateParameters = $bindable(),
+    subtitles = [],
+    subtitles_en = [],
+    speakers = [],
+    segments = [],
+    mediaElement = $bindable(),
+    mediaUrl
+  }: Props = $props();
   const mediaType = "video"
   const mediaFormat = "mp4"
   console.log(mediaUrl);
@@ -38,11 +51,11 @@
 
 <div class="media-container">
   {#if mediaType === "video"}
-    <!-- svelte-ignore a11y-media-has-caption -->
+    <!-- svelte-ignore a11y_media_has_caption -->
     <video
       class="media"
       bind:this={mediaElement}
-      on:timeupdate={handleTimeUpdate}
+      ontimeupdate={handleTimeUpdate}
       controls
       disablePictureInPicture
     >
@@ -53,7 +66,7 @@
     <audio
       class="media"
       bind:this={mediaElement}
-      on:timeupdate={handleTimeUpdate}
+      ontimeupdate={handleTimeUpdate}
       controls
       autoplay
     >
