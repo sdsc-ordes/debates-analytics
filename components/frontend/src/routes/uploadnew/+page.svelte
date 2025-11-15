@@ -22,7 +22,14 @@
         return;
     }
 
-    const file = files[0];
+    // --- FIX: Robustly get the first file from the FileList ---
+    const file = Array.from(files)[0];
+
+    if (!file) {
+        errorMessage = "Could not access selected file data.";
+        return;
+    }
+    // ---------------------------------------------------------
     
     // Reset state and set initial status
     errorMessage = null;
@@ -60,49 +67,53 @@
         uploadStatus = 'uploading';
         uploadMessage = `2/3: Uploading ${file.name} directly to S3...`;
         
+        // CRITICAL: Send the exact file type received from the browser
         const s3Response = await fetch(uploadUrl, {
             method: 'PUT',
-            headers: { 'Content-Type': file.type },
+            headers: { 'Content-Type': file.type }, 
             body: file
         });
 
-        if (!s3Response.ok) {
-            errorMessage = `S3 upload failed. Status: ${s3Response.status}. Check S3 permissions.`;
-            logger.error("S3 Upload Failed.", { status: s3Response.status, statusText: s3Response.statusText });
-            uploadStatus = 'error';
-            return;
-        }
-        
-        // --- STEP 3: Trigger Server Action (registerJob) ---
-        uploadStatus = 'fetching-url'; // Reusing this status for the low-latency job registration step
-        uploadMessage = `3/3: File uploaded. Initiating backend processing...`;
+        if (s3Response.ok) {
+            // --- UPLOAD SUCCESS ---
+            uploadMessage = `S3 upload complete. Registering job...`;
+            
+            // 1. Trigger Server Action (registerJob) to initiate backend processing
+            const formData = new FormData();
+            formData.append('jobId', jobId);
+            formData.append('s3Key', s3Key);
+            formData.append('title', file.name); 
 
-        const formData = new FormData();
-        formData.append('jobId', jobId);
-        formData.append('s3Key', s3Key);
-        formData.append('title', file.name); 
+            const registerResponse = await fetch('?/registerJob', {
+                method: 'POST',
+                body: formData,
+            });
+            
+            const actionResult = await registerResponse.json();
 
-        const registerResponse = await fetch('?/registerJob', {
-            method: 'POST',
-            body: formData,
-        });
-        
-        const actionResult = await registerResponse.json();
+            if (registerResponse.ok && actionResult.type !== 'failure') {
+                uploadStatus = 'success';
+                uploadMessage = actionResult.data.message;
+                logger.success("Job registered.", { jobId });
+                // Clear files and reload to update job list
+                files = undefined;
+                window.location.reload(); 
+            } else {
+                uploadStatus = 'error';
+                errorMessage = `Upload successful, but job registration failed: ${actionResult.data?.message || 'Server error.'}`;
+                logger.error("Job registration failed.", { jobId, result: actionResult });
+            }
 
-        if (registerResponse.ok && actionResult.type !== 'failure') {
-            uploadStatus = 'success';
-            uploadMessage = actionResult.data.message;
-            logger.success("Job registered.", { jobId });
-            // Clear files and reload to update job list
-            files = undefined;
-            window.location.reload(); 
         } else {
+            // --- UPLOAD FAILURE ---
+            const s3ErrorText = await s3Response.text();
+            // Try to extract a specific error message if possible
+            const detailedError = s3ErrorText.match(/<Message>(.*?)<\/Message>/)?.[1] || s3ErrorText;
+            
             uploadStatus = 'error';
-            errorMessage = `Upload successful, but job registration failed: ${actionResult.data?.message || 'Server error.'}`;
-            logger.error("Job registration failed.", { jobId, result: actionResult });
+            errorMessage = `S3 upload failed (Status: ${s3Response.status}). Detail: ${detailedError.substring(0, 150)}`;
+            logger.error("S3 Upload Failed.", { status: s3Response.status, statusText: s3Response.statusText, responseBody: s3ErrorText });
         }
-
-
     } catch (e) {
         uploadStatus = 'error';
         errorMessage = `Fatal network error during process: ${e}`;
@@ -125,7 +136,6 @@
                 aria-label="View Project on GitHub"
                 title="View Project on GitHub"
             >
-                <!-- Using lucide icon -->
                 <FileIcon class="size-6 text-[var(--primary-dark-color)]" />
             </a>
         </div>
@@ -174,7 +184,7 @@
                     class="btn w-full max-w-sm"
                     class:variant-filled-primary={files && files.length > 0 && uploadStatus !== 'uploading' && uploadStatus !== 'fetching-url'}
                     class:variant-filled-secondary={!(files && files.length > 0 && uploadStatus !== 'uploading' && uploadStatus !== 'fetching-url')}
-                    disabled={!files || files.length === 0 || uploadStatus === 'uploading' || uploadStatus === 'fetching-url'}
+                    disabled={!files || files.length === 0 || uploadStatus === 'uploading' || uploadStatus === 'fetching-url' || uploadStatus === 'error'}
                     onclick={handleFullUpload}
                 >
                     {#if uploadStatus === 'uploading'}
