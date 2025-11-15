@@ -32,6 +32,9 @@
 				<li aria-current={$page.url.pathname === '/upload' ? 'page' : undefined}>
 					<a href="/upload">Upload</a>
 				</li>
+				<li aria-current={$page.url.pathname === '/jobs' ? 'page' : undefined}>
+					<a href="/jobs">Jobs</a>
+				</li>
 			</ul>
 		</nav>
 	</div>
