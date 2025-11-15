@@ -1,7 +1,27 @@
 <script lang="ts">
+    import type { PageData } from "./$types";
 	import { FileIcon } from 'lucide-svelte';
 	import { FileUpload } from '@skeletonlabs/skeleton-svelte';
+	import { Listbox, useListCollection } from '@skeletonlabs/skeleton-svelte';
+    interface Props {
+        data: PageData;
+    }
 
+    let { data }: Props = $props();
+    $inspect("data", data);
+    console.log("data", data);
+    const mediaList: { label: string; value: string }[] = data?.mediaList || [];
+    console.log("mediaList", mediaList);
+
+	let query = $state('');
+
+	const collection = $derived(
+		useListCollection({
+			items: mediaList.filter((item) => item.label.toLowerCase().includes(query.toLowerCase())),
+			itemToString: (item) => item.label,
+			itemToValue: (item) => item.value,
+		}),
+	);
 </script>
 
 <svelte:head>
@@ -39,5 +59,18 @@
             </FileUpload.Context>
         </FileUpload.ItemGroup>
     </FileUpload>
+
+    <Listbox class="w-full max-w-md" {collection}>
+        <Listbox.Label>Search for Food</Listbox.Label>
+        <Listbox.Input placeholder="Type to search..." value={query} oninput={(e) => (query = e.currentTarget.value)} />
+        <Listbox.Content>
+            {#each collection.items as item (item.value)}
+                <Listbox.Item {item}>
+                    <Listbox.ItemText>{item.label}</Listbox.ItemText>
+                    <Listbox.ItemIndicator />
+                </Listbox.Item>
+            {/each}
+        </Listbox.Content>
+    </Listbox>
 
 </section>
