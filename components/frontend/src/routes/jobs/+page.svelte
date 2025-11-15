@@ -3,6 +3,7 @@
     import { FileIcon } from 'lucide-svelte';
     import { FileUpload } from '@skeletonlabs/skeleton-svelte';
     import { useListCollection, Listbox } from '@skeletonlabs/skeleton-svelte';
+    import { logger } from '$lib/utils/logger'
 
     interface Props {
         data: PageData;

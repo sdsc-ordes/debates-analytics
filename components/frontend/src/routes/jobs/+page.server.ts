@@ -1,5 +1,6 @@
 import type { PageServerLoad, Actions } from "./$types"
 import { error, fail } from "@sveltejs/kit"
+import { logger } from '$lib/utils/logger'
 import { fetchUploadedVideos } from "$lib/server/fetchUploadedVideos" // Assume this fetches the list of existing videos
 //import { processUpload } from "$lib/server/processUpload" // Assume this handles the video file and metadata
 

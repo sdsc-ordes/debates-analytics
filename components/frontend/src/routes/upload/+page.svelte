@@ -1,7 +1,6 @@
 <script lang="ts">
     import { FileIcon } from 'lucide-svelte';
     import { FileUpload } from '@skeletonlabs/skeleton-svelte';
-    import { v4 as uuidv4 } from 'uuid'; // Generates unique job ID
 
     // --- Upload State ---
     // This state variable will be bound to the FileUpload component to capture accepted files.
@@ -11,6 +10,7 @@
 
     // --- S3 UPLOAD LOGIC ---
     async function handleUpload() {
+        console.log("button for upload clicked")
         if (acceptedFiles.length === 0) {
             uploadStatus = 'error';
             uploadMessage = 'Please select a file first.';
@@ -21,13 +21,12 @@
         uploadMessage = 'Starting upload process...';
 
         const file = acceptedFiles[0];
-        const jobId = uuidv4(); // Generate a unique ID for this job/video
+        console.log(file);
 
         // 1. Get the Presigned Upload URL from the Backend
-        uploadMessage = `Requesting S3 URL for job ID: ${jobId}`;
+        uploadMessage = `Requesting S3 URL for job ID: ${file.name}`;
 
         const requestBody = JSON.stringify({
-            job_id: jobId,
             filename: file.name
         });
 
@@ -82,6 +81,10 @@
             console.error('Upload network error:', e);
         }
     }
+
+    async function prepareUpload(files: File[]) {
+        console.log("received file of length", files.length)
+    }
 </script>
 
 <svelte:head>
@@ -103,16 +106,12 @@
         <div class="w-full space-y-4">
             <!-- File Upload Section -->
 
-            <FileUpload>
+            <FileUpload onFileAccept={prepareUpload}>
                 <FileUpload.Label>Upload your files</FileUpload.Label>
                 <FileUpload.Dropzone>
                     <FileIcon class="size-10" />
                     <span>Select file or drag here.</span>
-                    <FileUpload.Trigger
-                    class="button-primary"
-                    >
-                    Browse Files
-                    </FileUpload.Trigger>
+                    <FileUpload.Trigger class="button-primary">Browse Files</FileUpload.Trigger>
                     <FileUpload.HiddenInput />
                 </FileUpload.Dropzone>
                 <FileUpload.ItemGroup>
@@ -147,8 +146,7 @@
                 <!-- Submit Button -->
                 <button
                     type="button"
-                    class="btn variant-filled-primary"
-                    disabled={acceptedFiles.length === 0 || uploadStatus === 'in-progress'}
+                    class="btn variant-filled-primary button-primary"
                     onclick={handleUpload}
                 >
                     {#if uploadStatus === 'in-progress'}

@@ -9,6 +9,8 @@ from backend import solr
 from backend import s3
 from backend import helpers
 from backend import models
+import uuid
+from uuid import uuid4
 
 
 SUBTITLE_TYPE_TRANSCRIPT = "transcript"
@@ -295,17 +297,15 @@ def _get_job_list_item_from_prefix(prefix):
     list_item = {"label": f"uploaded {job_id}", "value": job_id}
     return list_item
 
-# --- NEW MODEL: Request for upload URL ---
 class S3UploadUrlRequest(BaseModel):
-    # This ID will become the top-level prefix in S3 (e.g., a UUID)
-    job_id: str = Field(..., description="Unique job ID for the media upload.", examples=["a1b2c3d4-e5f6-4a7b-8c9d-10e11f12g13h"])
-    # The original filename, used to construct the S3 key
     filename: str = Field(..., description="Original filename with extension (e.g., my_video.mp4)")
 
 # --- NEW MODEL: Response containing the presigned upload URL ---
 class S3UploadUrlResponse(BaseModel):
     uploadUrl: str = Field(..., description="Presigned URL for HTTP PUT request to S3")
     s3Key: str = Field(..., description="The full S3 key where the file will be stored")
+    jobId: str = Field(..., description="Unique job ID for the media upload.", examples=["a1b2c3d4-e5f6-4a7b-8c9d-10e11f12g13h"])
+
 
 # --- NEW ENDPOINT: Get presigned upload URL ---
 @api.post("/get-upload-url", response_model=S3UploadUrlResponse)
@@ -314,12 +314,13 @@ async def get_upload_url(request_data: S3UploadUrlRequest):
     [POST] Returns a presigned URL that the client can use to upload a file directly to S3 via HTTP PUT.
     The file will be stored under {job_id}/media/{filename}.
     """
-    logging.info(f"Request received for upload URL: {request_data.job_id}/{request_data.filename}")
+    logging.info(f"Request received for upload URL: {request_data.filename}")
     s3_client = s3.s3Manager()
 
     # Define the full S3 key path for the video
     # We store the main media under a 'media/' subfolder within the job_id prefix
-    s3_key = f"{request_data.job_id}/media/{request_data.filename}"
+    job_id = str(uuid4())
+    s3_key = f"{job_id}/media/{request_data.filename}"
 
     upload_url = s3_client.get_presigned_upload_url(s3_key)
 
@@ -328,4 +329,4 @@ async def get_upload_url(request_data: S3UploadUrlRequest):
         # Return a standard error response
         return {"uploadUrl": "", "s3Key": s3_key, "error": "Could not generate S3 URL"}
 
-    return S3UploadUrlResponse(uploadUrl=upload_url, s3Key=s3_key)
+    return S3UploadUrlResponse(uploadUrl=upload_url, s3Key=s3_key, jobId=job_id)

@@ -71,3 +71,8 @@ export enum SubtitleTypeEnum {
 export interface SubtitleType {
   type: SubtitleTypeEnum
 }
+
+export interface SignedUploadUrl {
+  signedUrl: SignedUrl[]
+  signedMediaUrl: string
+}
