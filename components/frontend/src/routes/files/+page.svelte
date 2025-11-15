@@ -7,6 +7,7 @@
 
   // State to hold the final presigned URLs for display/next steps
   let uploadedUrls: { filename: string, uploadUrl: string }[] = $state([]);
+  $inspect(uploadedUrls);
 
   /**
    * Effect runs whenever files is set (i.e., when a user selects files).
@@ -112,6 +113,18 @@
 {#if uploadedUrls.length > 0}
     <h2>Fetched Upload URLs:</h2>
     {#each uploadedUrls as item}
-        <p class="text-green-600">✅ {item.filename}: <code class="bg-gray-100 p-1 text-xs">{item.uploadUrl.substring(0, 50)}...</code></p>
+        <p class="text-green-600">✅ {item.filename}: <code class="bg-gray-100 p-1 text-xs">
+          {item.uploadUrl.substring(0, 50)}...
+        </code>
+        </p>
+        <a href={item.uploadUrl}>{item.uploadUrl}</a>
     {/each}
 {/if}
+
+<form action="http://localhost:9000/debates/463fb1e7-d5a3-49ae-9…mVduICO9IykPh0Q1Fjg3WOINX24%3D&Expires=1763237658" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="Content-Type" value="image/jpeg">
+
+    <input type="file" name="file">
+
+    <button type="submit">Upload to S3</button>
+</form>
