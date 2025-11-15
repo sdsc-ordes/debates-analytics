@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from backend.s3 import s3Manager
@@ -256,3 +256,76 @@ async def update_subtitles(request: UpdateSubtitlesRequest):
     except Exception as e:
         logger.error(f"Error updating subtitles for {request.job_id}: {e}")
         return {"error": "Error updating subtitles"}
+
+
+class UploadedMedia(BaseModel):
+    label: str
+    value: str
+
+
+class S3UploadedResponse(BaseModel):
+    uploadedMedia: List[UploadedMedia] = Field(..., description="List of job ids")
+
+@api.get("/get-uploaded", response_model=S3UploadedResponse)
+async def get_uploaded(request: Request):
+
+    logging.info(f"request: {request}")
+    s3_client = s3.s3Manager()
+
+    s3_top_prefixes = s3_client.list_top_level_prefixes()
+    logging.info(f"Retrieved uploaded keys: {s3_top_prefixes}")
+
+    if s3_top_prefixes:
+        media_list = [_get_job_list_item_from_prefix(prefix) for prefix in s3_top_prefixes]
+    else:
+        media_list = []
+
+    logging.info(f"Derived media list: {media_list}")
+
+    response = {}
+    response["uploadedMedia"] = media_list
+
+    logging.info(f"Response: {response}")
+
+    return response
+
+
+def _get_job_list_item_from_prefix(prefix):
+    job_id = prefix.replace("/", "")
+    list_item = {"label": f"uploaded {job_id}", "value": job_id}
+    return list_item
+
+# --- NEW MODEL: Request for upload URL ---
+class S3UploadUrlRequest(BaseModel):
+    # This ID will become the top-level prefix in S3 (e.g., a UUID)
+    job_id: str = Field(..., description="Unique job ID for the media upload.", examples=["a1b2c3d4-e5f6-4a7b-8c9d-10e11f12g13h"])
+    # The original filename, used to construct the S3 key
+    filename: str = Field(..., description="Original filename with extension (e.g., my_video.mp4)")
+
+# --- NEW MODEL: Response containing the presigned upload URL ---
+class S3UploadUrlResponse(BaseModel):
+    uploadUrl: str = Field(..., description="Presigned URL for HTTP PUT request to S3")
+    s3Key: str = Field(..., description="The full S3 key where the file will be stored")
+
+# --- NEW ENDPOINT: Get presigned upload URL ---
+@api.post("/get-upload-url", response_model=S3UploadUrlResponse)
+async def get_upload_url(request_data: S3UploadUrlRequest):
+    """
+    [POST] Returns a presigned URL that the client can use to upload a file directly to S3 via HTTP PUT.
+    The file will be stored under {job_id}/media/{filename}.
+    """
+    logging.info(f"Request received for upload URL: {request_data.job_id}/{request_data.filename}")
+    s3_client = s3.s3Manager()
+
+    # Define the full S3 key path for the video
+    # We store the main media under a 'media/' subfolder within the job_id prefix
+    s3_key = f"{request_data.job_id}/media/{request_data.filename}"
+
+    upload_url = s3_client.get_presigned_upload_url(s3_key)
+
+    if not upload_url:
+        logger.error(f"Failed to generate upload URL for key: {s3_key}")
+        # Return a standard error response
+        return {"uploadUrl": "", "s3Key": s3_key, "error": "Could not generate S3 URL"}
+
+    return S3UploadUrlResponse(uploadUrl=upload_url, s3Key=s3_key)
