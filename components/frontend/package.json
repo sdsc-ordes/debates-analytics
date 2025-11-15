@@ -32,6 +32,7 @@
     "bootstrap-icons": "^1.11.3",
     "lucide-svelte": "^0.553.0",
     "minio": "^8.0.2",
-    "mongodb": "^6.9.0"
+    "mongodb": "^6.9.0",
+    "uuid": "^13.0.0"
   }
 }
