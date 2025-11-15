@@ -29,6 +29,9 @@
 				<li aria-current={$page.url.pathname === '/search' ? 'page' : undefined}>
 					<a href="/search">Search</a>
 				</li>
+				<li aria-current={$page.url.pathname === '/upload' ? 'page' : undefined}>
+					<a href="/upload">Upload</a>
+				</li>
 			</ul>
 		</nav>
 	</div>
