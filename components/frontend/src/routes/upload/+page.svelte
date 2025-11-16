@@ -8,7 +8,7 @@
   let errorMessage: string | null = $state(null);
   let uploadStatus: 'idle' | 'fetching-url' | 'uploading' | 'success' | 'error' = $state('idle');
   let uploadMessage: string | null = $state(null);
-  
+
   // --- Upload State for Display/Next Steps ---
   let postUrl: string | null = $state(null);
   let postFields: Record<string, string> | null = $state(null);
@@ -16,7 +16,7 @@
   let s3Key: string | null = $state(null);
 
   // --- S3 UPLOAD LOGIC ---
-  
+
   /**
    * Handles the entire 3-step upload process on button click:
    * 1. Get Presigned POST URL and Fields from Backend (FastAPI)
@@ -37,7 +37,7 @@
     uploadStatus = 'fetching-url';
     uploadMessage = `1/3: Requesting secure S3 credentials for ${file.name}...`;
     logger.info("Starting upload process.", { filename: file.name });
-    
+
     // --- STEP 1: Get Presigned POST Data from Backend (FastAPI) ---
     const endpoint = '/api/upload'; // SvelteKit Proxy URL
     try {
@@ -55,14 +55,14 @@
             uploadStatus = 'error';
             return;
         }
-        
+
         const data = await urlResponse.json();
-        
+
         postUrl = data.postUrl;
         postFields = data.fields;
         jobId = data.jobId;
         s3Key = data.s3Key;
-        
+
         if (!postUrl || !postFields || !jobId) {
             errorMessage = "Backend response missing required POST data (URL/Fields/Job ID).";
             uploadStatus = 'error';
@@ -70,19 +70,19 @@
         }
 
         logger.debug("Received POST credentials.", { jobId });
-        
+
         // --- STEP 2: Upload the File Directly to S3 using HTTP POST ---
         uploadStatus = 'uploading';
         uploadMessage = `2/3: Uploading ${file.name} directly to S3...`;
-        
+
         // 1. Construct the FormData object
         const formData = new FormData();
-        
+
         // 2. Append all required S3 security fields first
         Object.entries(postFields).forEach(([key, value]) => {
             formData.append(key, value);
         });
-        
+
         // 3. Append the actual file, S3 expects the file field to be named 'file'
         formData.append('file', file);
 
@@ -96,18 +96,18 @@
         if (s3Response.status === 201) { // 201 Created is the success status we signed for
             // --- UPLOAD SUCCESS ---
             uploadMessage = `S3 upload complete. Registering job...`;
-            
+
             // --- STEP 3: Trigger Server Action (registerJob) ---
             const registerFormData = new FormData();
             registerFormData.append('jobId', jobId);
             registerFormData.append('s3Key', s3Key);
-            registerFormData.append('title', file.name); 
+            registerFormData.append('title', file.name);
 
             const registerResponse = await fetch('?/registerJob', {
                 method: 'POST',
                 body: registerFormData,
             });
-            
+
             const actionResult = await registerResponse.json();
 
             if (registerResponse.ok && actionResult.type !== 'failure') {
@@ -116,7 +116,7 @@
                 logger.success("Job registered.", { jobId });
                 // Clear files and reload to update job list
                 files = undefined;
-                window.location.reload(); 
+                window.location.reload();
             } else {
                 uploadStatus = 'error';
                 errorMessage = `Upload successful, but job registration failed: ${actionResult.data?.message || 'Server error.'}`;
@@ -128,7 +128,7 @@
             const s3ErrorText = await s3Response.text();
             // Attempt to extract the error message from the XML response
             const detailedError = s3ErrorText.match(/<Message>(.*?)<\/Message>/)?.[1] || s3ErrorText;
-            
+
             uploadStatus = 'error';
             errorMessage = `S3 POST failed (Status: ${s3Response.status}). Detail: ${detailedError.substring(0, 150)}`;
             logger.error("S3 POST Failed.", { status: s3Response.status, statusText: s3Response.statusText, responseBody: s3ErrorText });
@@ -148,7 +148,7 @@
 
 <section>
     <div class="info">
-        
+
         <div class="links">
              <a
                 href="YOUR_GITHUB_LINK_HERE"
@@ -162,23 +162,23 @@
         <h1>Video Upload</h1>
 
         <div class="w-full space-y-4">
-            
+
             <!-- File Input Section -->
             <label for="many" class="label block">
                 <span class="text-lg font-bold">1. Select Media File</span>
             </label>
-            <input 
-                accept="video/*,audio/*" 
-                bind:files 
-                id="many" 
-                multiple 
-                type="file" 
+            <input
+                accept="video/*,audio/*"
+                bind:files
+                id="many"
+                multiple
+                type="file"
                 class="input"
             />
-            
+
             <!-- Status and Submit Button -->
             <div class="flex flex-col items-start gap-3 pt-4">
-                
+
                 <!-- Status Message -->
                 {#if uploadStatus !== 'idle' || errorMessage}
                     <p class="p-3 rounded-lg text-sm font-semibold w-full"
@@ -217,9 +217,9 @@
                     {/if}
                 </button>
             </div>
-            
+
         </div>
-        
+
         <!-- File Display (Manual List) -->
         {#if files && files.length > 0}
             <h3 class="text-base font-semibold pt-4">Selected File:</h3>
@@ -249,7 +249,7 @@
         align-items: end;
         gap: 2rem;
     }
-    
+
     h1 {
         font-family: var(--body-font);
         font-size: 36px;
@@ -264,7 +264,7 @@
         color: var(--text-color);
         margin-top: 1rem;
         border-radius: 10px;
-        width: 90%; 
+        width: 90%;
         max-width: 800px;
         justify-content: start;
         align-items: start;
