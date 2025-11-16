@@ -2,7 +2,7 @@ import boto3
 import os
 import logging
 from botocore.exceptions import NoCredentialsError, DataNotFoundError
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Any
 
 from dotenv import load_dotenv
 
@@ -104,28 +104,43 @@ class s3Manager:
         logging.info(f"Found {len(job_ids)} top-level prefixes (job_ids) in bucket '{self.bucket_name}'.")
         return job_ids
 
-    def get_presigned_upload_url(self, object_key: str, expiration: int = 3600) -> Union[str, None]:
+    def get_presigned_post(self, object_key: str, expiration: int = 3600) -> Union[Dict[str, Any], None]:
         """
-        Generate a presigned URL for uploading a file (PUT/UPLOAD).
-        The client uses an HTTP PUT request with the file data to upload.
+        Generates a presigned URL and fields for a client-side HTTP POST upload.
         """
         try:
-            print(f"getting presigned upload URL for s3 key {object_key}")
-            response = self.s3.generate_presigned_url(
-                "put_object",
-                Params={
-                    "Bucket": self.bucket_name,
-                    "Key": object_key
-                    # Note: No 'ResponseContentDisposition' is needed for uploads
+            logging.info(f"Generating presigned POST for key: {object_key}")
+            
+            # Define conditions: ACL, bucket name, and max file size (500 MB)
+            conditions = [
+                {"acl": "public-read"}, 
+                {"bucket": self.bucket_name},
+                ["starts-with", "$key", object_key],
+                # Max file size in bytes (500 MB)
+                ["content-length-range", 1, 500 * 1024 * 1024],
+                
+                # --- FIX ADDED HERE ---
+                {"success_action_status": "201"}, 
+                # ----------------------
+            ]
+            
+            response = self.s3.generate_presigned_post(
+                Bucket=self.bucket_name,
+                Key=object_key,
+                Fields={
+                    # These fields must be explicitly included in the form data AND conditions
+                    "acl": "public-read", 
+                    "success_action_status": "201" # This tells S3 to respond with 201 on success
                 },
-                ExpiresIn=expiration,
+                Conditions=conditions,
+                ExpiresIn=expiration
             )
-            # Replace the S3 server URL with the frontend-accessible base URL if necessary
-            frontend_url = response.replace(S3_SERVER, S3_FRONTEND_BASE_URL)
-            return frontend_url
+            
+            return response
+            
         except NoCredentialsError:
-            print("Credentials not available for upload.")
+            logging.error("Credentials not available for S3 POST.")
             return None
         except Exception as e:
-            print(f"Error generating presigned upload URL: {e}")
+            logging.error(f"Error generating presigned POST: {e}")
             return None
