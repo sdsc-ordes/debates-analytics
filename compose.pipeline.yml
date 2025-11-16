@@ -1,0 +1,35 @@
+services:
+  transcriber:
+    build: ./components/transcriber
+    networks:
+      - debates_network
+    environment:
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - HF_TOKEN=${HF_TOKEN}
+      - WHISPER_MODEL=${WHISPER_MODEL:-base}
+    volumes:
+      - ./inputs/transcripts:/app/input
+
+  dbloader:
+      build:
+        context: ./components/dbloader
+        dockerfile: Dockerfile
+      networks:
+        - debates_network
+      environment:
+        SOLR_URL: http://solr:8983/solr/debates/
+        MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
+        MONGO_DB: debates
+        S3_SERVER: http://minio-instance:9000
+        S3_FRONTEND_BASE_URL: http://localhost:80
+        S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+        S3_SECRET_KEY: ${S3_SECRET_KEY}
+        S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+      depends_on:
+        - minio-instance
+        - mongodb-instance
+        - solr
+        - rabbitmq

@@ -1,24 +1,27 @@
+version: '3.8'
+
 services:
+  # --- S3 Service (MinIO Instance) ---
   minio-instance:
     image: minio/minio
     volumes:
       - ${MINIO_PATH}:/data
     ports:
-      - 127.0.0.1:9000:9000
+      - 9000:9000
       - 9001:9001
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     command: server --address 0.0.0.0:9000 --console-address :9001 /data
     networks:
       - debates_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # This service runs once to create the bucket, then exits.
+  # --- MinIO Setup Service (Event & CORS Configuration) ---
   minio-setup:
     image: minio/mc
     depends_on:
@@ -29,17 +32,20 @@ services:
     networks:
       - debates_network
     environment:
-      # ... (Existing environment variables remain) ...
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - RABBITMQ_URL=${RABBITMQ_URL} # Must pass the full URL string
-    # 1. NEW: Volume mount to copy the script into the container
+      - RABBITMQ_URL=${RABBITMQ_URL}
     volumes:
-      - ./scripts/minio-setup.sh:/usr/bin/minio-setup.sh
+      - ./scripts/minio-setup.sh:/tmp/minio-setup.sh
     entrypoint: /bin/sh
-    # 2. NEW: Command executes the script
-    command: -c "chmod +x /usr/bin/minio-setup.sh && /usr/bin/minio-setup.sh"
+    command: -c "
+      echo 'Waiting for Minio...';
+      /usr/bin/mc alias set myminio http://minio-instance:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY;
+      echo 'Alias set.';
+      /usr/bin/mc mb myminio/$$S3_BUCKET_NAME || echo 'Bucket already exists.';
+      echo 'Bucket setup complete.';
+      exit 0;"
 
   solr:
     build:
@@ -96,9 +102,9 @@ services:
     container_name: rabbitmq
     ports:
       # AMQP port for Python clients to connect (service-to-service communication)
-      - "5672:5672"
+      - 5672:5672
       # Management web UI port (for viewing queues at http://localhost:15672)
-      - "15672:15672"
+      - 127.0.0.1:15672:15672
     environment:
       # Default user and password (Change these in production!)
       RABBITMQ_HOST: '%'
