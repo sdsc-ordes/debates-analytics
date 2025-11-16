@@ -18,6 +18,8 @@ SUFFIX_SRT_ORIG="transcription_original.srt"
 SUFFIX_SRT_EN="translation_original_english.srt"
 SUFFIX_METADATA="metadata.yml"
 
+MARKER_FILENAME=os.getenv("MARKER_FILENAME")
+
 
 class s3Manager:
     def __init__(self, prod=False):
@@ -27,7 +29,7 @@ class s3Manager:
             aws_access_key_id=S3_ACCESS_KEY,
             aws_secret_access_key=S3_SECRET_KEY,
         )
-        self.bucket_name = "debates"
+        self.bucket_name = S3_BUCKET_NAME
 
     def get_presigned_url(self, object_key, expiration=3600):
         """
@@ -147,3 +149,27 @@ class s3Manager:
         except Exception as e:
             logging.error(f"Error generating presigned POST: {e}")
             return None
+
+    def create_marker_file(self, job_id: str) -> bool:
+        """
+        Creates an empty marker file to signal a complete upload for the watcher service.
+        Key: {job_id}/media/job_registered.txt
+        """
+        try:
+            marker_key = f"{job_id}/media/{MARKER_FILENAME}"
+            logging.info(f"Creating marker file at: {marker_key}")
+            
+            # Put a minimal (empty) object to act as the marker
+            self.s3.put_object(
+                Bucket=self.bucket_name,
+                Key=marker_key,
+                Body=b'', # Empty body is fine for a marker
+                ContentType='text/plain',
+            )
+            return True
+        except NoCredentialsError:
+            logging.error("Credentials not available to create marker.")
+            return False
+        except Exception as e:
+            logging.error(f"Error creating marker file for job {job_id}: {e}")
+            return False
