@@ -23,21 +23,23 @@ services:
     image: minio/mc
     depends_on:
       minio-instance:
-        condition: service_healthy # Waits for Minio to be ready
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
     networks:
       - debates_network
     environment:
+      # ... (Existing environment variables remain) ...
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - RABBITMQ_URL=${RABBITMQ_URL} # Must pass the full URL string
+    # 1. NEW: Volume mount to copy the script into the container
+    volumes:
+      - ./scripts/minio-setup.sh:/usr/bin/minio-setup.sh
     entrypoint: /bin/sh
-    command: -c "
-      echo 'Waiting for Minio...';
-      /usr/bin/mc alias set myminio http://minio-instance:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY;
-      echo 'Alias set.';
-      /usr/bin/mc mb myminio/$$S3_BUCKET_NAME || echo 'Bucket already exists.';
-      echo 'Bucket setup complete.';
-      exit 0;"
+    # 2. NEW: Command executes the script
+    command: -c "chmod +x /usr/bin/minio-setup.sh && /usr/bin/minio-setup.sh"
 
   solr:
     build:
@@ -58,6 +60,7 @@ services:
       - solr-precreate
       - debates
       - /opt/solr/server/solr/configsets/debates
+
 
   mongodb-instance:
     image: mongo:7.0.8
