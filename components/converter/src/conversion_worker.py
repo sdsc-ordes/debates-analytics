@@ -17,9 +17,10 @@ logging.basicConfig(level=logging.INFO,
 TEMP_DIR = "/tmp"
 
 # RabbitMQ Configuration
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
-CONVERSION_QUEUE = 'video_conversion_jobs'  # Queue this worker consumes from
-TRANSCRIPTION_QUEUE = 'transcription_jobs'  # Queue this worker produces to
+# FIX 1: Use the standard RABBITMQ_URL environment variable
+RABBITMQ_URL = os.getenv("RABBITMQ_URL")
+CONVERSION_QUEUE = 'video_conversion_jobs'
+TRANSCRIPTION_QUEUE = 'transcription_jobs'
 
 # S3 Configuration
 S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
@@ -61,10 +62,10 @@ def convert_to_wav(local_video_path: str, local_wav_path: str):
         subprocess.run(
             [
                 "ffmpeg", "-i", local_video_path,
-                "-vn",             # No video
-                "-acodec", "pcm_s16le", # PCM 16-bit Little-Endian (standard for speech)
-                "-ar", "16000",     # Sample rate 16kHz
-                "-ac", "1",         # Mono channel
+                "-vn",
+                "-acodec", "pcm_s16le",
+                "-ar", "16000",
+                "-ac", "1",
                 "-y", local_wav_path
             ],
             check=True,
@@ -86,7 +87,6 @@ def upload_wav(local_wav_path: str, s3_wav_key: str):
 def send_to_transcriber_queue(job_payload: Dict[str, Any], connection: pika.BlockingConnection):
     """Publishes a new message to the transcription queue for the next worker."""
 
-    # Use the same connection (if possible) or establish a new channel for publishing
     channel = connection.channel()
     channel.queue_declare(queue=TRANSCRIPTION_QUEUE, durable=True)
 
@@ -96,12 +96,10 @@ def send_to_transcriber_queue(job_payload: Dict[str, Any], connection: pika.Bloc
         exchange='',
         routing_key=TRANSCRIPTION_QUEUE,
         body=message,
-        properties=pika.BasicProperties(delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE)
+        properties=pika.BasicProperties(delivery_mode=pika.spec.DELIVERY_MODE_PERSISTENT)
     )
     logging.info(f" [->] Sent transcription job for {job_payload['job_id']} to {TRANSCRIPTION_QUEUE}")
 
-    # NOTE: We keep the channel open if we reuse the connection, but for simplicity
-    # in a worker setup, we might close it if the connection wasn't passed in.
 
 # --- Core Worker Logic ---
 
@@ -117,27 +115,26 @@ def process_conversion_job(ch, method, properties, body, connection: pika.Blocki
         # 1. Deserialize the message
         job_data = json.loads(body)
         job_id = job_data['job_id']
-        s3_video_key = job_data['s3_path']
-        file_name = job_data['file_name']
-        file_ext = job_data['file_ext']
-        s3_prefix = os.path.dirname(s3_video_key) # e.g., job-uuid
+        # FIX: The message payload from FastAPI should match the key structure (s3_key)
+        # Assuming the job payload from FastAPI uses 's3_key'
+        s3_video_key = job_data['s3_key']
+
+        # Derive file name/ext from the s3_key instead of relying on separate fields
+        file_name_with_ext = os.path.basename(s3_video_key)
+        file_name, file_ext = os.path.splitext(file_name_with_ext)
+
+        s3_prefix = os.path.dirname(s3_video_key)
 
         logging.info(f" [x] Received job {job_id}. S3 Path: {s3_video_key}")
 
         # 2. Define local paths
-        local_video_path = os.path.join(TEMP_DIR, file_name)
+        local_video_path = os.path.join(TEMP_DIR, file_name_with_ext)
         local_wav_path = os.path.join(TEMP_DIR, f"{file_name}.wav")
         s3_wav_key = f"{s3_prefix}/{file_name}.wav"
 
         # 3. Execute Workflow Steps
-
-        # 3a. Download Video
         download_video(s3_video_key, local_video_path)
-
-        # 3b. Convert to WAV
         convert_to_wav(local_video_path, local_wav_path)
-
-        # 3c. Upload WAV
         upload_wav(local_wav_path, s3_wav_key)
 
         # 4. Prepare and Send Next Job (Producer action)
@@ -156,12 +153,9 @@ def process_conversion_job(ch, method, properties, body, connection: pika.Blocki
 
     except (json.JSONDecodeError, KeyError) as e:
         logging.error(f" [!] Malformed job message received: {body.decode()}. Error: {e}")
-        # Acknowledge to remove bad message from queue
         ch.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
-        # For critical errors (S3, FFmpeg), reject and requeue so another worker can try
         logging.error(f" [!] Fatal error processing job {job_data.get('job_id', 'Unknown')}: {e}")
-        # Reject and requeue for retry
         ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
     finally:
         # 6. Clean up local files
@@ -174,9 +168,13 @@ def process_conversion_job(ch, method, properties, body, connection: pika.Blocki
 def start_worker():
     """Establishes connection to RabbitMQ and starts consuming messages."""
 
-    # Ensure temp directory exists
     os.makedirs(TEMP_DIR, exist_ok=True)
 
+    if not RABBITMQ_URL:
+        logging.error("FATAL: RABBITMQ_URL environment variable is not set. Cannot start worker.")
+        sys.exit(1)
+
+    url_params = pika.URLParameters(RABBITMQ_URL)
     connection = None
     max_retries = 10
     retry_delay = 5
@@ -184,24 +182,19 @@ def start_worker():
     # Retry loop to wait for RabbitMQ to become available
     for attempt in range(max_retries):
         try:
-            logging.info(f"Attempting to connect to RabbitMQ at {RABBITMQ_HOST} (Attempt {attempt + 1}/{max_retries})...")
-            # 1. Establish connection
-            connection = pika.BlockingConnection(
-                pika.ConnectionParameters(host=RABBITMQ_HOST))
+            logging.info(f"Attempting to connect to RabbitMQ (Attempt {attempt + 1}/{max_retries})...")
+
+            # FIX 2: Use URLParameters for robust connection
+            connection = pika.BlockingConnection(url_params)
             channel = connection.channel()
 
-            # 2. Declare all necessary queues (idempotent)
             channel.queue_declare(queue=CONVERSION_QUEUE, durable=True)
             channel.queue_declare(queue=TRANSCRIPTION_QUEUE, durable=True)
 
             logging.info(f' [*] Waiting for jobs on {CONVERSION_QUEUE}. To exit press CTRL+C')
 
-            # 3. Set Quality of Service (QoS): Process one message at a time
-            # This ensures if the worker dies, only one message needs to be retried.
             channel.basic_qos(prefetch_count=1)
 
-            # 4. Start consuming (listening)
-            # Use a lambda to pass the connection object into the callback function
             callback_with_connection = lambda ch, method, properties, body: process_conversion_job(
                 ch, method, properties, body, connection
             )
@@ -209,7 +202,6 @@ def start_worker():
             channel.basic_consume(
                 queue=CONVERSION_QUEUE,
                 on_message_callback=callback_with_connection,
-                # auto_ack=False is CRITICAL for job queues, as we manually acknowledge in the callback
                 auto_ack=False
             )
 
@@ -221,7 +213,7 @@ def start_worker():
                 logging.warning(f" [!] Connection failed. Retrying in {retry_delay} seconds. Error: {e}")
                 time.sleep(retry_delay)
             else:
-                logging.error(f" [!] Fatal Error: Could not connect to RabbitMQ after {max_retries} attempts.")
+                logging.error(f" [!] Fatal Error: Could not connect to RabbitMQ after {max_retries} attempts. Error: {e}")
                 sys.exit(1)
         except KeyboardInterrupt:
             logging.info('Worker shutting down...')
