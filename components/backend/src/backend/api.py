@@ -11,7 +11,6 @@ from backend import helpers
 from backend import models
 import uuid
 from uuid import uuid4
-from backend.rabbitmq import publish_analysis_job
 
 
 SUBTITLE_TYPE_TRANSCRIPT = "transcript"
@@ -339,34 +338,3 @@ async def get_presigned_post(request_data: S3PostRequest):
         jobId=job_id,
         s3Key=s3_key
     )
-
-class StartAnalysisRequest(BaseModel):
-    job_id: str
-    s3_key: str
-    title: str
-
-
-@api.post("/start-analysis", response_model=dict[str, str])
-async def start_analysis(request_data: StartAnalysisRequest):
-    """
-    [POST] Registers a job by sending a message to RabbitMQ after a file is successfully uploaded to S3.
-    """
-    logger.info(f"Received analysis request for job_id: {request_data.job_id}")
-
-    try:
-        # FIX: Directly call and AWAIT the asynchronous function.
-        # This uses the AIO-PIKA logic which handles the connection/channel pool.
-        await publish_analysis_job(
-            request_data.job_id, 
-            request_data.s3_key, 
-            request_data.title
-        )
-        logger.info(f"Job successfully published to RabbitMQ queue for {request_data.job_id}")
-        return {"status": "Job processing triggered."}
-    except Exception as e:
-        logger.error(f"Failed to publish job {request_data.job_id} to RabbitMQ: {e}")
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Failed to queue job for processing. RabbitMQ error: {e}"
-        )
-
