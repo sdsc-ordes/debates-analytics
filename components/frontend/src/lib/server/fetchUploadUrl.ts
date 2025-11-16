@@ -1,4 +1,4 @@
-import type { UploadUrl } from "$lib/interfaces/metadata.interface"
+import type { SignedUploadUrl } from "$lib/interfaces/metadata.interface"
 import { BackendUrl } from "$lib/config"
 
 export async function fetchUploadUrl(
@@ -6,7 +6,7 @@ export async function fetchUploadUrl(
 ): Promise<SignedUploadUrl> {
   try {
     // FastAPI endpoint to retrieve signed URLs
-    const apiUrl = `${BackendUrl}/get-upload-url`
+    const apiUrl = `${BackendUrl}/get-presigned-post`
 
     // Request payload for signed URLs
     const payload = JSON.stringify({

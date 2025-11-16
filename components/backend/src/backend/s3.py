@@ -107,37 +107,40 @@ class s3Manager:
     def get_presigned_post(self, object_key: str, expiration: int = 3600) -> Union[Dict[str, Any], None]:
         """
         Generates a presigned URL and fields for a client-side HTTP POST upload.
+        The URL returned is adjusted to use the S3_PUBLIC_ENDPOINT hostname.
         """
         try:
             logging.info(f"Generating presigned POST for key: {object_key}")
-            
-            # Define conditions: ACL, bucket name, and max file size (500 MB)
+
             conditions = [
-                {"acl": "public-read"}, 
+                {"acl": "public-read"},
                 {"bucket": self.bucket_name},
                 ["starts-with", "$key", object_key],
-                # Max file size in bytes (500 MB)
                 ["content-length-range", 1, 500 * 1024 * 1024],
-                
-                # --- FIX ADDED HERE ---
-                {"success_action_status": "201"}, 
-                # ----------------------
+                {"success_action_status": "201"},
             ]
-            
+
             response = self.s3.generate_presigned_post(
                 Bucket=self.bucket_name,
                 Key=object_key,
                 Fields={
-                    # These fields must be explicitly included in the form data AND conditions
-                    "acl": "public-read", 
-                    "success_action_status": "201" # This tells S3 to respond with 201 on success
+                    "acl": "public-read",
+                    "success_action_status": "201"
                 },
                 Conditions=conditions,
                 ExpiresIn=expiration
             )
-            
+
+            # CRITICAL ADJUSTMENT: Apply the same hostname substitution logic as get_presigned_url
+            if S3_PUBLIC_ENDPOINT and S3_SERVER:
+                # The 'url' field contains the internal Docker hostname (S3_SERVER)
+                # We replace it with the public hostname (S3_PUBLIC_ENDPOINT)
+                response["url"] = response["url"].replace(S3_SERVER, S3_PUBLIC_ENDPOINT)
+
+            logging.info(f"Returning external POST URL: {response['url']}")
+
             return response
-            
+
         except NoCredentialsError:
             logging.error("Credentials not available for S3 POST.")
             return None
