@@ -130,7 +130,7 @@ def send_to_dbloader_queue(job_payload: Dict[str, Any], connection: pika.Blockin
         exchange='',
         routing_key=DBLOADER_QUEUE,
         body=message,
-        properties=pika.BasicProperties(delivery_mode=pika.spec.PERSISTENT_DELIVERY_MODE)
+        properties=pika.BasicProperties(delivery_mode=2)
     )
     logging.info(f" [->] Sent dbload job for {job_payload['job_id']} to {DBLOADER_QUEUE}")
 
