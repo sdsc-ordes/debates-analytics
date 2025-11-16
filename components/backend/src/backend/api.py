@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 from backend.s3 import s3Manager

@@ -107,7 +107,7 @@ class s3Manager:
     def get_presigned_post(self, object_key: str, expiration: int = 3600) -> Union[Dict[str, Any], None]:
         """
         Generates a presigned URL and fields for a client-side HTTP POST upload.
-        The URL returned is adjusted to use the S3_PUBLIC_ENDPOINT hostname.
+        The URL returned is adjusted to use the S3_FRONTEND_BASE_URL hostname.
         """
         try:
             logging.info(f"Generating presigned POST for key: {object_key}")
@@ -132,10 +132,10 @@ class s3Manager:
             )
 
             # CRITICAL ADJUSTMENT: Apply the same hostname substitution logic as get_presigned_url
-            if S3_PUBLIC_ENDPOINT and S3_SERVER:
+            if S3_FRONTEND_BASE_URL and S3_SERVER:
                 # The 'url' field contains the internal Docker hostname (S3_SERVER)
-                # We replace it with the public hostname (S3_PUBLIC_ENDPOINT)
-                response["url"] = response["url"].replace(S3_SERVER, S3_PUBLIC_ENDPOINT)
+                # We replace it with the public hostname (S3_FRONTEND_BASE_URL)
+                response["url"] = response["url"].replace(S3_SERVER, S3_FRONTEND_BASE_URL)
 
             logging.info(f"Returning external POST URL: {response['url']}")
 
