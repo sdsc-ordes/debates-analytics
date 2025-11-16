@@ -86,3 +86,30 @@ services:
       - debates_network
     depends_on:
       - mongodb-instance
+
+  rabbitmq:
+    # Use the official image with the management plugin (recommended for dev/monitoring)
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      # AMQP port for Python clients to connect (service-to-service communication)
+      - "5672:5672"
+      # Management web UI port (for viewing queues at http://localhost:15672)
+      - "15672:15672"
+    environment:
+      # Default user and password (Change these in production!)
+      RABBITMQ_HOST: '%'
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      # Persist configuration and message data
+      - ${RABBITMQ_DATA_PATH}:/var/lib/rabbitmq/
+      - ${RABBITMQ_LOG_PATH}:/var/log/rabbitmq
+    healthcheck:
+      # Checks if RabbitMQ is accepting AMQP connections
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - debates_network
