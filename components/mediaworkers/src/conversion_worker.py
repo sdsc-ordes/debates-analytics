@@ -5,7 +5,6 @@ import logging
 import pika
 import logging
 from typing import Dict, Any, Callable
-from mediaworkers.state import load_job_state, update_job_log
 
 # Import modular components
 from mediaworkers.config import (
@@ -37,16 +36,6 @@ def process_conversion_job(ch, method, properties, body, connection: pika.Blocki
         job_id = job_data['job_id']
         s3_video_key = job_data['s3_key']
 
-        existing_state = s3_client.load_job_state(job_id)
-        status = existing_state.get('status') if existing_state else "MISSING"
-
-        if status in ["CONVERSION_COMPLETE", "PROCESSING", "TRANSCRIPTION_COMPLETE", "CONVERSION_FAILED"]:
-            logger.warning(f" [STATE] Job {job_id} already processed or locked. Status: {status}. Acknowledging.")
-            ch.basic_ack(delivery_tag=method.delivery_tag)
-            return
-
-        s3_client.update_job_log(job_id, "PROCESSING", "Conversion worker started processing video file.")
-
         # Derive paths
         file_name_with_ext = os.path.basename(s3_video_key)
         file_name = os.path.splitext(file_name_with_ext)[0]
@@ -63,13 +52,6 @@ def process_conversion_job(ch, method, properties, body, connection: pika.Blocki
         s3_client.download_file(s3_video_key, local_video_path)
         convert_to_wav(local_video_path, local_wav_path)
         s3_client.upload_file(local_wav_path, s3_wav_key)
-
-        s3_client.update_job_log(
-            job_id=job_id,
-            status="CONVERSION_COMPLETE",
-            log_message=f"Successfully converted video to WAV at {s3_wav_key}.",
-            new_fields={"s3_audio_key": s3_wav_key}
-        )
 
         # 4. Prepare and Send Next Job (Producer action)
         transcription_payload = {
@@ -92,7 +74,6 @@ def process_conversion_job(ch, method, properties, body, connection: pika.Blocki
     except Exception as e:
         # Other fatal errors (S3, FFmpeg), reject and requeue for retry
         logging.error(f" [!] Fatal error processing job {job_data.get('job_id', 'Unknown')}: {e}")
-        self.update_job_log(job_id, "CONVERSION_FAILED", f"Critical error during conversion: {e}")
         ch.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
     finally:
         # 6. Clean up local files

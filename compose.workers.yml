@@ -21,20 +21,3 @@ services:
         condition: service_healthy
     command: python s3_watcher.py
 
-  converter:
-    build: ./components/mediaworkers
-    container_name: video_to_audio_converter_service
-    networks:
-      - debates_network
-    environment:
-      - S3_SERVER=http://minio-instance:9000
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - RABBITMQ_URL=${RABBITMQ_URL}
-    depends_on:
-      minio-setup:
-        condition: service_completed_successfully
-      rabbitmq:
-        condition: service_healthy
-    command: python conversion_worker.py

@@ -1,7 +1,7 @@
 import sys
 import logging
 import boto3
-from typing import List
+from typing import List, Optional, Dict, Any
 from botocore.exceptions import ClientError
 from mediaworkers.config import (S3_SERVER, S3_ACCESS_KEY, S3_SECRET_KEY,
    S3_BUCKET_NAME, MARKER_FILENAME, STATE_FILENAME)
@@ -79,47 +79,3 @@ class s3Manager:
             logger.error(f"Error listing S3 prefixes: {e}")
 
         return marker_keys
-
-    def get_state_key(self, job_id: str) -> str:
-        """Returns the S3 key path for the job state file."""
-        # State file lives at the job's root: {job_id}/status.json
-        return f"{job_id}/{STATE_FILENAME}"
-
-    def load_job_state(self, job_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Retrieves the job state JSON file from S3.
-        Returns None if the file does not exist.
-        """
-        key = get_state_key(job_id)
-        try:
-            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
-            data = response['Body'].read().decode('utf-8')
-            state = json.loads(data)
-            logger.debug(f" [STATE] Loaded state for {job_id}: {state['status']}")
-            return state
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'NoSuchKey':
-                return None
-            logger.error(f" [STATE] Error loading state for {job_id}: {e}")
-            raise
-        except json.JSONDecodeError as e:
-            logger.error(f" [STATE] Error decoding JSON for {job_id}: {e}")
-            raise
-
-    def save_job_state(self,, job_id: str, new_state: Dict[str, Any]):
-        """
-        Saves the updated job state JSON back to S3.
-        """
-        key = self.get_state_key(job_id)
-        json_data = json.dumps(new_state, indent=2)
-
-        try:
-            self.s3_client.put_object(
-                Bucket=self.bucket_name,
-                Key=key,
-                Body=json_data,
-                ContentType='application/json'
-            )
-            logger.info(f" [STATE] Saved state for {job_id}. Status: {new_state['status']}")
-        except Exception as e:
-            logger.error(f" [STATE] Error saving state for {job_id}: {e}")

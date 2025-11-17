@@ -20,7 +20,7 @@ def send_to_queue(job_payload: Dict[str, Any], connection: pika.BlockingConnecti
             exchange='',
             routing_key=TRANSCRIPTION_QUEUE,
             body=message,
-            properties=pika.BasicProperties(delivery_mode=2)
+            properties=pika.BasicProperties(delivery_mode=1)
         )
         logging.info(f" [->] Sent job {job_payload['job_id']} to {TRANSCRIPTION_QUEUE}")
 

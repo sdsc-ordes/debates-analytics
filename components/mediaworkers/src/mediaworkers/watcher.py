@@ -49,7 +49,7 @@ def process_and_queue_job(marker_key: str, connection: pika.BlockingConnection, 
             exchange='',
             routing_key=CONVERSION_QUEUE,
             body=message,
-            properties=pika.BasicProperties(delivery_mode=2)
+            properties=pika.BasicProperties(delivery_mode=1)
         )
         logger.info(f" [->] Published job {job_id} to {CONVERSION_QUEUE}. Video Key: {s3_video_key}")
         # --- End Publish ---
