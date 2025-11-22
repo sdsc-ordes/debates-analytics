@@ -6,7 +6,7 @@
 <section>
 	<div class="info">
 		<div class="links">
-			<a href="https://github.com/sdsc-ordes/political-debates-ui">
+			<a aria-label="GitHub Repository" href="https://github.com/sdsc-ordes/political-debates-ui">
 				<i class="fab fa-github"></i>
 			</a>
 		</div>
