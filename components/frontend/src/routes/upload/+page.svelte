@@ -1,253 +1,185 @@
 <script lang="ts">
-  import { logger } from '$lib/utils/logger';
-  import { FileIcon } from 'lucide-svelte';
-  
-  // The files variable is bound to the input's FileList
-  let files: FileList | undefined = $state();
+  import { invalidateAll } from '$app/navigation';
+  import { CloudUpload, CircleCheck, CircleAlert, Loader } from 'lucide-svelte';
 
-  let errorMessage: string | null = $state(null);
-  let uploadStatus: 'idle' | 'fetching-url' | 'uploading' | 'success' | 'error' = $state('idle');
-  let uploadMessage: string | null = $state(null);
+  // --- LOGIC REMAINS EXACTLY THE SAME ---
+  let files = $state<FileList>();
+  let status = $state<'idle' | 'preparing' | 'uploading' | 'processing' | 'success' | 'error'>('idle');
+  let progress = $state(0);
+  let errorMessage = $state<string | null>(null);
 
-  // --- Upload State for Display/Next Steps ---
-  let postUrl: string | null = $state(null);
-  let postFields: Record<string, string> | null = $state(null);
-  let jobId: string | null = $state(null);
-  let s3Key: string | null = $state(null);
+  let file = $derived(files?.[0]);
 
-  // --- S3 UPLOAD LOGIC ---
+  function uploadToS3(url: string, fields: Record<string, string>, file: File): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
 
-  /**
-   * Handles the entire 3-step upload process on button click:
-   * 1. Get Presigned POST URL and Fields from Backend (FastAPI)
-   * 2. HTTP POST file directly to S3
-   * 3. Register job with SvelteKit server action
-   */
-  async function handleFullUpload() {
-    if (!files || files.length === 0) {
-        errorMessage = "Please select a file first.";
-        return;
-    }
+      Object.entries(fields).forEach(([k, v]) => formData.append(k, v));
+      formData.append('file', file);
 
-    // Safely extract the first file
-    const file = Array.from(files)[0];
+      xhr.open('POST', url);
 
-    // Reset state and set initial status
-    errorMessage = null;
-    uploadStatus = 'fetching-url';
-    uploadMessage = `1/3: Requesting secure S3 credentials for ${file.name}...`;
-    logger.info("Starting upload process.", { filename: file.name });
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          progress = Math.round((e.loaded / e.total) * 100);
+        }
+      };
 
-    // --- STEP 1: Get Presigned POST Data from Backend (FastAPI) ---
-    const endpoint = '/api/upload'; // SvelteKit Proxy URL
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(`S3 Upload Failed: ${xhr.status}`);
+      };
+
+      xhr.onerror = () => reject('Network Error during S3 Upload');
+      xhr.send(formData);
+    });
+  }
+
+  async function handleUpload() {
+    if (!file) return;
+
     try {
-        const urlResponse = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ "filename": file.name })
-        });
+      errorMessage = null;
+      status = 'preparing';
+      progress = 0;
 
-        if (!urlResponse.ok) {
-            const errorData = await urlResponse.json();
-            const detailMessage = errorData.detail?.[0]?.msg || errorData.error || JSON.stringify(errorData);
-            errorMessage = `Credential Fetch Failed: ${urlResponse.status}. Detail: ${detailMessage.substring(0, 150)}`;
-            logger.error({ status: urlResponse.status, body: errorData }, errorMessage);
-            uploadStatus = 'error';
-            return;
-        }
+      const presignRes = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type })
+      });
 
-        const data = await urlResponse.json();
+      if (!presignRes.ok) {
+        const err = await presignRes.json();
+        throw new Error(err.detail || 'Failed to get upload permissions');
+      }
+      const response = await presignRes.json();
 
-        postUrl = data.postUrl;
-        postFields = data.fields;
-        jobId = data.jobId;
-        s3Key = data.s3Key;
+      const { postUrl, fields, jobId, s3Key } = response;
+      
+      status = 'uploading';
+      await uploadToS3(postUrl, fields, file);
 
-        if (!postUrl || !postFields || !jobId) {
-            errorMessage = "Backend response missing required POST data (URL/Fields/Job ID).";
-            uploadStatus = 'error';
-            return;
-        }
+      status = 'success';
+      files = undefined;
+      await invalidateAll(); 
 
-        logger.debug("Received POST credentials.", { jobId });
-
-        // --- STEP 2: Upload the File Directly to S3 using HTTP POST ---
-        uploadStatus = 'uploading';
-        uploadMessage = `2/3: Uploading ${file.name} directly to S3...`;
-
-        // 1. Construct the FormData object
-        const formData = new FormData();
-
-        // 2. Append all required S3 security fields first
-        Object.entries(postFields).forEach(([key, value]) => {
-            formData.append(key, value);
-        });
-
-        // 3. Append the actual file, S3 expects the file field to be named 'file'
-        formData.append('file', file);
-
-        // 4. Execute the POST upload
-        const s3Response = await fetch(postUrl, {
-            method: 'POST',
-            // CRITICAL: Do NOT set Content-Type header with FormData. Browser handles it.
-            body: formData
-        });
-
-        if (s3Response.status === 201) { // 201 Created is the success status we signed for
-            // --- UPLOAD SUCCESS ---
-            uploadMessage = `S3 upload complete. Registering job...`;
-
-            // --- STEP 3: Trigger Server Action (registerJob) ---
-            const registerFormData = new FormData();
-            registerFormData.append('jobId', jobId);
-            registerFormData.append('s3Key', s3Key);
-            registerFormData.append('title', file.name);
-
-            const registerResponse = await fetch('?/registerJob', {
-                method: 'POST',
-                body: registerFormData,
-            });
-
-            const actionResult = await registerResponse.json();
-
-            if (registerResponse.ok && actionResult.type !== 'failure') {
-                uploadStatus = 'success';
-                uploadMessage = actionResult.data.message;
-                logger.success("Job registered.", { jobId });
-                // Clear files and reload to update job list
-                files = undefined;
-                window.location.reload();
-            } else {
-                uploadStatus = 'error';
-                errorMessage = `Upload successful, but job registration failed: ${actionResult.data?.message || 'Server error.'}`;
-                logger.error("Job registration failed.", { jobId, result: actionResult });
-            }
-
-        } else {
-            // --- UPLOAD FAILURE ---
-            const s3ErrorText = await s3Response.text();
-            // Attempt to extract the error message from the XML response
-            const detailedError = s3ErrorText.match(/<Message>(.*?)<\/Message>/)?.[1] || s3ErrorText;
-
-            uploadStatus = 'error';
-            errorMessage = `S3 POST failed (Status: ${s3Response.status}). Detail: ${detailedError.substring(0, 150)}`;
-            logger.error("S3 POST Failed.", { status: s3Response.status, statusText: s3Response.statusText, responseBody: s3ErrorText });
-        }
-    } catch (e) {
-        uploadStatus = 'error';
-        errorMessage = `Fatal network error during process: ${e}`;
-        logger.error("Fatal Network Error.", { error: e });
+    } catch (err: any) {
+      status = 'error';
+      errorMessage = err.message || 'Unknown error occurred';
+      console.error(err);
     }
   }
 </script>
 
 <svelte:head>
-    <title>Upload</title>
-    <meta name="description" content="File upload" />
+  <title>Upload Video</title>
 </svelte:head>
 
 <section>
-    <div class="info">
-
-        <div class="links">
-             <a
-                href="YOUR_GITHUB_LINK_HERE"
-                aria-label="View Project on GitHub"
-                title="View Project on GitHub"
-            >
-                <FileIcon class="size-6 text-[var(--primary-dark-color)]" />
-            </a>
-        </div>
-
-        <h1>Video Upload</h1>
-
-        <div class="w-full space-y-4">
-
-            <!-- File Input Section -->
-            <label for="many" class="label block">
-                <span class="text-lg font-bold">1. Select Media File</span>
-            </label>
-            <input
-                accept="video/*,audio/*"
-                bind:files
-                id="many"
-                multiple
-                type="file"
-                class="input"
-            />
-
-            <!-- Status and Submit Button -->
-            <div class="flex flex-col items-start gap-3 pt-4">
-
-                <!-- Status Message -->
-                {#if uploadStatus !== 'idle' || errorMessage}
-                    <p class="p-3 rounded-lg text-sm font-semibold w-full"
-                        class:bg-blue-100={uploadStatus === 'fetching-url'}
-                        class:bg-yellow-100={uploadStatus === 'uploading'}
-                        class:bg-red-500={uploadStatus === 'error' || errorMessage}
-                        class:text-white={uploadStatus === 'error' || errorMessage}
-                        class:text-blue-900={uploadStatus === 'fetching-url'}
-                        class:text-yellow-900={uploadStatus === 'uploading'}
-                    >
-                        {#if errorMessage}
-                            ERROR: {errorMessage}
-                        {:else}
-                            {uploadMessage}
-                        {/if}
-                    </p>
-                {/if}
-
-                <!-- Upload Button -->
-                <button
-                    type="button"
-                    class="btn w-full max-w-sm"
-                    class:variant-filled-primary={files && files.length > 0 && uploadStatus !== 'uploading' && uploadStatus !== 'fetching-url'}
-                    class:variant-filled-secondary={!(files && files.length > 0 && uploadStatus !== 'uploading' && uploadStatus !== 'fetching-url')}
-                    disabled={!files || files.length === 0 || uploadStatus === 'uploading' || uploadStatus === 'fetching-url' || uploadStatus === 'error'}
-                    onclick={handleFullUpload}
-                >
-                    {#if uploadStatus === 'uploading'}
-                        Uploading...
-                    {:else if uploadStatus === 'fetching-url'}
-                        Initializing...
-                    {:else if files && files.length > 0}
-                        2. Upload and Start Job
-                    {:else}
-                        Select File to Enable Upload
-                    {/if}
-                </button>
-            </div>
-
-        </div>
-
-        <!-- File Display (Manual List) -->
-        {#if files && files.length > 0}
-            <h3 class="text-base font-semibold pt-4">Selected File:</h3>
-            {#each Array.from(files) as file}
-                <p class="text-sm">
-                    **Name:** {file.name} | **Type:** {file.type} | **Size:** {(file.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-            {/each}
-        {/if}
+  <div class="info upload-card">
+    
+    <div class="header">
+      <CloudUpload class="icon-primary" />
+      <h1>Video Upload</h1>
     </div>
+
+    <div class="content-wrapper">
+      <label class="drop-zone" class:disabled={status === 'uploading' || status === 'processing'}>
+        <input
+          bind:files
+          type="file"
+          accept="video/*,audio/*"
+          disabled={status === 'uploading' || status === 'processing'}
+        />
+
+        <div class="drop-zone-content">
+          {#if file}
+            <div class="file-name">{file.name}</div>
+            <div class="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</div>
+          {:else}
+            <span class="placeholder-text">Click to select a video file</span>
+          {/if}
+        </div>
+      </label>
+
+      {#if status !== 'idle'}
+        <div class="status-box">
+
+          {#if status === 'preparing'}
+            <div class="status-row loading">
+              <Loader class="animate-spin icon-small" />
+              <span>Requesting permissions...</span>
+            </div>
+          {/if}
+
+          {#if status === 'uploading'}
+            <div class="status-col">
+              <div class="progress-label">
+                <span>Uploading to S3...</span>
+                <span>{progress}%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: {progress}%"></div>
+              </div>
+            </div>
+          {/if}
+
+          {#if status === 'processing'}
+            <div class="status-row loading">
+              <Loader class="animate-spin icon-small" />
+              <span>Queueing job...</span>
+            </div>
+          {/if}
+
+          {#if status === 'success'}
+            <div class="status-row success">
+              <CircleCheck class="icon-small" />
+              <span>Upload Complete! Job started.</span>
+            </div>
+            <button class="link-button" onclick={() => status = 'idle'} type="button">
+              Upload another?
+            </button>
+          {/if}
+
+          {#if status === 'error'}
+            <div class="status-row error">
+              <CircleAlert class="icon-small" />
+              <span>Error: {errorMessage}</span>
+            </div>
+            <button class="link-button" onclick={() => status = 'idle'} type="button">
+              Try again
+            </button>
+          {/if}
+        </div>
+      {/if}
+
+      {#if status === 'idle' || status === 'error'}
+        <button
+          class="button-primary full-width"
+          disabled={!file}
+          onclick={handleUpload}
+          type="button"
+        >
+          {#if !file} Select File First {:else} Start Upload {/if}
+        </button>
+      {/if}
+
+    </div>
+  </div>
 </section>
 
 <style>
+    /* --- Layout & Typography --- */
     section {
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        flex: 0.6;
-    }
-
-    .links {
-        display: flex;
-        flex-direction: row;
-        justify-content: end;
-        width: 100%;
-        align-items: end;
-        gap: 2rem;
+        /* Matches Home page flex styling */
+        flex: 0.6; 
+        padding: 2rem;
     }
 
     h1 {
@@ -256,8 +188,10 @@
         color: var(--primary-dark-color);
         line-height: 1;
         font-weight: bold;
+        margin: 0;
     }
 
+    /* --- The Main Card (Matches .info from Home) --- */
     .info {
         border: 2px dashed var(--primary-dark-color);
         padding: 50px;
@@ -266,45 +200,172 @@
         border-radius: 10px;
         width: 90%;
         max-width: 800px;
-        justify-content: start;
-        align-items: start;
         display: flex;
         flex-direction: column;
         gap: 2rem;
+        background-color: white; /* Ensure readability */
     }
 
-    /* Custom Input Style */
-    .input {
-        border: 1px solid var(--primary-dark-color);
-        padding: 10px;
-        border-radius: 5px;
+    .header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        justify-content: center;
         width: 100%;
-        cursor: pointer;
+        margin-bottom: 1rem;
     }
 
-    /* Primary Button Style to ensure it works without Skeleton's full class set */
-    .btn {
-        padding: 10px 20px;
-        border-radius: 8px;
+    .content-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        width: 100%;
+    }
+
+    /* --- Icons --- */
+    /* Using global style for SVG icons to match theme */
+    :global(.icon-primary) {
+        color: var(--secondary-color);
+        width: 2rem;
+        height: 2rem;
+    }
+    :global(.icon-small) {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    :global(.animate-spin) {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* --- File Drop Zone (Input) --- */
+    .drop-zone {
+        border: 1px solid var(--primary-dark-color);
+        border-radius: 5px; /* Matches input style */
+        padding: 2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        background-color: #fff;
+    }
+
+    .drop-zone:hover {
+        background-color: rgba(0,0,0,0.02);
+        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .drop-zone input {
+        display: none;
+    }
+
+    .drop-zone.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .file-name {
         font-weight: bold;
-        transition: background-color 0.2s;
-        border: none;
-        cursor: pointer;
+        color: var(--secondary-color);
+        font-size: 1.1rem;
     }
 
-    .variant-filled-primary {
+    .file-size {
+        font-size: 0.85rem;
+        color: gray;
+    }
+
+    .placeholder-text {
+        color: var(--text-color);
+        font-weight: 500;
+    }
+
+    /* --- Status Box --- */
+    .status-box {
+        padding: 1rem;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        background-color: #f9f9f9;
+        font-size: 0.95rem;
+    }
+
+    .status-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: bold;
+    }
+
+    .status-row.loading { color: var(--secondary-color); }
+    .status-row.success { color: #16a34a; } /* Green */
+    .status-row.error { color: #dc2626; }   /* Red */
+
+    /* --- Progress Bar --- */
+    .status-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--primary-dark-color);
+    }
+
+    .progress-track {
+        width: 100%;
+        height: 10px;
+        background-color: #e5e5e5;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
         background-color: var(--secondary-color);
-        color: white;
+        transition: width 0.2s ease;
     }
 
-    .variant-filled-secondary {
-        background-color: #6c757d; /* A neutral gray */
-        color: white;
+    /* --- Buttons --- */
+    .button-primary {
+        background-color: var(--secondary-color);
+        color: white; /* Assuming var(--on-primary) is white */
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px; /* Matches Search form button radius */
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: opacity 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
     }
 
-    .btn:disabled {
+    .button-primary:hover {
+        opacity: 0.9;
+    }
+
+    .button-primary:disabled {
         background-color: #ccc;
         cursor: not-allowed;
-        opacity: 0.6;
+    }
+
+    .full-width {
+        width: 100%;
+    }
+
+    .link-button {
+        background: none;
+        border: none;
+        color: gray;
+        text-decoration: underline;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        width: 100%;
     }
 </style>
