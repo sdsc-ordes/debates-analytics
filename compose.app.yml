@@ -13,8 +13,7 @@ services:
       S3_FRONTEND_BASE_URL: http://localhost:9000
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
-      RABBITMQ_URL: ${RABBITMQ_URL}
-      MARKER_FILENAME: ${MARKER_FILENAME}
+      REDIS_URL: redis://redis:6379
     ports:
       - 8082:8000
     depends_on:

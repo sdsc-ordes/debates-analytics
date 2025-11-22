@@ -3,7 +3,7 @@ services:
   debug-cli:
     image: alpine/curl
     # Override the default entrypoint to keep the container running indefinitely
-    # This allows you to exec into it later.
+    # This allows to exec into it later.
     command: tail -f /dev/null
     networks:
       - debates_network
