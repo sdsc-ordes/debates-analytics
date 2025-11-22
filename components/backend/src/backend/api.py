@@ -338,25 +338,3 @@ async def get_presigned_post(request_data: S3PostRequest):
         jobId=job_id,
         s3Key=s3_key
     )
-
-class CreateMarkerRequest(BaseModel):
-    job_id: str = Field(..., description="The unique job ID for which the marker file should be created.")
-
-
-@api.post("/create-marker", response_model=dict[str, bool])
-async def create_marker(request_data: CreateMarkerRequest):
-    """
-    [POST] Creates the job_registered.txt marker file in S3 to signal the watcher service.
-    This is called AFTER the client has successfully completed the video upload.
-    """
-    logger.info(f"Request to create marker received for job_id: {request_data.job_id}")
-    s3_client = s3.s3Manager()
-
-    # Call the new S3 Manager method
-    success = s3_client.create_marker_file(request_data.job_id)
-    
-    if not success:
-        logger.error(f"Failed to create marker file for job: {request_data.job_id}")
-        raise HTTPException(status_code=500, detail="Failed to create marker file on S3.")
-
-    return {"success": True}
