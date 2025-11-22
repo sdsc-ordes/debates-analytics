@@ -11,4 +11,5 @@ dependencies = [
     "pysolr>=3.10.0",
     "boto3>=1.35.49",
     "fastapi[standard]>=0.115.4",
+    "rq>=2.6.1",
 ]

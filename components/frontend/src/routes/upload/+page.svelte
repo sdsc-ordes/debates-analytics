@@ -57,13 +57,20 @@
       const response = await presignRes.json();
 
       const { postUrl, fields, jobId, s3Key } = response;
-      
+
       status = 'uploading';
       await uploadToS3(postUrl, fields, file);
 
+      status = 'processing';
+      await fetch('/api/process', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId, s3Key, title: file.name })
+      });
+
       status = 'success';
       files = undefined;
-      await invalidateAll(); 
+      await invalidateAll();
 
     } catch (err: any) {
       status = 'error';
@@ -79,7 +86,7 @@
 
 <section>
   <div class="info upload-card">
-    
+
     <div class="header">
       <CloudUpload class="icon-primary" />
       <h1>Video Upload</h1>
@@ -178,7 +185,7 @@
         justify-content: center;
         align-items: center;
         /* Matches Home page flex styling */
-        flex: 0.6; 
+        flex: 0.6;
         padding: 2rem;
     }
 
