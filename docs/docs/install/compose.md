@@ -59,7 +59,8 @@ MINIO_PATH=[PATH_MINIO]
 
 ## Environment Variables for frontend
 
-The frontend is build with [Sveltekit](https://svelte.dev/) and also a environment variable:
+The frontend is build with [Sveltekit](https://svelte.dev/) and also a
+environment variable:
 
 ```
 cd frontend

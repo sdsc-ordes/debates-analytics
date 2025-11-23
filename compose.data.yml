@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # --- S3 Service (MinIO Instance) ---
@@ -64,7 +64,6 @@ services:
       - debates
       - /opt/solr/server/solr/configsets/debates
 
-
   mongodb-instance:
     image: mongo:7.0.8
     ports:
@@ -79,7 +78,11 @@ services:
       - ${MONGO_PATH}:/data/db
     healthcheck:
       # We use $$ to tell Docker Compose "don't replace this, let the container shell handle it"
-      test: ["CMD-SHELL", "mongosh --username $$MONGO_INITDB_ROOT_USERNAME --password $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --quiet --eval \"db.adminCommand('ping').ok\""]
+      test:
+        [
+          "CMD-SHELL",
+          'mongosh --username $$MONGO_INITDB_ROOT_USERNAME --password $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --quiet --eval "db.adminCommand(''ping'').ok"',
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -101,15 +104,15 @@ services:
       - mongodb-instance
 
   redis:
-      image: redis:alpine
-      ports:
-        - "6379:6379"
-      networks:
-        - debates_network
-      volumes:
-        - ${REDIS_PATH}:/data
-      healthcheck:
-        test: ["CMD", "redis-cli", "ping"]
-        interval: 5s
-        timeout: 3s
-        retries: 5
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - debates_network
+    volumes:
+      - ${REDIS_PATH}:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
