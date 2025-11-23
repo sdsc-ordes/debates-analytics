@@ -4,6 +4,8 @@ set -e
 set -u
 
 ROOT_DIR=$(git rev-parse --show-toplevel)
+
+# shellcheck disable=SC1091
 . "$ROOT_DIR/tools/ci/general.sh"
 
 function main() {
@@ -25,7 +27,6 @@ function main() {
     rm -rf ".yamllint.yaml" || true
     ln -s "tools/configs/yamllint/yamllint.yaml" ".yamllint.yaml"
 
-    
 }
 
 main "$@"
