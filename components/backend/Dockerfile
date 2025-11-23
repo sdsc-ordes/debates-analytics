@@ -18,4 +18,4 @@ RUN uv sync --frozen --no-cache
 
 EXPOSE 8000
 
-CMD ["python", "debates.py", "serve"]
+CMD ["python", "api.py", "serve"]
