@@ -1,9 +1,0 @@
-data
-build
-
-# Credentials
-.env
-
-# Docs
-docs/site/
-docs/docs.egg-info/*
