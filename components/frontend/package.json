@@ -26,6 +26,7 @@
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
     "minio": "^8.0.2",
-    "mongodb": "^6.9.0"
+    "mongodb": "^6.9.0",
+    "pino": "^10.1.0"
   }
 }
