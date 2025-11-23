@@ -9,11 +9,14 @@
 
 The processed data is loaded from **Pipeline S3** into 3 databases:
 
-- **App S3**: S3 Database for processed data: this is done manually with only a small modification see below
-- **App MongoDB** Mongo database for all metadata on speakers, segments, transcripts and translations
-- **App Solr** Solr search engine where speaker segments are loaded as documents into Solr
+- **App S3**: S3 Database for processed data: this is done manually with only a
+  small modification see below
+- **App MongoDB** Mongo database for all metadata on speakers, segments,
+  transcripts and translations
+- **App Solr** Solr search engine where speaker segments are loaded as documents
+  into Solr
 
-``` mermaid
+```mermaid
 flowchart LR
     subgraph WebApp[Web Application]
         B[(App S3)]
@@ -30,8 +33,10 @@ flowchart LR
 
 ## Loading into the App S3
 
-All [files are from Pipeline S3](processing.md/#outputs-in-s3) loaded into App S3: this is currently done manually.
-App S3 needs just one extra file `HRC_20220328T0000-metadata.yml`: it is derived from `HRC_20220328T0000-files.yml`.
+All [files are from Pipeline S3](processing.md/#outputs-in-s3) loaded into App
+S3: this is currently done manually. App S3 needs just one extra file
+`HRC_20220328T0000-metadata.yml`: it is derived from
+`HRC_20220328T0000-files.yml`.
 
 ```hl_lines="4"
 debates
@@ -84,15 +89,18 @@ schedule:
   timezone: "Europe/Zurich"
 ```
 
-- The metadata in `context` and  `schedule` have been derived from https://conf.unog.ch/digitalrecordings/en
-- `s3_prefix`: is the prefix or directory on S3, where the files for the media item are stored
+- The metadata in `context` and `schedule` have been derived from
+  https://conf.unog.ch/digitalrecordings/en
+- `s3_prefix`: is the prefix or directory on S3, where the files for the media
+  item are stored
 - `media`: points to the actual media file that is played in the `media player`:
 
 `media` subkeys:
 
-   - `key`: is the actual media file
-   - `type`: can be `video`or `audio`
-   - `format`: format is the media file format: for videos `mp4` is supported and for audio files `wav`.
+- `key`: is the actual media file
+- `type`: can be `video`or `audio`
+- `format`: format is the media file format: for videos `mp4` is supported and
+  for audio files `wav`.
 
 ## Loading into Mongodb and Solr
 
@@ -100,7 +108,8 @@ schedule:
 
     Only do these steps on a fresh set up when you database is empty: otherwise it will mess up your existing data
 
-Once the environment is setup, the commands to load data into the mongodb and Solr are the following per media item:
+Once the environment is setup, the commands to load data into the mongodb and
+Solr are the following per media item:
 
 Then load the data from App S3:
 
@@ -116,5 +125,6 @@ After this step the data should be available. You can now start the backend:
 python debates.py serve
 ```
 
-You will find the api documentation at `http://localhost:8000/docs` or as json file at `http://localhost:8000/openapi.json`
-For your convenience it has also been added to this documentation: [api documentation](api.md)
+You will find the api documentation at `http://localhost:8000/docs` or as json
+file at `http://localhost:8000/openapi.json` For your convenience it has also
+been added to this documentation: [api documentation](api.md)

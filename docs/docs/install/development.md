@@ -1,6 +1,8 @@
 # Development setup
 
-In the development setup the docker compose file `docker-compose.dev.yml` is used to run only the databases as services. The dataloader and frontend are then run locally outside of docker.
+In the development setup the docker compose file `docker-compose.dev.yml` is
+used to run only the databases as services. The dataloader and frontend are then
+run locally outside of docker.
 
 ```
 git clone git@github.com:sdsc-ordes/debates-app.git
@@ -10,7 +12,8 @@ git submodule update --init
 
 ## Environment Variables for docker compose
 
-The env variables are similar to the [compose setup](compose.md): you have to set:
+The env variables are similar to the [compose setup](compose.md): you have to
+set:
 
 - [environment for the debates app](compose.md#environment-variables-for-debates-app)
 
@@ -50,9 +53,11 @@ PROD_S3_SECRET_KEY=
 PROD_S3_REGION_NAME=
 ```
 
-The `PROD_S3_*` are there for the transfer of data from the Pipeline S3 to the App S3.
+The `PROD_S3_*` are there for the transfer of data from the Pipeline S3 to the
+App S3.
 
-After you have [loaded the data into the App S3](../architecture/dataloader.md), you can build the backend and then serve the backend api:
+After you have [loaded the data into the App S3](../architecture/dataloader.md),
+you can build the backend and then serve the backend api:
 
 ```
 cd dataloader
@@ -79,7 +84,8 @@ pnpm install
 pnpm dev
 ```
 
-The frontend should now be up and running and tell you the url where it is available
+The frontend should now be up and running and tell you the url where it is
+available
 
 ## Load data
 
@@ -87,7 +93,9 @@ See [compose setup](compose.md#load-data)
 
 ## Dev setup of the documentation
 
-The docs are powered by [uv](https://github.com/astral-sh/uv) as python package manager and [Material for Mkdocs](https://squidfunk.github.io/mkdocs-material/) as documentation package
+The docs are powered by [uv](https://github.com/astral-sh/uv) as python package
+manager and [Material for Mkdocs](https://squidfunk.github.io/mkdocs-material/)
+as documentation package
 
 ```
 cd docs

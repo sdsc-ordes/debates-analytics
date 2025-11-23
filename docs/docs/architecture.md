@@ -2,7 +2,8 @@
 
 The architecture consists of 3 parts:
 
-- [**processing pipeline**](processing.md): for the video and audio files to derive transcripts translations and additional metadata
+- [**processing pipeline**](processing.md): for the video and audio files to
+  derive transcripts translations and additional metadata
 
 ```mermaid
 flowchart LR
@@ -12,7 +13,8 @@ flowchart LR
     D --> E
 ```
 
-- [**loading results into secondary databases**](loading.md): the processed data is loaded into structured databases to improve findability
+- [**loading results into secondary databases**](loading.md): the processed data
+  is loaded into structured databases to improve findability
 
 ```mermaid
 flowchart LR
@@ -21,7 +23,8 @@ flowchart LR
   E --segments--> C[(Search Engine Solr)]
 ```
 
-- [**serving and enriching metadata via a WebUI**](webui.md): the Webui allows to search in the debates and to annotate and correct the speaker statements
+- [**serving and enriching metadata via a WebUI**](webui.md): the Webui allows
+  to search in the debates and to annotate and correct the speaker statements
 
 ```mermaid
 flowchart LR
