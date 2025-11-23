@@ -244,7 +244,12 @@ def serve():
     """
     Start the FastAPI server.
     """
-    uvicorn.run(api, host=API_HOST, port=8000)
+    uvicorn.run(
+        api,
+        host="0.0.0.0",
+        port=8000,
+        log_level="info"
+    )
 
 
 if __name__ == "__main__":
