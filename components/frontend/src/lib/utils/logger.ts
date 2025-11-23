@@ -1,14 +1,14 @@
-import pino from 'pino';
+import pino from "pino"
 
 // --- Configuration ---
 const config = {
-    // Set base log level
-    level: 'debug',
+  // Set base log level
+  level: "debug",
 
-    browser: {
-        asObject: false,
-    },
-};
+  browser: {
+    asObject: false,
+  },
+}
 
 // Initialize the logger
-export const logger = pino(config);
+export const logger = pino(config)
