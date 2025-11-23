@@ -26,7 +26,7 @@
 
   let { data }: Props = $props();
 
-  const job_id: string = data?.job_id;
+  const media_id: string = data?.media_id;
   const debate: Debate = data?.debate;
 
   let subtitles: Subtitle[] = data?.subtitles;
@@ -68,7 +68,7 @@
   </div>
 
   <div class="col-md-3 speaker-container">
-    <SpeakerDisplay bind:speakers {timeUpdateParameters} {job_id} />
+    <SpeakerDisplay bind:speakers {timeUpdateParameters} {media_id} />
   </div>
 
   <div class="col-md-6 video-container">
@@ -88,7 +88,7 @@
 
 <DebateToolBar {downloadUrls} />
 
-<SegmentDisplay {subtitles} {subtitles_en} {timeUpdateParameters} {job_id} {mediaElement} />
+<SegmentDisplay {subtitles} {subtitles_en} {timeUpdateParameters} {media_id} {mediaElement} />
 
 <style>
 .video-layout {

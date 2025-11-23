@@ -17,7 +17,7 @@ export async function fetchUploadedVideos(
       },
     })
     if (!response.ok) {
-      throw new Error(`Error fetching jobs: ${response.statusText}`)
+      throw new Error(`Error fetching media: ${response.statusText}`)
     }
 
     // Extract JSON from the response

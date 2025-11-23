@@ -93,12 +93,12 @@
     </div>
 
     <div class="content-wrapper">
-      <label class="drop-zone" class:disabled={status === 'uploading' || status === 'processing'}>
+      <label class="drop-zone" class:disabled={status === 'uploading' || status === 'processing' || status === 'success'}>
         <input
           bind:files
           type="file"
           accept="video/*,audio/*"
-          disabled={status === 'uploading' || status === 'processing'}
+          disabled={status === 'uploading' || status === 'processing' || status === 'success'}
         />
 
         <div class="drop-zone-content">
@@ -124,7 +124,7 @@
           {#if status === 'uploading'}
             <div class="status-col">
               <div class="progress-label">
-                <span>Uploading to S3...</span>
+                <span>Uploading...</span>
                 <span>{progress}%</span>
               </div>
               <div class="progress-track">
@@ -145,9 +145,6 @@
               <CircleCheck class="icon-small" />
               <span>Upload Complete! Job started.</span>
             </div>
-            <button class="link-button" onclick={() => status = 'idle'} type="button">
-              Upload another?
-            </button>
           {/if}
 
           {#if status === 'error'}
@@ -178,63 +175,63 @@
 </section>
 
 <style>
-    /* --- Layout & Typography --- */
+    /* --- Layout --- */
     section {
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        /* Matches Home page flex styling */
-        flex: 0.6;
-        padding: 2rem;
+        min-height: 60vh; /* Keeps it centered vertically */
+        padding: 1rem;
     }
 
-    h1 {
-        font-family: var(--body-font);
-        font-size: 36px;
-        color: var(--primary-dark-color);
-        line-height: 1;
-        font-weight: bold;
-        margin: 0;
-    }
-
-    /* --- The Main Card (Matches .info from Home) --- */
+    /* --- The Main Card --- */
     .info {
         border: 2px dashed var(--primary-dark-color);
-        padding: 50px;
+        background-color: white;
         color: var(--text-color);
-        margin-top: 1rem;
-        border-radius: 10px;
-        width: 90%;
-        max-width: 800px;
+        
+        /* Modest Sizing */
+        width: 100%;
+        max-width: 480px; /* Reduced from 800px */
+        padding: 2rem;    /* Reduced from 50px */
+        border-radius: 12px;
+        
         display: flex;
         flex-direction: column;
-        gap: 2rem;
-        background-color: white; /* Ensure readability */
+        gap: 1.5rem;
+        align-items: center; /* Centers content inside card */
     }
 
     .header {
         display: flex;
+        flex-direction: column; /* Stack icon on top of text */
         align-items: center;
-        gap: 1rem;
-        justify-content: center;
-        width: 100%;
-        margin-bottom: 1rem;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    h1 {
+        font-family: var(--body-font);
+        font-size: 1.75rem; /* Reduced size */
+        color: var(--primary-dark-color);
+        line-height: 1.2;
+        font-weight: bold;
+        margin: 0;
     }
 
     .content-wrapper {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.25rem;
         width: 100%;
     }
 
     /* --- Icons --- */
-    /* Using global style for SVG icons to match theme */
     :global(.icon-primary) {
         color: var(--secondary-color);
-        width: 2rem;
-        height: 2rem;
+        width: 2.5rem;
+        height: 2.5rem;
     }
     :global(.icon-small) {
         width: 1.25rem;
@@ -245,11 +242,11 @@
     }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-    /* --- File Drop Zone (Input) --- */
+    /* --- File Drop Zone --- */
     .drop-zone {
         border: 1px solid var(--primary-dark-color);
-        border-radius: 5px; /* Matches input style */
-        padding: 2rem;
+        border-radius: 8px;
+        padding: 2.5rem 1.5rem; /* Taller padding for clickable area */
         cursor: pointer;
         transition: all 0.2s ease;
         text-align: center;
@@ -257,54 +254,57 @@
     }
 
     .drop-zone:hover {
-        background-color: rgba(0,0,0,0.02);
-        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+        background-color: #f8fafc;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
     }
 
-    .drop-zone input {
-        display: none;
-    }
+    .drop-zone input { display: none; }
 
     .drop-zone.disabled {
         opacity: 0.6;
         cursor: not-allowed;
+        background-color: #f1f5f9;
     }
 
     .file-name {
         font-weight: bold;
         color: var(--secondary-color);
-        font-size: 1.1rem;
+        font-size: 1rem;
+        word-break: break-all; /* Prevents long filenames breaking layout */
     }
 
     .file-size {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: gray;
+        margin-top: 0.25rem;
     }
 
     .placeholder-text {
         color: var(--text-color);
         font-weight: 500;
+        font-size: 0.95rem;
     }
 
     /* --- Status Box --- */
     .status-box {
-        padding: 1rem;
-        border-radius: 5px;
-        border: 1px solid #ddd;
-        background-color: #f9f9f9;
-        font-size: 0.95rem;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        font-size: 0.9rem;
     }
 
     .status-row {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        font-weight: bold;
+        justify-content: center; /* Center status text */
+        gap: 0.5rem;
+        font-weight: 600;
     }
 
     .status-row.loading { color: var(--secondary-color); }
-    .status-row.success { color: #16a34a; } /* Green */
-    .status-row.error { color: #dc2626; }   /* Red */
+    .status-row.success { color: #16a34a; }
+    .status-row.error { color: #dc2626; }
 
     /* --- Progress Bar --- */
     .status-col {
@@ -316,16 +316,16 @@
     .progress-label {
         display: flex;
         justify-content: space-between;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         font-weight: 600;
         color: var(--primary-dark-color);
     }
 
     .progress-track {
         width: 100%;
-        height: 10px;
-        background-color: #e5e5e5;
-        border-radius: 5px;
+        height: 6px; /* Thinner */
+        background-color: #e2e8f0;
+        border-radius: 99px;
         overflow: hidden;
     }
 
@@ -338,41 +338,28 @@
     /* --- Buttons --- */
     .button-primary {
         background-color: var(--secondary-color);
-        color: white; /* Assuming var(--on-primary) is white */
+        color: white;
         border: none;
-        padding: 12px 20px;
-        border-radius: 8px; /* Matches Search form button radius */
-        font-weight: bold;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
         cursor: pointer;
-        font-size: 1rem;
+        font-size: 0.95rem;
         transition: opacity 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-
-    .button-primary:hover {
-        opacity: 0.9;
-    }
-
-    .button-primary:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-    }
-
-    .full-width {
         width: 100%;
     }
+
+    .button-primary:hover { opacity: 0.9; }
+    .button-primary:disabled { background-color: #cbd5e1; cursor: not-allowed; }
 
     .link-button {
         background: none;
         border: none;
-        color: gray;
+        color: #64748b;
         text-decoration: underline;
         cursor: pointer;
         margin-top: 0.5rem;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         width: 100%;
     }
 </style>

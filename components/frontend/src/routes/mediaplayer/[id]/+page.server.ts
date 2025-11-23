@@ -9,10 +9,10 @@ import { error } from "@sveltejs/kit" // Import the error function
 
 export const load: PageServerLoad = async ({ params }) => {
   try {
-    const job_id: string = params.id
+    const media_id: string = params.id
 
     // Fetch metadata FIRST.  If it fails, it's a 404.
-    const metadata: ResponseMetadata = await fetchMetadata(job_id) // Await here
+    const metadata: ResponseMetadata = await fetchMetadata(media_id) // Await here
     console.log(metadata)
 
     // Check if metadata exists. If not, it's a 404
@@ -22,10 +22,10 @@ export const load: PageServerLoad = async ({ params }) => {
       throw error(404, "Not Found") // Throw 404 if metadata is missing or incomplete
     }
 
-    const signedUrls: SignedUrls = await fetchMedia(job_id)
+    const signedUrls: SignedUrls = await fetchMedia(media_id)
 
     return {
-      job_id: job_id,
+      media_id: media_id,
       debate: metadata.debate,
       speakers: metadata.speakers.speakers,
       segments: metadata.segments.segments,

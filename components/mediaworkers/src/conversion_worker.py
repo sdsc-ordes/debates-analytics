@@ -2,22 +2,18 @@ import os
 import sys
 import json
 import logging
-import pika
 import logging
 from typing import Dict, Any, Callable
 
 # Import modular components
 from mediaworkers.config import (
-    CONVERSION_QUEUE, TEMP_DIR
+    TEMP_DIR
 )
 from mediaworkers.s3_handler import s3Manager
-from mediaworkers.publisher import send_to_queue
 from mediaworkers.convert import convert_to_wav
-from mediaworkers.consumer import start_consuming # NEW IMPORT
 
 logger = logging.getLogger(__name__)
 
-s3_client = s3Manager()
 
 def process_conversion_job(ch, method, properties, body, connection: pika.BlockingConnection):
     """
@@ -91,7 +87,7 @@ def start_worker():
 
     # Start consuming messages on the CONVERSION_QUEUE, passing the job processor
     # The consumer module handles connection, retries, and queue declaration.
-    start_consuming(CONVERSION_QUEUE, process_conversion_job)
+    process_conversion_job()
 
 if __name__ == '__main__':
     start_worker()

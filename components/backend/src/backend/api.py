@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class S3MediaUrlRequest(BaseModel):
-    job_id: str = Field(..., description="job_id", examples=["df2afc83-7e69-4868-ba4c-b7c4afed6218"])
+    media_id: str = Field(..., description="media_id", examples=["df2afc83-7e69-4868-ba4c-b7c4afed6218"])
 
 class S3MediaUrlResponse(BaseModel):
     signedUrls: List[models.S3MediaUrls] = Field(..., description="List of presigned URLs")
@@ -48,18 +48,18 @@ async def get_media_urls(request: S3MediaUrlRequest):
     logging.info(f"request: {request}")
     s3_client = s3.s3Manager()
 
-    # Get transcript keys for job_id
-    transcript_keys = s3_client.list_objects_by_prefix(f"{request.job_id}/transcripts")
+    # Get transcript keys for media_id
+    transcript_keys = s3_client.list_objects_by_prefix(f"{request.media_id}/transcripts")
     logging.info(f"Retrieved transcript keys: {transcript_keys}")
 
-    # Get media keys for job_id
-    media_keys = s3_client.list_objects_by_prefix(f"{request.job_id}/media")
+    # Get media keys for media_id
+    media_keys = s3_client.list_objects_by_prefix(f"{request.media_id}/media")
     logging.info(f"Retrieved media keys: {media_keys}")
 
     # Initialize variables
     media_url: str = ""
     download_urls: List[Dict[str, str]] = []
-    job_id = request.job_id
+    media_id = request.media_id
 
     # Process Media Keys to find the .mp4 file
     for object_key in media_keys:
@@ -70,7 +70,7 @@ async def get_media_urls(request: S3MediaUrlRequest):
             break
 
     if not media_url:
-        logging.warning(f"No .mp4 media file found for job_id: {job_id}")
+        logging.warning(f"No .mp4 media file found for media_id: {media_id}")
 
     # Process Transcript Keys for download links
     for object_key in transcript_keys:
@@ -96,7 +96,7 @@ async def get_media_urls(request: S3MediaUrlRequest):
 
 
 class MongoMetadataRequest(BaseModel):
-    job_id: str = Field(..., description="job_id", examples=["df2afc83-7e69-4868-ba4c-b7c4afed6218"])
+    media_id: str = Field(..., description="media_id", examples=["df2afc83-7e69-4868-ba4c-b7c4afed6218"])
 
 
 class MongoMetadataResponse(BaseModel):
@@ -111,12 +111,12 @@ class MongoMetadataResponse(BaseModel):
 async def mongo_metadata(request: MongoMetadataRequest):
     logging.info(f"request: {request}")
     debate = mongodb.mongodb_find_one_document(
-        {"job_id": request.job_id}, mongodb.MONGO_DEBATES_COLLECTION
+        {"media_id": request.media_id}, mongodb.MONGO_DEBATES_COLLECTION
     )
-    logging.info(f"debate found for {request.job_id}: {debate}")
+    logging.info(f"debate found for {request.media_id}: {debate}")
 
     if not debate:
-        logger.warning(f"No debate found for job_id: {request.job_id}")
+        logger.warning(f"No debate found for media_id: {request.media_id}")
         return MongoMetadataResponse(debate=None)
 
     debate_document = helpers.clean_document(debate)
@@ -189,7 +189,7 @@ async def search_solr(request: SolrRequest):
 
 
 class UpdateSpeakersRequest(BaseModel):
-    job_id: str
+    media_id: str
     speakers: List[models.Speaker]
 
 
@@ -201,7 +201,7 @@ async def update_speakers(request: UpdateSpeakersRequest):
     logging.info(f"request: {request}")
     try:
         debate = mongodb.mongodb_find_one_document(
-            { "job_id": request.job_id }, mongodb.MONGO_DEBATES_COLLECTION
+            { "media_id": request.media_id }, mongodb.MONGO_DEBATES_COLLECTION
         )
         debate_id = debate["_id"]
         speakers_as_dicts = [speaker.dict() for speaker in request.speakers]
@@ -210,16 +210,16 @@ async def update_speakers(request: UpdateSpeakersRequest):
             values={ "$set": { "speakers": speakers_as_dicts } },
             collection=mongodb.MONGO_SPEAKERS_COLLECTION
         )
-        logger.info(f"Speakers for {request.job_id} updated successfully.")
-        solr.update_speakers(job_id=request.job_id, speakers=speakers_as_dicts)
-        logger.info(f"Speakers for {request.job_id} updated on Solr.")
+        logger.info(f"Speakers for {request.media_id} updated successfully.")
+        solr.update_speakers(media_id=request.media_id, speakers=speakers_as_dicts)
+        logger.info(f"Speakers for {request.media_id} updated on Solr.")
     except Exception as e:
-        logger.error(f"Error updating speakers for {request.job_id}: {e}")
+        logger.error(f"Error updating speakers for {request.media_id}: {e}")
         return {"error": "Error updating speakers"}
 
 
 class UpdateSubtitlesRequest(BaseModel):
-    job_id: str
+    media_id: str
     segmentNr: int
     subtitles: List[models.Subtitle]
     subtitleType: models.EnumSubtitleType
@@ -235,7 +235,7 @@ async def update_subtitles(request: UpdateSubtitlesRequest):
         print("in update subtitles")
         print(request)
         debate = mongodb.mongodb_find_one_document(
-            { "job_id": request.job_id }, mongodb.MONGO_DEBATES_COLLECTION
+            { "media_id": request.media_id }, mongodb.MONGO_DEBATES_COLLECTION
         )
         debate_id = debate["_id"]
         subtitles_as_dicts = [subtitle.dict() for subtitle in request.subtitles]
@@ -252,16 +252,16 @@ async def update_subtitles(request: UpdateSubtitlesRequest):
             values={ "$set": values },
             collection=mongodb.MONGO_SUBTITLE_COLLECTION,
         )
-        logger.info(f"Subtitles for {request.job_id} updated successfully.")
+        logger.info(f"Subtitles for {request.media_id} updated successfully.")
         solr.update_segment(
-            job_id=request.job_id,
+            media_id=request.media_id,
             segment_nr=request.segmentNr,
             subtitles=subtitles_as_dicts,
             subtitle_type=subtitle_type,
         )
-        logger.info(f"Subtitles for {request.job_id} updated on Solr.")
+        logger.info(f"Subtitles for {request.media_id} updated on Solr.")
     except Exception as e:
-        logger.error(f"Error updating subtitles for {request.job_id}: {e}")
+        logger.error(f"Error updating subtitles for {request.media_id}: {e}")
         return {"error": "Error updating subtitles"}
 
 
@@ -298,8 +298,8 @@ async def get_uploaded(request: Request):
 
 
 def _get_job_list_item_from_prefix(prefix):
-    job_id = prefix.replace("/", "")
-    list_item = {"label": f"uploaded {job_id}", "value": job_id}
+    media_id = prefix.replace("/", "")
+    list_item = {"label": f"uploaded {media_id}", "value": media_id}
     return list_item
 
 # --- NEW MODEL: Request for upload POST data ---
@@ -319,16 +319,16 @@ class S3PostResponse(BaseModel):
 async def get_presigned_post(request_data: S3PostRequest):
     """
     [POST] Returns a presigned URL and fields for the client to upload a file directly to S3 via HTTP POST.
-    The file will be stored under {job_id}/media/{filename}.
+    The file will be stored under {media_id}/media/{filename}.
     """
     # 1. GENERATE THE UNIQUE JOB ID IN THE BACKEND
-    job_id = str(uuid.uuid4())
+    media_id = str(uuid.uuid4())
 
-    logging.info(f"Generating presigned POST for job_id: {job_id} / Filename: {request_data.filename}")
+    logging.info(f"Generating presigned POST for media_id: {media_id} / Filename: {request_data.filename}")
     s3_client = s3.s3Manager()
 
     # Define the full S3 key path for the video
-    s3_key = f"{job_id}/media/{request_data.filename}"
+    s3_key = f"{media_id}/source.mp4"
 
     post_data = s3_client.get_presigned_post(s3_key)
 
@@ -340,23 +340,28 @@ async def get_presigned_post(request_data: S3PostRequest):
     return S3PostResponse(
         postUrl=post_data["url"],
         fields=post_data["fields"],
-        jobId=job_id,
+        jobId=media_id,
         s3Key=s3_key
     )
 
 class ProcessRequest(BaseModel):
     s3_key: str = Field(..., description="The final S3 key where the file will be stored")
-    job_id: str = Field(..., description="The unique job ID generated by the backend")
+    media_id: str = Field(..., description="The unique job ID generated by the backend")
+    title: str = Field(None, description="filename of the media")
 
 @api.post("/process")
 async def start_processing(request: ProcessRequest):
     # This puts the job into Redis!
     # 'process_video' is the Python function the worker will run
-    logger.info(f"Enqueuing processing job for S3 key: {request.s3_key}, job_id: {request.job_id}")
+    logger.info(f"Enqueuing processing job for S3 key: {request.s3_key}, media_id: {request.media_id}")
     job = q.enqueue(
-        'tasks.process_video', # Name of function string or actual function object
+        'converter.process_video', # Name of function string or actual function object
         request.s3_key,
-        job_id=request.job_id
+        media_id=request.media_id,
     )
 
-    return {"status": "queued", "job_id": job.get_id()}
+    return {
+        "status": "queued",
+        "media_id": request.media_id,
+        "job_id": job.get_id()
+    }

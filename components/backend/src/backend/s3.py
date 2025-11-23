@@ -87,24 +87,24 @@ class s3Manager:
 
     def list_top_level_prefixes(self) -> List[str]:
         """
-        Lists all top-level prefixes (job_ids) in the S3 bucket using the delimiter '/'.
+        Lists all top-level prefixes (media_ids) in the S3 bucket using the delimiter '/'.
         This returns what looks like folders at the root level.
 
         Returns:
-            A list of top-level prefixes (e.g., 'job_id_1/', 'job_id_2/').
+            A list of top-level prefixes (e.g., 'media_id_1/', 'media_id_2/').
         """
-        job_ids = []
+        media_ids = []
         paginator = self.s3.get_paginator('list_objects_v2')
         pages = paginator.paginate(Bucket=self.bucket_name, Delimiter='/')
 
         for page in pages:
             if 'CommonPrefixes' in page:
                 for prefix_data in page['CommonPrefixes']:
-                    # CommonPrefixes contains dictionaries like {'Prefix': 'job_id_1/'}
-                    job_ids.append(prefix_data['Prefix'])
+                    # CommonPrefixes contains dictionaries like {'Prefix': 'media_id_1/'}
+                    media_ids.append(prefix_data['Prefix'])
 
-        logging.info(f"Found {len(job_ids)} top-level prefixes (job_ids) in bucket '{self.bucket_name}'.")
-        return job_ids
+        logging.info(f"Found {len(media_ids)} top-level prefixes (media_ids) in bucket '{self.bucket_name}'.")
+        return media_ids
 
     def get_presigned_post(self, object_key: str, expiration: int = 3600) -> Union[Dict[str, Any], None]:
         """
@@ -150,13 +150,13 @@ class s3Manager:
             logging.error(f"Error generating presigned POST: {e}")
             return None
 
-    def create_marker_file(self, job_id: str) -> bool:
+    def create_marker_file(self, media_id: str) -> bool:
         """
         Creates an empty marker file to signal a complete upload for the watcher service.
-        Key: {job_id}/media/job_registered.txt
+        Key: {media_id}/media/job_registered.txt
         """
         try:
-            marker_key = f"{job_id}/media/{MARKER_FILENAME}"
+            marker_key = f"{media_id}/media/{MARKER_FILENAME}"
             logging.info(f"Creating marker file at: {marker_key}")
             
             # Put a minimal (empty) object to act as the marker
@@ -171,5 +171,5 @@ class s3Manager:
             logging.error("Credentials not available to create marker.")
             return False
         except Exception as e:
-            logging.error(f"Error creating marker file for job {job_id}: {e}")
+            logging.error(f"Error creating marker file for job {media_id}: {e}")
             return False

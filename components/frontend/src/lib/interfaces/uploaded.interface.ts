@@ -1,3 +1,3 @@
 export interface UploadedVideosResponse {
-  job_id: string
+  media_id: string
 }

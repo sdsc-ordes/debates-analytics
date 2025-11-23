@@ -15,7 +15,7 @@
     let { highlighting, doc }: Props = $props();
 
     const navigateToVideoPlayer = () => {
-        goto(`/mediaplayer/${encodeURIComponent(doc.job_id)}?start=${encodeURIComponent(doc.start)}`);
+        goto(`/mediaplayer/${encodeURIComponent(doc.media_id)}?start=${encodeURIComponent(doc.start)}`);
     };
 </script>
 
@@ -44,7 +44,7 @@
             </p>
             <div class="datetime-container">
                 <div class="date-time-item">
-                     {doc.job_id}
+                     {doc.media_id}
                 </div>
                 <div class="date-time-item">
                     <i class="fa fa-clock" aria-hidden="true"></i>

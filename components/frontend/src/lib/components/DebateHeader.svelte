@@ -12,6 +12,6 @@
 <div class="card-title-large" style="color: var(--primary-dark-color);">
   {debate.media}
   <div class="date-time-item">
-    <div class="card-title-small">{debate.job_id}</div>
+    <div class="card-title-small">{debate.media_id}</div>
   </div>
 </div>

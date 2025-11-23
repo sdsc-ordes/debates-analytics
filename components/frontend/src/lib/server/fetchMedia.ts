@@ -2,7 +2,7 @@ import type { SignedUrls } from "$lib/interfaces/metadata.interface"
 import { BackendUrl } from "$lib/config"
 
 export async function fetchMedia(
-  job_id: string,
+  media_id: string,
 ): Promise<SignedUrls> {
   try {
     // FastAPI endpoint to retrieve signed URLs
@@ -10,7 +10,7 @@ export async function fetchMedia(
 
     // Request payload for signed URLs
     const payload = JSON.stringify({
-      job_id: job_id,
+      media_id: media_id,
     })
     console.log(`API call to ${apiUrl} with paylosd: ${payload}`)
 

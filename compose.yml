@@ -30,6 +30,6 @@ volumes:
 # This drastically improves readability and organization.
 include:
   - compose.data.yml
-  #- compose.workers.yml
+  - compose.workers.yml
   - compose.app.yml
-  #- compose.debug.yml
+  - compose.debug.yml

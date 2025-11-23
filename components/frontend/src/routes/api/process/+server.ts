@@ -11,7 +11,7 @@ export async function POST({ request, fetch }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             s3_key: s3Key,
-            job_id: jobId // Pass the ID if you generated it earlier, or let Backend generate it
+            media_id: jobId // Pass the ID if you generated it earlier, or let Backend generate it
         })
     });
 

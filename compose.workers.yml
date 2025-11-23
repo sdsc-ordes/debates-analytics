@@ -1,23 +1,19 @@
 services:
 
-  mediawatcher:
-    build: ./components/mediaworkers
-    networks:
-      - debates_network
-    container_name: s3_watcher_service
-    environment:
-      - S3_SERVER=http://minio-instance:9000
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - S3_MEDIA_PATH=${S3_MEDIA_PATH}
-      - RABBITMQ_URL=${RABBITMQ_URL}
-      - WATCH_INTERVAL_SECONDS=30
-      - MARKER_FILENAME=${MARKER_FILENAME}
-    depends_on:
-      minio-setup:
-        condition: service_completed_successfully
-      rabbitmq:
-        condition: service_healthy
-    command: python s3_watcher.py
-
+  worker:
+      build: ./components/workers
+      # CRITICAL: This command starts the listener
+      command: rq worker --url redis://redis:6379
+      depends_on:
+        redis:
+          condition: service_healthy
+      environment:
+        - S3_SERVER=http://minio-instance:9000
+        - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+        - S3_SECRET_KEY=${S3_SECRET_KEY}
+        - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+        - REDIS_URL=redis://redis:6379
+        # Make sure Python can find your modules
+        - PYTHONPATH=/app
+      networks:
+        - debates_network

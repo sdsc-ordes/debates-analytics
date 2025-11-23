@@ -76,5 +76,5 @@ class Media(BaseModel):
     format: str
 
 class DebateDocument(BaseModel):
-    job_id: str
+    media_id: str
     media: str

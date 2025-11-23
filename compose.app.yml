@@ -17,8 +17,12 @@ services:
     ports:
       - 8082:8000
     depends_on:
-      - mongodb-instance
-      - solr
+      mongodb-instance:
+        condition: service_healthy
+      solr:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   frontend:
     build:
