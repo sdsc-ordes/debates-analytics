@@ -4,7 +4,7 @@
   self,
   lib,
   pkgs,
-  pkgsPinned
+  pkgsPinned,
   ...
 }:
 {
