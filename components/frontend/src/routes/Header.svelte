@@ -1,11 +1,15 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { page } from '$app/stores';
 	import { canEdit } from "$lib/stores/auth";
-	let homePath = '/';
-	$: if ($canEdit) {
-        console.log("User can edit!");
-		homePath = '/edit';
-    }
+	let homePath = $state('/');
+	run(() => {
+		if ($canEdit) {
+	        console.log("User can edit!");
+			homePath = '/edit';
+	    }
+	});
 </script>
 
 <header>

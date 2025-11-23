@@ -20,7 +20,11 @@
   } from "$lib/interfaces/metadata.interface";
     import DebateToolBar from "$lib/components/DebateToolBar.svelte";
 
-  export let data: PageData;
+  interface Props {
+    data: PageData;
+  }
+
+  let { data }: Props = $props();
 
   const s3Prefix: string = data?.prefix;
   const debate: Debate = data?.debate;
@@ -29,20 +33,20 @@
   let subtitles_en: Subtitle[] = data?.subtitles_en;
   const segments: Segment[] = data?.segments;
 
-  let speakers: Speaker[] = data?.speakers;
+  let speakers: Speaker[] = $state(data?.speakers);
   const mediaUrl: string = data?.signedUrls.signedMediaUrl;
   const media = data.media;
   const downloadUrls: SignedUrl[] = data?.signedUrls.signedUrls;
 
   let startTime: number = Number($page.url.searchParams.get("start") || 0);
-  let timeUpdateParameters: TimeUpdateParameters = onMediaTimeUpdate(
+  let timeUpdateParameters: TimeUpdateParameters = $state(onMediaTimeUpdate(
     startTime,
     subtitles_en,
     subtitles,
     segments,
-  );
+  ));
 
-  let mediaElement: HTMLVideoElement;
+  let mediaElement: HTMLVideoElement = $state();
 
 </script>
 

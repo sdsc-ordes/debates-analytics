@@ -9,11 +9,11 @@
   import { createDefaultSolrQuery } from "$lib/interfaces/search.interface";
   import { onMount } from "svelte";
 
-  let solrQuery: SolrQuery = createDefaultSolrQuery();
-  let solrResponse: SolrResponse;
-  let highlighting: SolrHighlighting;
-  let docs: SolrDocument[];
-  let facetCounts: SolrFacetCounts;
+  let solrQuery: SolrQuery = $state(createDefaultSolrQuery());
+  let solrResponse: SolrResponse = $state();
+  let highlighting: SolrHighlighting = $state();
+  let docs: SolrDocument[] = $state();
+  let facetCounts: SolrFacetCounts = $state();
   let errorMessage: string | null = null; // For displaying errors
 
   async function handleSearch() {

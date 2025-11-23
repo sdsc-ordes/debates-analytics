@@ -4,14 +4,24 @@
   import { canEdit } from "$lib/stores/auth";
   import { jumpToTime } from "$lib/utils/mediaStartUtils";
 
-  export let subtitles: Subtitle[] = [];
-  export let subtitles_en: Subtitle[] = [];
-  export let timeUpdateParameters: TimeUpdateParameters;
-  export let mediaElement: HTMLVideoElement;
-  export let s3Prefix: string;
+  interface Props {
+    subtitles?: Subtitle[];
+    subtitles_en?: Subtitle[];
+    timeUpdateParameters: TimeUpdateParameters;
+    mediaElement: HTMLVideoElement;
+    s3Prefix: string;
+  }
 
-  let editSubtitlesTranscription: boolean = false;
-  let editSubtitlesTranslation: boolean = false;
+  let {
+    subtitles = $bindable([]),
+    subtitles_en = [],
+    timeUpdateParameters,
+    mediaElement,
+    s3Prefix
+  }: Props = $props();
+
+  let editSubtitlesTranscription: boolean = $state(false);
+  let editSubtitlesTranslation: boolean = $state(false);
 
   let errorMessage: string | null = null; // For displaying errors
 
@@ -80,20 +90,20 @@
       {#if $canEdit && !editSubtitlesTranscription}
         <button
           class="secondary-button"
-          on:click={toggleEditSubtitlesTranscription}
+          onclick={toggleEditSubtitlesTranscription}
           aria-label="Edit"
           >Edit
         </button>
       {:else if editSubtitlesTranscription}
         <button
           class="secondary-button"
-          on:click={toggleEditSubtitlesTranscription}
+          onclick={toggleEditSubtitlesTranscription}
           aria-label="Cancel"
           >Cancel
         </button>
         <button
           class="secondary-button"
-          on:click={() => saveSubtitle$Transcription()}
+          onclick={() => saveSubtitle$Transcription()}
           aria-label="Save"
         >
           Save
@@ -107,18 +117,18 @@
             class={index === timeUpdateParameters.displaySubtitleIndex - 1
               ? "highlighted"
               : ""}
-            on:click={() => jumpToTime(mediaElement, subtitle.start)}
+            onclick={() => jumpToTime(mediaElement, subtitle.start)}
           >
             {#if editSubtitlesTranscription}
               <div>
                 <textarea
                   id={`subtitle-${index}`}
                   bind:value={subtitle.content}
-                  on:input={(e) => updateSubtitle(index, e.target.value)}
+                  oninput={(e) => updateSubtitle(index, e.target.value)}
                   class={`editable-textarea ${
                     index === timeUpdateParameters.displaySubtitleIndex - 1 ? "highlighted-textarea" : ""
                   }`}
-                />
+></textarea>
               </div>
             {:else}
               {subtitle.content}
@@ -140,20 +150,20 @@
       {#if $canEdit && !editSubtitlesTranslation}
         <button
           class="secondary-button"
-          on:click={toggleEditSubtitlesTranslation}
+          onclick={toggleEditSubtitlesTranslation}
           aria-label="Edit"
           >Edit
         </button>
       {:else if editSubtitlesTranslation}
         <button
           class="secondary-button"
-          on:click={toggleEditSubtitlesTranslation}
+          onclick={toggleEditSubtitlesTranslation}
           aria-label="Cancel"
           >Cancel
         </button>
         <button
           class="secondary-button"
-          on:click={() => saveSubtitle$Translation()}
+          onclick={() => saveSubtitle$Translation()}
           aria-label="Save"
         >
           Save
@@ -167,18 +177,18 @@
             class={index === timeUpdateParameters.displaySubtitleEnIndex - 1
               ? "highlighted"
               : ""}
-            on:click={() => jumpToTime(mediaElement, subtitle.start)}
+            onclick={() => jumpToTime(mediaElement, subtitle.start)}
           >
             {#if editSubtitlesTranslation}
               <div>
                 <textarea
                   id={`subtitle-${index}`}
                   bind:value={subtitle.content}
-                  on:input={(e) => updateSubtitle(index, e.target.value)}
+                  oninput={(e) => updateSubtitle(index, e.target.value)}
                   class={`editable-textarea ${
                     index === timeUpdateParameters.displaySubtitleEnIndex - 1 ? "highlighted-textarea" : ""
                   }`}
-                />
+></textarea>
               </div>
             {:else}
               {subtitle.content}
