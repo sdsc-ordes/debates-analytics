@@ -13,6 +13,9 @@ services:
         - S3_SECRET_KEY=${S3_SECRET_KEY}
         - S3_BUCKET_NAME=${S3_BUCKET_NAME}
         - REDIS_URL=redis://redis:6379
+        - HF_TOKEN=${HF_TOKEN}
+        - HF_SPACE_URL=${HF_SPACE_URL}
+        - HF_MODEL=${HF_MODEL}
         # Make sure Python can find your modules
         - PYTHONPATH=/app
       networks:

@@ -19,6 +19,9 @@ s3_client = boto3.client(
     aws_secret_access_key=os.getenv("S3_SECRET_KEY")
 )
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+HF_TOKEN = os.getenv("HF_TOKEN")
+HF_SPACE_URL = os.getenv("HF_SPACE_URL")
+HF_MODEL = os.getenv("HF_MODEL")
 
 # Hugging Face Client
 HF_SPACE_URL = "https://katospiegel-odtp-pyannote-whisper.hf.space/"
@@ -58,7 +61,7 @@ def process_transcription(s3_key, media_id):
             model="large-v3", # Recommend 'large-v3' for best quality, or 'base' for speed
             task="transcribe",
             language="auto",
-            hf_token=None,    # Add your token here if the space becomes private
+            hf_token=HF_TOKEN,    # Add your token here if the space becomes private
             quantize=False,
             api_name="/process_audio"
         )
