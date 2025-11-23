@@ -14,6 +14,8 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
 redis_conn = Redis.from_url(redis_url)
 q = Queue(connection=redis_conn)
+
+# S3 Client
 s3_client = boto3.client(
     's3',
     endpoint_url=os.getenv("S3_SERVER"),
@@ -30,17 +32,17 @@ def process_video(s3_key, media_id):
     4. Enqueues the Transcriber job
     """
     job = get_current_job()
-    
+
     # 1. Update Status
     logger.info(f"Job {media_id}: Starting processing for {s3_key}")
     job.meta['progress'] = 'downloading'
     job.save_meta()
 
     # Paths
-    filename = os.path.basename(s3_key)
+    filename = os.path.basename(media_id)
     local_video_path = os.path.join(TEMP_DIR, filename)
     local_wav_path = os.path.join(TEMP_DIR, f"{filename}.wav")
-    s3_wav_key = s3_key.replace(".mp4", ".wav")
+    s3_wav_key = f"{media_id}/audio.wav"
 
     try:
         # 2. Download
@@ -62,7 +64,7 @@ def process_video(s3_key, media_id):
         )
 
         # 4. Upload
-        logger.info(f"Job {job_id}: Uploading WAV...")
+        logger.info(f"Job {media_id}: Uploading WAV...")
         job.meta['progress'] = 'uploading'
         job.save_meta()
 
