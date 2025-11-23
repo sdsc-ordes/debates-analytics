@@ -30,3 +30,4 @@ include:
   - compose.data.yml
   - compose.app.yml
   - compose.debug.yml
+  - compose.workers.yml

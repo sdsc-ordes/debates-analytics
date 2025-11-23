@@ -1,0 +1,12 @@
+[project]
+name = "workers-services"
+version = "0.1.0"
+requires-python = ">= 3.11"
+
+dependencies = [
+    "boto3>=1.35.49",
+    "rq>=2.6.1",
+    "redis",
+    "gradio-client>=2.0.0",
+    "pymongo>=4.15.4",
+]

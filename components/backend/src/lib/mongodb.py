@@ -21,6 +21,17 @@ def mongo_find_one_document(query, collection):
         return document
 
 
+
+def mongo_insert_one_document(document, collection):
+    """Insert a document into a MongoDB collection."""
+    with MongoClient(MONGO_URL) as client:
+        db = client[MONGO_DB]
+        result = db[collection].insert_one(document)
+
+        return result.inserted_id
+
+
+
 def mongo_update_document(query, values, collection):
     with MongoClient(MONGO_URL) as client:
         db = client[MONGO_DB]
