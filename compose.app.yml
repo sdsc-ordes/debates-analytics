@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: ./components/backend
+      dockerfile: Dockerfile
+    networks:
+      - debates_network
+    environment:
+      SOLR_URL: ${SOLR_URL}
+      MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
+      MONGO_DB: debates
+      S3_SERVER: ${S3_SERVER}
+      S3_FRONTEND_BASE_URL: ${S3_FRONTEND_BASE_URL}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      REDIS_URL: ${REDIS_URL}
+    ports:
+      - 8082:8000
+    depends_on:
+      mongodb-instance:
+        condition: service_healthy
+      solr:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./components/frontend
+    ports:
+      - 3000:3000
+    depends_on:
+      - backend
+    environment:
+      PUBLIC_BACKEND_SERVER: ${PUBLIC_BACKEND_SERVER}
+    networks:
+      - debates_network
+    command: ["node", "build"]

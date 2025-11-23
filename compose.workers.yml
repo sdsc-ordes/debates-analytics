@@ -1,0 +1,22 @@
+services:
+
+  worker:
+      build: ./components/workers
+      # This command starts the listener
+      command: rq worker --url ${REDIS_URL}
+      depends_on:
+        redis:
+          condition: service_healthy
+      environment:
+        - S3_SERVER=${S3_SERVER}
+        - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+        - S3_SECRET_KEY=${S3_SECRET_KEY}
+        - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+        - REDIS_URL=${REDIS_URL}
+        - HF_TOKEN=${HF_TOKEN}
+        - HF_SPACE_URL=${HF_SPACE_URL}
+        - HF_MODEL=${HF_MODEL}
+        # Make sure Python can find your modules
+        - PYTHONPATH=/app
+      networks:
+        - debates_network
