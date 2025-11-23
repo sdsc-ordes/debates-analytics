@@ -44,6 +44,3 @@ config/.env.*
 
 # allow template/example files
 !*.env.example
-
-example/
-inputs/

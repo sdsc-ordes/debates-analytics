@@ -6,11 +6,11 @@ root_dir := `git rev-parse --show-toplevel`
 flake_dir := root_dir / "tools/nix"
 output_dir := root_dir / ".output"
 build_dir := output_dir / "build"
-docker_compose_files := "--env-file config/.env.secret --env-file config/.env.test" # Centralized env files
+docker_compose_files := "--env-file config/.env.secret --env-file config/.env.test"
 
 # --- Modularity ---
 mod nix "./tools/just/nix.just"
-mod container "./tools/just/container.just" # Assuming this has generic container targets
+mod container "./tools/just/container.just"
 
 # --- Core Development Targets ---
 
@@ -41,41 +41,31 @@ setup *args:
 
 ## 📦 Container Management Targets
 
-# Build all container images in parallel.
-[parallel]
-image: image-backend image-frontend image-solr
+# Start services in the background. Use the defined environment files.
+up *args:
+    @echo "Starting services..."
+    docker compose {{docker_compose_files}} up -d {{args}}
 
-# Build a single backend image.
-[private]
-[group("image")]
-image-backend:
-    @echo "Building backend image..."
-    cd components/backend && just image
+# View live logs for all or specific services.
+logs *args:
+    @echo "Tailing logs..."
+    docker compose {{docker_compose_files}} logs -f {{args}}
 
-# Build a single frontend image.
-[private]
-[group("image")]
-image-frontend:
-    @echo "Building frontend image..."
-    cd components/frontend && just image
+# Stop and remove containers, networks, and volumes (for a clean slate).
+down:
+    @echo "Stopping and removing services..."
+    docker compose {{docker_compose_files}} down -v
 
-# Build a single solr image.
-[private]
-[group("image")]
-image-solr:
-    @echo "Building solr image..."
-    cd components/solr && just image
+# Stop running services without removing them.
+stop *args:
+    @echo "Stopping services..."
+    docker compose {{docker_compose_files}} stop {{args}}
 
-# Default target if you do not specify a target.
-default:
-    just --list --unsorted
+# List containers.
+ps *args:
+    docker compose {{docker_compose_files}} ps {{args}}
 
-start:
-  just container::mgr compose -d up && \
-  just container::mgr compose exec solr bash ~/load-data.sh
-
-start-dev:
-  just container::mgr compose -f docker-compose-dev.yml -d up && \
-  just container::mgr compose exec \
-    -f docker-compose-dev.yml \
-    solr bash ~/load-data.sh
+# Restart services.
+restart *args:
+    @echo "Restarting services..."
+    docker compose {{docker_compose_files}} restart {{args}}

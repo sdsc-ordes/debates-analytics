@@ -10,8 +10,8 @@
   svelte = [
     {
       packages = [
-        pkgsPinned.nodejs
-        pkgsPinned.pnpm
+        pkgs.nodejs
+        pkgs.pnpm
       ];
     }
   ];
