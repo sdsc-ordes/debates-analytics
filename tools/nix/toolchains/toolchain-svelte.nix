@@ -9,8 +9,10 @@
 {
   svelte = [
     {
-      # TODO: Copy everything from `dac-portal` toolchain.nix "frontend"
-      packages = [ ];
+      packages = [
+        pkgsPinned.nodejs
+        pkgsPinned.pnpm
+      ];
     }
   ];
 }
