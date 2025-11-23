@@ -1,11 +1,18 @@
 <script lang="ts">
+    import { createBubbler, preventDefault } from 'svelte/legacy';
+
+    const bubble = createBubbler();
     import type { SignedUrl } from "$lib/interfaces/backend.interface";
 
-    export let downloadUrls: SignedUrl[] = [];
+    interface Props {
+        downloadUrls?: SignedUrl[];
+    }
 
-    let selectedFileUrl = downloadUrls[0]?.url;
+    let { downloadUrls = [] }: Props = $props();
 
-    $: signedUrl = selectedFileUrl || null;
+    let selectedFileUrl = $state(downloadUrls[0]?.url);
+
+    let signedUrl = $derived(selectedFileUrl || null);
 
     function handleDownload() {
         if (signedUrl) {
@@ -29,7 +36,7 @@
 <div class="download">
     <!-- <span>Select and Download a File</span> -->
 
-    <form class="toolbar-form" on:submit|preventDefault>
+    <form class="toolbar-form" onsubmit={preventDefault(bubble('submit'))}>
         <!-- Dropdown for file selection -->
         <select class="toolbar-select" bind:value={selectedFileUrl}>
             <option value="" disabled>Select a file</option>
@@ -42,7 +49,7 @@
     <button
         class="secondary-button"
         type="button"
-        on:click={handleDownload}
+        onclick={handleDownload}
         disabled={!signedUrl}
     >
         Download

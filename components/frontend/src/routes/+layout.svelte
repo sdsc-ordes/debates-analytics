@@ -1,8 +1,13 @@
-<script>
+<script lang="ts">
 	import Header from "./Header.svelte";
 	import "../app.css";
 	import 'bootstrap-icons/font/bootstrap-icons.css';
 	import 'bootstrap/dist/css/bootstrap.min.css';
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
+
+	let { children }: Props = $props();
 </script>
 
 <div class="app">
@@ -11,7 +16,7 @@
 	<Header />
 
 	<main>
-		<slot />
+		{@render children?.()}
 	</main>
 
 	<footer>

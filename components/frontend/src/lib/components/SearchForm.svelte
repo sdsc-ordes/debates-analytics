@@ -1,8 +1,14 @@
 <script lang="ts">
+    import { preventDefault } from 'svelte/legacy';
+
     import { createEventDispatcher } from "svelte";
     import type { SolrQuery } from "$lib/interfaces/search.interface";
 
-    export let solrQuery: SolrQuery;
+    interface Props {
+        solrQuery: SolrQuery;
+    }
+
+    let { solrQuery = $bindable() }: Props = $props();
 
     const dispatch = createEventDispatcher();
 
@@ -17,14 +23,14 @@
 </script>
 
 <div>
-    <form on:submit|preventDefault={submitForm} class="search-form">
+    <form onsubmit={preventDefault(submitForm)} class="search-form">
         <input
             class="search-input"
             type="text"
             bind:value={solrQuery.queryTerm}
             placeholder="Enter search term"
         />
-        <button class="option-button" type="button" on:click={resetForm}>
+        <button class="option-button" type="button" onclick={resetForm}>
             <i class="fa fa-xmark"></i>
         </button>
         <button class="button-primary" type="submit">

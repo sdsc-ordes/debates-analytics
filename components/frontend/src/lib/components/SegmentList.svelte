@@ -10,10 +10,19 @@
   import { jumpToTime } from "$lib/utils/mediaStartUtils";
   import { displaySpeaker } from "$lib/utils/displayUtils";
 
-  export let segments: Segment[] = [];
-  export let speakers: Speaker[] = [];
-  export let timeUpdateParameters: TimeUpdateParameters;
-  export let mediaElement: HTMLVideoElement;
+  interface Props {
+    segments?: Segment[];
+    speakers?: Speaker[];
+    timeUpdateParameters: TimeUpdateParameters;
+    mediaElement: HTMLVideoElement;
+  }
+
+  let {
+    segments = [],
+    speakers = [],
+    timeUpdateParameters,
+    mediaElement
+  }: Props = $props();
 </script>
 
 <div class="scrollable-container">
@@ -25,10 +34,10 @@
           timeUpdateParameters.displaySegmentNr
             ? 'current'
             : 'other'}"
-          on:click={() => jumpToTime(mediaElement, segment.start)}
+          onclick={() => jumpToTime(mediaElement, segment.start)}
           role="button"
           tabindex="0"
-          on:keydown={(e) =>
+          onkeydown={(e) =>
             (e.key === "Enter" || e.key === " ") &&
             jumpToTime(mediaElement, segment.start)}
           id='segment-{ segment.segment_nr }'
