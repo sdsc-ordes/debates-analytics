@@ -2,15 +2,15 @@ import { json } from '@sveltejs/kit';
 import { BackendUrl } from "$lib/config"
 
 export async function POST({ request, fetch }) {
-    const { s3Key, jobId, title } = await request.json();
-    console.log(`Sending processing request for S3 key: ${s3Key}, job ID: ${jobId}`);
+    const { s3Key, mediaId, title } = await request.json();
+    console.log(`Sending processing request for S3 key: ${s3Key}, media ID: ${mediaId}`);
 
     const response = await fetch(`${BackendUrl}/process`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             s3_key: s3Key,
-            media_id: jobId,
+            media_id: mediaId,
             title: title,
         })
     });

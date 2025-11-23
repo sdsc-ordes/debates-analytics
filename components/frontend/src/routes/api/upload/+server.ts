@@ -33,7 +33,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
     const credentials = await backendResponse.json();
 
-    logger.info({ media_id: credentials.jobId }, "Successfully fetched S3 POST credentials.");
+    logger.info({ media_id: credentials.mediaId }, "Successfully fetched S3 POST credentials.");
 
     return json(credentials);
 

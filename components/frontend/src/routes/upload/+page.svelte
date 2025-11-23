@@ -7,6 +7,7 @@
   let progress = $state(0);
   let errorMessage = $state<string | null>(null);
   let file = $derived(files?.[0]);
+  let assignedMediaId = $derived<string | null>(null);
   function uploadToS3(url: string, fields: Record<string, string>, file: File): Promise<void> {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -43,14 +44,15 @@
         throw new Error(err.detail || 'Failed to get upload permissions');
       }
       const response = await presignRes.json();
-      const { postUrl, fields, jobId, s3Key } = response;
+      const { postUrl, fields, mediaId, s3Key } = response;
+      assignedMediaId = mediaId;
       status = 'uploading';
       await uploadToS3(postUrl, fields, file);
       status = 'processing';
       await fetch('/api/process', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobId, s3Key, title: file.name })
+          body: JSON.stringify({ mediaId, s3Key, title: file.name })
       });
       status = 'success';
       files = undefined;
@@ -126,7 +128,7 @@
           {#if status === 'success'}
             <div class="status-row success">
               <CircleCheck class="icon-small" />
-              <span>Upload Complete! Job started.</span>
+              <span>Upload Complete! Job started. Media ID: {assignedMediaId}</span>
             </div>
           {/if}
 
