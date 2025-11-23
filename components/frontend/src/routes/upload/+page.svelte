@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation';
   import { CloudUpload, CircleCheck, CircleAlert, Loader } from 'lucide-svelte';
-  // --- LOGIC REMAINS EXACTLY THE SAME ---
+
   let files = $state<FileList>();
   let status = $state<'idle' | 'preparing' | 'uploading' | 'processing' | 'success' | 'error'>('idle');
   let progress = $state(0);
@@ -80,7 +80,7 @@
         <input
           bind:files
           type="file"
-          accept="video/*,audio/*"
+          accept="video/mp4"
           disabled={status === 'uploading' || status === 'processing' || status === 'success'}
         />
 
@@ -142,14 +142,14 @@
         </div>
       {/if}
 
-      {#if status === 'idle' || status === 'error'}
+      {#if file && (status === 'idle' || status === 'error')}
         <button
           class="button-primary full-width"
           disabled={!file}
           onclick={handleUpload}
           type="button"
         >
-          {#if !file} Select File First {:else} Start Upload {/if}
+          Upload
         </button>
       {/if}
 
