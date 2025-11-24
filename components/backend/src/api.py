@@ -366,9 +366,7 @@ async def start_processing(request: ProcessRequest):
         {"$set": update_fields},
         MONGO_DEBATES_COLLECTION,
     )
-
-    if result.matched_count == 0:
-        logger.warning(f"Received process request for unknown media_id: {request.media_id}")
+    logger.info(f"MongoDB update result: {result}")
 
     return {
         "status": "queued",
