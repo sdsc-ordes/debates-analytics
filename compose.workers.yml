@@ -1,21 +1,24 @@
 services:
+
   workers:
-    build: ./components/workers
-    # CRITICAL: This command starts the listener
-    command: rq worker --url redis://redis:6379
-    depends_on:
-      redis:
-        condition: service_healthy
-    environment:
-      - S3_SERVER=http://minio-instance:9000
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-      - REDIS_URL=redis://redis:6379
-      - HF_TOKEN=${HF_TOKEN}
-      - HF_SPACE_URL=${HF_SPACE_URL}
-      - HF_MODEL=${HF_MODEL}
-      # Make sure Python can find your modules
-      - PYTHONPATH=/app
-    networks:
-      - debates_network
+      build: ./components/workers
+      # CRITICAL: This command starts the listener
+      command: rq worker --url redis://redis:6379
+      depends_on:
+        redis:
+          condition: service_healthy
+      environment:
+        - S3_SERVER=http://minio-instance:9000
+        - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+        - S3_SECRET_KEY=${S3_SECRET_KEY}
+        - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+        - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
+        - MONGO_DB=debates
+        - REDIS_URL=redis://redis:6379
+        - HF_TOKEN=${HF_TOKEN}
+        - HF_SPACE_URL=${HF_SPACE_URL}
+        - HF_MODEL=${HF_MODEL}
+        # Make sure Python can find your modules
+        - PYTHONPATH=/app
+      networks:
+        - debates_network

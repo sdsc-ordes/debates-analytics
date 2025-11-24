@@ -77,7 +77,8 @@ def process_video(s3_key, media_id):
         q.enqueue(
             'transcriber.process_transcription',
             media_id=media_id,
-            s3_key=s3_wav_key
+            s3_key=s3_wav_key,
+            job_timeout=-1
         )
 
         # 6. Cleanup
