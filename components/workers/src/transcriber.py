@@ -3,7 +3,6 @@ import boto3
 import logging
 import shutil # For safer file cleanup
 from pymongo import MongoClient # You need to update the DB!
-from bson.objectid import ObjectId
 from gradio_client import Client, handle_file
 from rq import get_current_job
 
