@@ -55,7 +55,7 @@ def process_transcription(s3_key, media_id):
             def upload_artifact(file_path, s3_suffix):
                 if file_path and os.path.exists(file_path):
                     key = f"{s3_base_path}/{s3_suffix}"
-                    s3_client.upload_file(file_path, key)
+                    s3.upload_file(file_path, key)
                     uploaded_files[s3_suffix] = key
 
             # Upload Transcription Set
