@@ -12,12 +12,13 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME}
       - MONGO_URI=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
-      - MONGO_DB=debates
+      - MONGO_DB_NAME=${MONGO_DB_NAME}
+      - MONGO_MEDIA_COLLECTION=${MONGO_MEDIA_COLLECTION}
       - REDIS_URL=redis://redis:6379
       - HF_TOKEN=${HF_TOKEN}
       - HF_SPACE_URL=${HF_SPACE_URL}
       - HF_MODEL=${HF_MODEL}
       # Make sure Python can find your modules
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app/src
     networks:
       - debates_network

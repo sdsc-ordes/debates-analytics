@@ -8,8 +8,10 @@ services:
     environment:
       SOLR_URL: ${SOLR_URL}
       MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
-      MONGO_DB: debates
+      MONGO_DB_NAME: ${MONGO_DB_NAME}
+      MONGO_MEDIA_COLLECTION: ${MONGO_MEDIA_COLLECTION}
       S3_SERVER: ${S3_SERVER}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
       S3_FRONTEND_BASE_URL: ${S3_FRONTEND_BASE_URL}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}

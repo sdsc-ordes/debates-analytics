@@ -26,7 +26,7 @@ from lib.mongodb import (
     mongo_update_document,
     mongo_clean_document,
     mongo_insert_one_document,
-    MONGO_DEBATES_COLLECTION,
+    MONGO_MEDIA_COLLECTION,
     MONGO_SPEAKERS_COLLECTION,
     MONGO_SEGMENTS_COLLECTION,
     MONGO_SUBTITLE_COLLECTION,
@@ -124,7 +124,7 @@ class MongoMetadataResponse(BaseModel):
 async def mongo_metadata(request: MongoMetadataRequest):
     logging.info(f"request: {request}")
     debate = mongo_find_one_document(
-        {"media_id": request.media_id}, MONGO_DEBATES_COLLECTION
+        {"media_id": request.media_id}, MONGO_MEDIA_COLLECTION
     )
     logging.info(f"debate found for {request.media_id}: {debate}")
 
@@ -212,7 +212,7 @@ async def update_speakers(request: UpdateSpeakersRequest):
     logging.info(f"request: {request}")
     try:
         debate = mongo_find_one_document(
-            { "media_id": request.media_id }, MONGO_DEBATES_COLLECTION
+            { "media_id": request.media_id }, MONGO_MEDIA_COLLECTION
         )
         debate_id = debate["_id"]
         speakers_as_dicts = [speaker.dict() for speaker in request.speakers]
@@ -246,7 +246,7 @@ async def update_subtitles(request: UpdateSubtitlesRequest):
         print("in update subtitles")
         print(request)
         debate = mongo_find_one_document(
-            { "media_id": request.media_id }, MONGO_DEBATES_COLLECTION
+            { "media_id": request.media_id }, MONGO_MEDIA_COLLECTION
         )
         debate_id = debate["_id"]
         subtitles_as_dicts = [subtitle.dict() for subtitle in request.subtitles]
@@ -320,7 +320,7 @@ async def get_presigned_post(request_data: S3PostRequest):
 
     # Insert into MongoDB
     try:
-        mongo_insert_one_document(initial_doc, MONGO_DEBATES_COLLECTION)
+        mongo_insert_one_document(initial_doc, MONGO_MEDIA_COLLECTION)
     except Exception as e:
         logger.error(f"Database insertion failed: {e}")
         raise HTTPException(status_code=500, detail="Database error")
@@ -364,7 +364,7 @@ async def start_processing(request: ProcessRequest):
     result = mongo_update_document(
         {"_id": request.media_id},
         {"$set": update_fields},
-        MONGO_DEBATES_COLLECTION,
+        MONGO_MEDIA_COLLECTION,
     )
     logger.info(f"MongoDB update result: {result}")
 
