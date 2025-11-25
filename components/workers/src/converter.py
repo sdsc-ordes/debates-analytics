@@ -1,99 +1,84 @@
 import os
-import subprocess
-import boto3
 import logging
-from rq import get_current_job, Queue
-from redis import Redis
+from rq import get_current_job
 
-# --- Configuration ---
-logging.basicConfig(level=logging.INFO)
+# Import shared libraries
+from lib.s3 import get_s3_manager
+from lib.queue import get_queue_manager
+from lib.filesystem import temp_workspace
+from lib.media import convert_to_wav
+from lib.mongo import get_mongo_manager
+
 logger = logging.getLogger(__name__)
-
-TEMP_DIR = "/tmp/processing"
-os.makedirs(TEMP_DIR, exist_ok=True)
-redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
-redis_conn = Redis.from_url(redis_url)
-q = Queue(connection=redis_conn)
-
-# S3 Client
-s3_client = boto3.client(
-    's3',
-    endpoint_url=os.getenv("S3_SERVER"),
-    aws_access_key_id=os.getenv("S3_ACCESS_KEY"),
-    aws_secret_access_key=os.getenv("S3_SECRET_KEY")
-)
-BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
 def process_video(s3_key, media_id):
     """
-    1. Downloads MP4 from S3 (based on media_id)
+    1. Downloads video from S3
     2. Converts to WAV
     3. Uploads WAV to S3
-    4. Enqueues the Transcriber job
+    4. Updates MongoDB
+    5. Enqueues Transcription Job
     """
+    # Setup Dependencies
+    s3 = get_s3_manager()
+    queue = get_queue_manager()
+    db = get_mongo_manager()
     job = get_current_job()
 
-    # 1. Update Status
-    logger.info(f"Job {media_id}: Starting processing for {s3_key}")
+    logger.info(f"Job {media_id}: Starting processing")
+
+    # Update Job Status (Redis)
     job.meta['progress'] = 'downloading'
     job.save_meta()
 
-    # Paths
-    filename = os.path.basename(media_id)
-    local_video_path = os.path.join(TEMP_DIR, filename)
-    local_wav_path = os.path.join(TEMP_DIR, f"{filename}.wav")
-    s3_wav_key = f"{media_id}/audio.wav"
+    # Update DB Status
+    db.update_status(media_id, "converting_started")
 
     try:
-        # 2. Download
-        logger.info(f"Job {media_id}: Downloading...")
-        s3_client.download_file(BUCKET_NAME, s3_key, local_video_path)
+        # Context Manager handles filesystem cleanup automatically
+        with temp_workspace() as work_dir:
 
-        # 3. Convert (FFmpeg)
-        logger.info(f"Job {media_id}: Converting to WAV...")
-        job.meta['progress'] = 'converting'
-        job.save_meta()
-        # -ar 16000 (16kHz) and -ac 1 (Mono) are standard for Whisper/Speech-to-text
-        subprocess.run(
-            [
-                "ffmpeg", "-i", local_video_path,
-                "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
-                "-y", local_wav_path
-            ],
-            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
+            # Define Paths
+            local_video = os.path.join(work_dir, "source.mp4")
+            local_wav = os.path.join(work_dir, "audio.wav")
+            s3_wav_key = f"{media_id}/audio.wav"
 
-        # 4. Upload
-        logger.info(f"Job {media_id}: Uploading WAV...")
-        job.meta['progress'] = 'uploading'
-        job.save_meta()
+            # Download
+            s3.download_file(s3_key, local_video)
 
-        s3_client.upload_file(local_wav_path, BUCKET_NAME, s3_wav_key)
+            # Convert
+            job.meta['progress'] = 'converting'
+            job.save_meta()
+            db.update_status(media_id, "converting_processing")
 
-        # 5. Enqueue Transcriber (The Next Step)
-        logger.info(f"Job {media_id}: Enqueuing transcription job...")
+            convert_to_wav(local_video, local_wav)
 
-        # We pass media_id AND the specific wav_key we just created
-        q.enqueue(
-            'transcriber.process_transcription',
-            media_id=media_id,
-            s3_key=s3_wav_key,
-            job_timeout=-1
-        )
+            # 4. Upload to S3
+            job.meta['progress'] = 'uploading'
+            job.save_meta()
 
-        # 6. Cleanup
-        if os.path.exists(local_video_path):
-            os.remove(local_video_path)
-        if os.path.exists(local_wav_path):
-            os.remove(local_wav_path)
+            s3.upload_file(local_wav, s3_wav_key)
 
-        return {"status": "completed", "wav_key": s3_wav_key}
+            db.update_status(
+                media_id,
+                status="converting_completed",
+                metadata={"audio_s3_key": s3_wav_key}
+            )
+
+            logger.info(f"Job {media_id}: Enqueuing transcription...")
+            queue.enqueue(
+                'transcriber.process_transcription',
+                media_id=media_id,
+                s3_key=s3_wav_key,
+                job_timeout=-1
+            )
+
+            return {"status": "completed", "wav_key": s3_wav_key}
 
     except Exception as e:
         logger.error(f"Job {media_id} Failed: {e}")
-        # Attempt cleanup even on fail
-        if os.path.exists(local_video_path):
-            os.remove(local_video_path)
-        if os.path.exists(local_wav_path):
-            os.remove(local_wav_path)
+
+        db.mark_failed(media_id, str(e))
+
+        # re-raise the exception so RQ marks the job as 'Failed' in Redis
         raise e
