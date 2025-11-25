@@ -1,8 +1,7 @@
 import boto3
 import os
 import logging
-from botocore.exceptions import NoCredentialsError, ClientError
-from typing import List, Dict, Union, Any, Optional
+from botocore.exceptions import ClientError
 from functools import lru_cache
 
 # Setup Logging

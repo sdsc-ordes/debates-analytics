@@ -1,8 +1,5 @@
 import os
-import json
 import logging
-from datetime import datetime
-from gradio_client import Client
 from rq import get_current_job
 
 from common.s3 import get_s3_manager
