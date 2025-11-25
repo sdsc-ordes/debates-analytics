@@ -13,10 +13,10 @@ S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
 S3_SERVER = os.getenv("S3_SERVER")
 S3_FRONTEND_BASE_URL = os.getenv("S3_FRONTEND_BASE_URL")
 
-S3_BUCKET_NAME="debates"
-SUFFIX_SRT_ORIG="transcription_original.srt"
-SUFFIX_SRT_EN="translation_original_english.srt"
-SUFFIX_METADATA="metadata.yml"
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+SUFFIX_SRT_ORIG ="transcription_original.srt"
+SUFFIX_SRT_EN ="translation_original_english.srt"
+SUFFIX_METADATA ="metadata.yml"
 
 MARKER_FILENAME=os.getenv("MARKER_FILENAME")
 
@@ -75,9 +75,7 @@ class s3Manager:
              )
 
         if 'Contents' in response:
-            # Filter out the 'directory' entry if it exists (which has a size of 0)
             for obj in response['Contents']:
-                # Optional: You can add further checks here if needed, like obj['Size'] > 0
                 keys.append(obj['Key'])
 
         logging.info(f"Found {len(keys)} objects with prefix '{prefix}' in bucket '{self.bucket_name}': {keys}")
@@ -97,7 +95,6 @@ class s3Manager:
         for page in pages:
             if 'CommonPrefixes' in page:
                 for prefix_data in page['CommonPrefixes']:
-                    # CommonPrefixes contains dictionaries like {'Prefix': 'media_id_1/'}
                     media_ids.append(prefix_data['Prefix'])
 
         logging.info(f"Found {len(media_ids)} top-level prefixes (media_ids) in bucket '{self.bucket_name}'.")
@@ -130,10 +127,9 @@ class s3Manager:
                 ExpiresIn=expiration
             )
 
-            # CRITICAL ADJUSTMENT: Apply the same hostname substitution logic as get_presigned_url
             if S3_FRONTEND_BASE_URL and S3_SERVER:
                 # The 'url' field contains the internal Docker hostname (S3_SERVER)
-                # We replace it with the public hostname (S3_FRONTEND_BASE_URL)
+                # Replace it with the public hostname (S3_FRONTEND_BASE_URL)
                 response["url"] = response["url"].replace(S3_SERVER, S3_FRONTEND_BASE_URL)
 
             logging.info(f"Returning external POST URL: {response['url']}")
@@ -146,27 +142,3 @@ class s3Manager:
         except Exception as e:
             logging.error(f"Error generating presigned POST: {e}")
             return None
-
-    def create_marker_file(self, media_id: str) -> bool:
-        """
-        Creates an empty marker file to signal a complete upload for the watcher service.
-        Key: {media_id}/media/job_registered.txt
-        """
-        try:
-            marker_key = f"{media_id}/media/{MARKER_FILENAME}"
-            logging.info(f"Creating marker file at: {marker_key}")
-
-            # Put a minimal (empty) object to act as the marker
-            self.s3.put_object(
-                Bucket=self.bucket_name,
-                Key=marker_key,
-                Body=b'', # Empty body is fine for a marker
-                ContentType='text/plain',
-            )
-            return True
-        except NoCredentialsError:
-            logging.error("Credentials not available to create marker.")
-            return False
-        except Exception as e:
-            logging.error(f"Error creating marker file for job {media_id}: {e}")
-            return False
