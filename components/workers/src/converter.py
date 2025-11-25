@@ -2,12 +2,11 @@ import os
 import logging
 from rq import get_current_job
 
-# Import shared libraries
-from lib.s3 import get_s3_manager
-from lib.queue import get_queue_manager
-from lib.filesystem import temp_workspace
-from lib.media import convert_to_wav
-from lib.mongo import get_mongo_manager
+from common.s3 import get_s3_manager
+from common.queue import get_queue_manager
+from common.filesystem import temp_workspace
+from tasks.convert import convert_to_wav
+from common.mongo import get_mongo_manager
 
 logger = logging.getLogger(__name__)
 

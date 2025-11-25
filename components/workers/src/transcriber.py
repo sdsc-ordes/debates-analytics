@@ -5,11 +5,10 @@ from datetime import datetime
 from gradio_client import Client
 from rq import get_current_job
 
-# --- Import Shared Libraries ---
-from lib.s3 import get_s3_manager
-from lib.filesystem import temp_workspace
-from lib.mongo import get_mongo_manager
-from lib.hf import WhisperService
+from common.s3 import get_s3_manager
+from common.filesystem import temp_workspace
+from common.mongo import get_mongo_manager
+from tasks.transcribe import WhisperService
 
 logger = logging.getLogger(__name__)
 
