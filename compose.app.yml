@@ -5,17 +5,27 @@ services:
       dockerfile: Dockerfile
     networks:
       - debates_network
+    container_name: backend
+    labels:
+      - "dev.dozzle.name=Backend"
+      - "dev.dozzle.group=App"
     environment:
       SOLR_URL: ${SOLR_URL}
       MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
       MONGO_DB_NAME: ${MONGO_DB_NAME}
       MONGO_MEDIA_COLLECTION: ${MONGO_MEDIA_COLLECTION}
+      MONGO_SPEAKER_COLLECTION: ${MONGO_SPEAKER_COLLECTION}
+      MONGO_SUBTITLE_COLLECTION: ${MONGO_SUBTITLE_COLLECTION}
+      MONGO_SEGMENT_COLLECTION: ${MONGO_SEGMENT_COLLECTION}
       S3_SERVER: ${S3_SERVER}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME}
       S3_FRONTEND_BASE_URL: ${S3_FRONTEND_BASE_URL}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
       REDIS_URL: ${REDIS_URL}
+      TASK_CONVERT: ${TASK_CONVERT}
+      TASK_TRANSCRIBE: ${TASK_TASK_TRANSCRIBE}
+      TASK_UPLOAD: ${TASK_UPLOAD}
     ports:
       - 8082:8000
     depends_on:
@@ -29,6 +39,10 @@ services:
   frontend:
     build:
       context: ./components/frontend
+    container_name: frontend
+    labels:
+      - "dev.dozzle.name=Frontend"
+      - "dev.dozzle.group=App"
     ports:
       - 3000:3000
     depends_on:

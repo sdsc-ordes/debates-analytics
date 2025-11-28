@@ -44,7 +44,6 @@ class MongoManager:
         if job_id:
             update_fields["current_job_id"] = job_id
 
-        # If there is extra metadata (like file paths), merge it in
         if metadata:
             for key, value in metadata.items():
                 update_fields[key] = value

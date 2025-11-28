@@ -1,35 +1,36 @@
 import boto3
-import os
-import logging
-from botocore.exceptions import NoCredentialsError, DataNotFoundError
-from typing import List, Dict, Union, Any
-
 from dotenv import load_dotenv
+import logging
+from functools import lru_cache
+from common.config import get_settings
+from typing import List, Union, Dict, Any
+from botocore.exceptions import NoCredentialsError, DataNotFoundError
+
+# Setup Logging
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
-S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
-S3_SERVER = os.getenv("S3_SERVER")
-S3_FRONTEND_BASE_URL = os.getenv("S3_FRONTEND_BASE_URL")
 
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-SUFFIX_SRT_ORIG ="transcription_original.srt"
-SUFFIX_SRT_EN ="translation_original_english.srt"
-SUFFIX_METADATA ="metadata.yml"
+class S3Manager:
+    def __init__(self):
+        settings = get_settings()
 
-MARKER_FILENAME=os.getenv("MARKER_FILENAME")
+        self.access_key = settings.s3_access_key
+        self.secret_key = settings.s3_secret_key
+        self.server_url = settings.s3_server
+        self.bucket_name = settings.s3_bucket_name
+        self.s3_frontend_base_url = settings.s3_frontend_base_url
 
+        if not all([self.access_key, self.secret_key, self.server_url]):
+            logger.error("Missing S3 environment variables!")
 
-class s3Manager:
-    def __init__(self, prod=False):
         self.s3 = boto3.client(
             's3',
-            endpoint_url=S3_SERVER,
-            aws_access_key_id=S3_ACCESS_KEY,
-            aws_secret_access_key=S3_SECRET_KEY,
+            endpoint_url=self.server_url,
+            aws_access_key_id=self.access_key,
+            aws_secret_access_key=self.secret_key,
         )
-        self.bucket_name = S3_BUCKET_NAME
 
     def get_presigned_url(self, object_key, expiration=3600):
         """
@@ -46,7 +47,7 @@ class s3Manager:
                 },
                 ExpiresIn=expiration,
             )
-            frontend_url = response.replace(S3_SERVER, S3_FRONTEND_BASE_URL)
+            frontend_url = response.replace(self.server_url, self.s3_frontend_base_url)
             return frontend_url
         except DataNotFoundError:
             print(f"s3 key not found: {object_key}")
@@ -127,10 +128,7 @@ class s3Manager:
                 ExpiresIn=expiration
             )
 
-            if S3_FRONTEND_BASE_URL and S3_SERVER:
-                # The 'url' field contains the internal Docker hostname (S3_SERVER)
-                # Replace it with the public hostname (S3_FRONTEND_BASE_URL)
-                response["url"] = response["url"].replace(S3_SERVER, S3_FRONTEND_BASE_URL)
+            response["url"] = response["url"].replace(self.server_url, self.s3_frontend_base_url)
 
             logging.info(f"Returning external POST URL: {response['url']}")
 
@@ -142,3 +140,12 @@ class s3Manager:
         except Exception as e:
             logging.error(f"Error generating presigned POST: {e}")
             return None
+
+
+@lru_cache()
+def get_s3_manager() -> S3Manager:
+    """
+    Creates the manager once and caches it in memory.
+    Acting like a Singleton, but that can be overridden in tests.
+    """
+    return S3Manager()
