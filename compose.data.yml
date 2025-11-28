@@ -6,6 +6,10 @@ services:
     image: minio/minio
     volumes:
       - ${MINIO_PATH}:/data
+    container_name: s3
+    labels:
+      - "dev.dozzle.name=S3"
+      - "dev.dozzle.group=Services"
     ports:
       - 9000:9000
       - 9001:9001
@@ -27,6 +31,10 @@ services:
     depends_on:
       minio-instance:
         condition: service_healthy
+    container_name: s3-setup
+    labels:
+      - "dev.dozzle.name=S3 Setup"
+      - "dev.dozzle.group=Setup"
     networks:
       - debates_network
     environment:
@@ -51,6 +59,10 @@ services:
       - 8983:8983
     networks:
       - debates_network
+    container_name: solr
+    labels:
+      - "dev.dozzle.name=Solr"
+      - "dev.dozzle.group=Services"
     healthcheck:
       test: curl --max-time 10 -f http://localhost:8983 || exit 1
       start_period: 60s
@@ -72,6 +84,10 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
       MONGO_INITDB_DATABASE: debates
+    container_name: mongo-db
+    labels:
+      - "dev.dozzle.name=Mongo DB"
+      - "dev.dozzle.group=Services"
     networks:
       - debates_network
     volumes:
@@ -92,6 +108,10 @@ services:
     image: mongo-express:1.0.2-18
     ports:
       - 127.0.0.1:8081:8081
+    container_name: mongo-express
+    labels:
+      - "dev.dozzle.name=Mongo Express"
+      - "dev.dozzle.group=Services"
     environment:
       ME_CONFIG_OPTIONS_EDITORTHEME: "ambiance"
       ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER}
@@ -109,6 +129,10 @@ services:
       - "6379:6379"
     networks:
       - debates_network
+    container_name: redis
+    labels:
+      - "dev.dozzle.name=Redis"
+      - "dev.dozzle.group=Services"
     volumes:
       - ${REDIS_PATH}:/data
     healthcheck:

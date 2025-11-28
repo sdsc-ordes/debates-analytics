@@ -3,6 +3,10 @@ services:
     build: ./components/workers
     # CRITICAL: This command starts the listener
     command: rq worker --url redis://redis:6379
+    container_name: workers
+    labels:
+      - "dev.dozzle.name=Workers"
+      - "dev.dozzle.group=Ingestion"
     depends_on:
       redis:
         condition: service_healthy
