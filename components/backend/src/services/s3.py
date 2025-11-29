@@ -160,6 +160,28 @@ class S3Manager:
             logger.error(f"Failed to upload {s3_key}: {e}")
             raise e
 
+    def delete_media_folder(self, media_id: str):
+        """
+        Deletes the entire folder for a media_id (video + transcripts).
+        """
+        prefix = f"{media_id}/"
+        try:
+            # List all objects in the folder
+            response = self.s3_client.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix)
+
+            if 'Contents' in response:
+                objects_to_delete = [{'Key': obj['Key']} for obj in response['Contents']]
+
+                # Delete in batch
+                self.s3_client.delete_objects(
+                    Bucket=self.bucket_name,
+                    Delete={'Objects': objects_to_delete}
+                )
+                logger.info(f"Deleted {len(objects_to_delete)} objects from S3 for {media_id}")
+        except Exception as e:
+            logger.error(f"Failed to delete S3 folder {media_id}: {e}")
+            # Don't raise, we want to continue deleting other resources
+
 
 @lru_cache()
 def get_s3_manager() -> S3Manager:
