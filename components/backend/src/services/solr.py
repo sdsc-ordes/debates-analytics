@@ -4,7 +4,7 @@ from functools import lru_cache
 from pysolr import Solr
 from config.settings import get_settings
 
-from models import SolrRequest
+from models.solr import SolrRequest
 
 logger = logging.getLogger(__name__)
 

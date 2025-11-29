@@ -4,7 +4,9 @@ import logging
 from functools import lru_cache
 from config.settings import get_settings
 from typing import List, Union, Dict, Any
-from botocore.exceptions import NoCredentialsError, DataNotFoundError
+from botocore.exceptions import (
+    NoCredentialsError, DataNotFoundError, ClientError
+)
 
 # Setup Logging
 logger = logging.getLogger(__name__)

@@ -3,10 +3,10 @@ from fastapi import APIRouter, HTTPException, Depends
 from services.mongo import get_mongo_manager, MongoManager
 from services.s3 import get_s3_manager, S3Manager
 from services.solr import get_solr_manager, SolrManager
-from models import (
-    S3MediaUrlRequest, S3MediaUrlResponse,
+from models.media import S3MediaUrlRequest, S3MediaUrlResponse
+from models.metadata import (
     MongoMetadataRequest, MongoMetadataResponse,
-    UpdateSpeakersRequest, UpdateSubtitlesRequest
+    UpdateSpeakersRequest, UpdateSubtitlesRequest,
 )
 
 logger = logging.getLogger(__name__)

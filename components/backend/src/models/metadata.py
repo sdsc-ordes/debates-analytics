@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime
 from .base import Speaker, Subtitle, EnumSubtitleType
 from .documents import DebateDocument, SpeakersDocument, SegmentsDocument, SubtitlesDocument
 
@@ -24,15 +23,3 @@ class MongoMetadataResponse(BaseModel):
     segments: Optional[SegmentsDocument] = None
     subtitles: Optional[SubtitlesDocument] = None
     subtitles_en: Optional[SubtitlesDocument] = None
-
-# 1. The Dashboard List Item (Lightweight)
-class MediaListItem(BaseModel):
-    media_id: str
-    filename: str
-    status: str
-    created_at: datetime
-    title: Optional[str] = None
-
-class MediaListResponse(BaseModel):
-    items: List[MediaListItem]
-    total: int
