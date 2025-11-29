@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import List
 from enum import Enum
 
 class EnumSubtitleType(str, Enum):

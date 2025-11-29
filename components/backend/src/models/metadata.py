@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from typing import List, Optional
 from datetime import datetime
 from .base import Speaker, Subtitle, EnumSubtitleType
 from .documents import DebateDocument, SpeakersDocument, SegmentsDocument, SubtitlesDocument
@@ -36,18 +36,3 @@ class MediaListItem(BaseModel):
 class MediaListResponse(BaseModel):
     items: List[MediaListItem]
     total: int
-
-# 2. The Detailed Progress Response
-class ProcessingStatusResponse(BaseModel):
-    media_id: str
-    status: str             # From MongoDB (e.g., 'transcribing')
-    job_id: Optional[str]   # The Redis Job ID
-
-    # Real-time info from Redis
-    job_state: Optional[str] # queued, started, failed, finished
-    progress: Optional[str]  # 'downloading', 'transcribing', 'uploading'
-    error: Optional[str]     # If failed, why?
-
-    # Timestamps
-    created_at: datetime
-    updated_at: datetime

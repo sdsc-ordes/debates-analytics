@@ -1,5 +1,4 @@
 import logging
-from typing import Optional, Dict
 
 # TYPE CHECKING imports only run for your IDE/Linter, not at runtime.
 # This prevents circular import errors while giving you full autocomplete.

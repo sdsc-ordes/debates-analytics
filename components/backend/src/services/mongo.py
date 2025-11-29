@@ -192,31 +192,6 @@ class MongoManager:
             }}
         )
 
-    def get_all_media(self):
-        """Returns all media documents sorted by date"""
-        cursor = self.media_collection.find().sort("created_at", -1)
-        return list(cursor)
-
-    def delete_everything(self, media_id: str):
-        """
-        Deletes media doc AND all related speakers/subtitles/segments.
-        """
-        # 1. Get the internal ObjectId to find relations
-        doc = self.media_collection.find_one({"media_id": media_id})
-        if not doc:
-            return False
-
-        internal_id = doc["_id"]
-
-        # 2. Delete Related Data first
-        self.speakers_collection.delete_many({"debate_id": internal_id})
-        self.subtitles_collection.delete_many({"debate_id": internal_id})
-        self.segments_collection.delete_many({"debate_id": internal_id})
-
-        # 3. Delete the Media Doc
-        self.media_collection.delete_one({"media_id": media_id})
-        return True
-
 
 @lru_cache()
 def get_mongo_manager() -> MongoManager:
