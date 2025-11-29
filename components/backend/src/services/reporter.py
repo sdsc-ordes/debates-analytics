@@ -1,7 +1,4 @@
 import logging
-
-# TYPE CHECKING imports only run for your IDE/Linter, not at runtime.
-# This prevents circular import errors while giving you full autocomplete.
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from rq.job import Job

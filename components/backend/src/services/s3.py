@@ -67,7 +67,6 @@ class S3Manager:
             A list of full object keys (paths).
         """
         keys = []
-        # Use list_objects_v2 directly without the paginator
         response = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix)
 
         if response.get('IsTruncated'):

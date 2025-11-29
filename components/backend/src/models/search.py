@@ -1,9 +1,11 @@
 from pydantic import BaseModel, Field
 from typing import List
 
+
 class FacetFilter(BaseModel):
     facetField: str = Field(..., description="Solr facet field name", examples=["statement_type"])
     facetValue: str = Field(..., description="Solr facet field value", examples=["translation"])
+
 
 class SolrRequest(BaseModel):
     queryTerm: str = Field(..., description="Solr query term can be empty", examples=["honor"])

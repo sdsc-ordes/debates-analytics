@@ -3,19 +3,15 @@ from typing import Optional, Dict, Any
 from pymongo import MongoClient, ReturnDocument
 from functools import lru_cache
 from datetime import datetime
-
-# 1. Import settings instead of os.getenv
 from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
-# 2. Define Constants
 SUBTITLE_TYPE_TRANSCRIPT = "transcript"
 SUBTITLE_TYPE_TRANSLATION = "translation"
 
 class MongoManager:
     def __init__(self):
-        # Load settings
         settings = get_settings()
 
         self.mongo_url = settings.mongo_url
@@ -25,8 +21,6 @@ class MongoManager:
             self.client = MongoClient(self.mongo_url)
             self.db = self.client[self.db_name]
 
-            # 3. Initialize ALL collections here
-            # If you don't do this, 'self.speakers_collection' will fail later
             self.media_collection = self.db[settings.mongo_media_collection]
             self.speakers_collection = self.db[settings.mongo_speaker_collection]
             self.segments_collection = self.db[settings.mongo_segment_collection]
@@ -37,7 +31,6 @@ class MongoManager:
             logger.error(f"Failed to connect to MongoDB: {e}")
             raise e
 
-    # 4. Fixed Indentation: This method is now inside the class
     def get_full_metadata(self, media_id: str) -> Optional[Dict[str, Any]]:
         """
         Aggregates data from Media, Speakers, Segments, and Subtitles collections.
@@ -47,12 +40,10 @@ class MongoManager:
         if not debate:
             return None
 
-        # Clean the debate doc
         debate_clean = self._clean_document(debate)
 
         internal_id = debate["_id"]
 
-        # Fetch Related Data
         speakers = self.speakers_collection.find_one({"debate_id": internal_id})
         segments = self.segments_collection.find_one({"debate_id": internal_id})
 
@@ -66,7 +57,6 @@ class MongoManager:
             "type": SUBTITLE_TYPE_TRANSLATION
         })
 
-        # Construct the result dictionary
         return {
             "debate": debate_clean,
             "speakers": self._clean_document(speakers),
@@ -75,7 +65,6 @@ class MongoManager:
             "subtitles_en": self._clean_document(sub_translation, keys_to_remove=["type", "language"])
         }
 
-    # 4. Fixed Indentation: This method is now inside the class
     def _clean_document(self, doc: dict, keys_to_remove: list = None) -> Optional[dict]:
         """
         Internal helper to clean MongoDB documents.
@@ -85,7 +74,6 @@ class MongoManager:
 
         cleaned = doc.copy()
 
-        # Convert ObjectId to string
         if "_id" in cleaned:
             cleaned["_id"] = str(cleaned["_id"])
 
@@ -123,13 +111,10 @@ class MongoManager:
         if not debate_id:
             return False
 
-        # Map Enum to DB Configuration
-        # (Moving this logic here keeps the Router clean)
         if subtitle_type_enum == "transcript":
-            db_type = "transcript" # The 'type' field in Mongo
-            update_field = "subtitles" # The field holding the array
+            db_type = "transcript"
+            update_field = "subtitles"
         else:
-            # Assuming 'translation'
             db_type = "translation"
             update_field = "subtitles_en"
 

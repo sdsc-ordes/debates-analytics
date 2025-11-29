@@ -19,7 +19,6 @@ class QueueManager:
         Specific method for processing videos.
         Abstraction: The caller doesn't need to know the task function path.
         """
-        # We delegate to RQ here
         job = self.q.enqueue(
             self.task_convert,
             media_id=media_id,

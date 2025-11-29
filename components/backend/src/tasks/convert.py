@@ -2,8 +2,6 @@ import subprocess
 import logging
 import os
 from rq import get_current_job
-
-# Imports
 from services.s3 import get_s3_manager
 from services.queue import get_queue_manager
 from services.filesystem import temp_workspace
@@ -54,7 +52,7 @@ def process_video(s3_key, media_id):
             logger.info(f"Job {media_id}: Enqueuing transcription...")
 
             rq.enqueue(
-                settings.task_transcribe, # Use settings!
+                settings.task_transcribe,
                 media_id=media_id,
                 s3_key=s3_wav_key,
                 job_timeout=-1
@@ -64,6 +62,7 @@ def process_video(s3_key, media_id):
 
     except Exception as e:
         reporter.mark_failed(e)
+        # Re-raise for RQ
         raise e
 
 
@@ -84,7 +83,6 @@ def convert_to_wav(input_path: str, output_path: str):
 
     logger.info(f"Running FFmpeg: {' '.join(cmd)}")
 
-    # Run silently unless it fails
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode != 0:

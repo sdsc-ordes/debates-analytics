@@ -56,6 +56,11 @@ async def start_processing(
     rq: QueueManager = Depends(get_queue_manager),
     mongo: MongoManager = Depends(get_mongo_manager),
 ):
+    """
+    [POST] Starts processing: starts redis queue with first task: converting
+    the video to audio. Updates status on Mongo DB.
+    Status -> 'preparing'
+    """
     media_id = request.media_id
     s3_key = request.s3_key
     job = None
@@ -77,7 +82,9 @@ async def start_processing(
             job_id=job_id,
         )
 
-        # Validation: If MongoDB didn't find the document, manually trigger the error flow
+        # Validation: If MongoDB didn't find the document:
+        # manually trigger the error flow,
+        # so that no job runs without monitoring
         if not result:
             raise ValueError(f"Media ID {media_id} not found in MongoDB")
 
@@ -90,9 +97,7 @@ async def start_processing(
         }
 
     except Exception as e:
-        # --- Unified Rollback Logic ---
-
-        # 3. Check if 'job' was created before the error happened
+        # roll job back in case of an exception.
         if job:
             logger.warning(f"Error occurred. Rolling back job {job.get_id()}")
             try:

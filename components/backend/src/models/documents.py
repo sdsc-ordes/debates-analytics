@@ -3,7 +3,7 @@ from typing import List
 from datetime import datetime
 from .base import Speaker, Segment, Subtitle
 
-# Inner objects
+
 class S3Key(BaseModel):
     name: str
     type: str
@@ -14,7 +14,7 @@ class Media(BaseModel):
     type: str
     format: str
 
-# Main Documents
+
 class DebateDocument(BaseModel):
     s3_prefix: str
     created_at: datetime
@@ -25,11 +25,14 @@ class DebateDocument(BaseModel):
     type: str
     session: str
 
+
 class SpeakersDocument(BaseModel):
     speakers: List[Speaker]
 
+
 class SegmentsDocument(BaseModel):
     segments: List[Segment]
+
 
 class SubtitlesDocument(BaseModel):
     subtitles: List[Subtitle]

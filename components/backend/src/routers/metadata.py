@@ -100,20 +100,16 @@ async def update_speakers(
     """
     logger.info(f"Updating speakers for media_id: {request.media_id}")
 
-    # Convert Pydantic models to dicts once here
     speakers_data = [s.dict() for s in request.speakers]
 
     try:
-        # 1. Update MongoDB
         success = mongo_client.update_debate_speakers(request.media_id, speakers_data)
         if not success:
             logger.warning(f"Media ID {request.media_id} not found in DB during speaker update")
             raise HTTPException(status_code=404, detail="Media not found")
 
-        # 2. Update Solr
-        # Using the class method we defined earlier
         solr_client.update_speakers(
-            s3_prefix=request.media_id, # Assuming media_id is used as s3_prefix
+            s3_prefix=request.media_id,
             speakers=speakers_data
         )
 
@@ -140,7 +136,6 @@ async def update_subtitles(
     subtitles_data = [s.dict() for s in request.subtitles]
 
     try:
-        # 1. Update MongoDB
         success = mongo_client.update_debate_subtitles(
             media_id=request.media_id,
             subtitle_type_enum=request.subtitleType,
@@ -151,8 +146,6 @@ async def update_subtitles(
             logger.warning(f"Media ID {request.media_id} not found in DB during subtitle update")
             raise HTTPException(status_code=404, detail="Media not found")
 
-        # 2. Update Solr
-        # Mapping Enum to the string expected by Solr
         solr_type_str = "transcript" if request.subtitleType == "transcript" else "translation"
 
         solr_client.update_segment(

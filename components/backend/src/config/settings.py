@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     port: int = 8000
     log_level: str = "info"
 
-    # S3 Config (No default value = Required)
+    # S3 Config
     s3_access_key: str
     s3_secret_key: str
     s3_server: str
