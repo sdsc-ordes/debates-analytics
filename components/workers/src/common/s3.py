@@ -3,6 +3,7 @@ import os
 import logging
 from botocore.exceptions import ClientError
 from functools import lru_cache
+from common.config import settings
 
 # Setup Logging
 logger = logging.getLogger(__name__)
@@ -10,13 +11,12 @@ logger = logging.getLogger(__name__)
 
 class S3Manager:
     def __init__(self):
-        self.access_key = os.getenv("S3_ACCESS_KEY")
-        self.secret_key = os.getenv("S3_SECRET_KEY")
-        self.server_url = os.getenv("S3_SERVER")
-        self.bucket_name = os.getenv("S3_BUCKET_NAME")
+        settings = get_settings()
 
-        if not all([self.access_key, self.secret_key, self.server_url]):
-            logger.error("Missing S3 environment variables!")
+        self.access_key = settings.s3_access_key
+        self.secret_key = settings.s3_secret_key
+        self.server_url = settings.s3_server
+        self.bucket_name = settings.s3_bucket_name
 
         self.s3 = boto3.client(
             's3',
@@ -42,6 +42,11 @@ class S3Manager:
         except ClientError as e:
             logger.error(f"Failed to upload {s3_key}: {e}")
             raise e
+
+    def get_s3_data(self, s3_path):
+        response = self.s3.get_object(Bucket=self.bucket_name, Key=s3_path)
+        data = response['Body'].read().decode('utf-8')
+        return data
 
 
 @lru_cache()

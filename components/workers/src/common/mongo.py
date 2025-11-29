@@ -3,18 +3,24 @@ import logging
 from datetime import datetime
 from pymongo import MongoClient, ReturnDocument
 from functools import lru_cache
+from common.config import settings
 
 # Setup Logger
 logger = logging.getLogger(__name__)
 
 class MongoManager:
     def __init__(self):
-        self.mongo_uri = os.getenv("MONGO_URI")
-        self.db_name = os.getenv("MONGO_DB_NAME")
-        self.collection_name = os.getenv("MONGO_MEDIA_COLLECTION")
+        settings = get_settings()
+
+        self.mongo_url = settings.mongo_url
+        self.db_name = settings.mongo_db_name
+        self.media_collection = self.db[settings.mongo_media_collection]
+        self.speakers_collection = self.db[settings.mongo_speaker_collection]
+        self.segments_collection = self.db[settings.mongo_segment_collection]
+        self.subtitles_collection = self.db[settings.mongo_subtitle_collection]
 
         try:
-            self.client = MongoClient(self.mongo_uri)
+            self.client = MongoClient(self.mongo_url)
             self.db = self.client[self.db_name]
             self.collection = self.db[self.collection_name]
             logger.info(f"Connected to MongoDB: {self.db_name}.{self.collection_name}")

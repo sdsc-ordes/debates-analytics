@@ -2,6 +2,7 @@ import os
 from redis import Redis
 from rq import Queue
 from functools import lru_cache
+from common.config import settings
 
 class QueueManager:
     def __init__(self):

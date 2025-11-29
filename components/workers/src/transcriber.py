@@ -55,14 +55,18 @@ def process_transcription(s3_key, media_id):
                     uploaded_files[s3_suffix] = key
 
             # Upload Transcription Set
-            upload_artifact(transcription_files['srt'], "subtitles-original.srt")
+            upload_artifact(transcription_files['srt'], "transcription.srt")
             upload_artifact(transcription_files['json'], "subtitles-original.json")
             upload_artifact(transcription_files['segments_json'], "segments-original.json")
+            upload_artifact(transcription_files['segments_md'], "segments-original.md")
+            upload_artifact(transcription_files['segments_pdf'], "segments-original.pdf")
 
             # Upload Translation Set
-            upload_artifact(translation_files['srt'], "subtitles-translation.srt")
+            upload_artifact(translation_files['srt'], "translation.srt")
             upload_artifact(translation_files['json'], "subtitles-translation.json")
             upload_artifact(translation_files['segments_json'], "segments-translation.json")
+            upload_artifact(transcription_files['segments_md'], "segments-translation.md")
+            upload_artifact(transcription_files['segments_pdf'], "segments-translation.pdf")
 
             db.update_status(
                 media_id,
