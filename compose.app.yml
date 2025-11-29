@@ -1,3 +1,23 @@
+x-backend-env: &backend-env # Shared Infrastructure
+  SOLR_URL: ${SOLR_URL}
+  MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
+  MONGO_DB_NAME: ${MONGO_DB_NAME}
+  MONGO_MEDIA_COLLECTION: ${MONGO_MEDIA_COLLECTION}
+  MONGO_SPEAKER_COLLECTION: ${MONGO_SPEAKER_COLLECTION}
+  MONGO_SUBTITLE_COLLECTION: ${MONGO_SUBTITLE_COLLECTION}
+  MONGO_SEGMENT_COLLECTION: ${MONGO_SEGMENT_COLLECTION}
+
+  # Shared External Services
+  S3_SERVER: ${S3_SERVER}
+  S3_BUCKET_NAME: ${S3_BUCKET_NAME}
+  S3_FRONTEND_BASE_URL: ${S3_FRONTEND_BASE_URL}
+  S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+  S3_SECRET_KEY: ${S3_SECRET_KEY}
+  REDIS_URL: ${REDIS_URL}
+
+  # Python Path (Critical for sharing code)
+  PYTHONPATH: /app/src
+
 services:
   backend:
     build:
@@ -10,22 +30,8 @@ services:
       - "dev.dozzle.name=Backend"
       - "dev.dozzle.group=App"
     environment:
-      SOLR_URL: ${SOLR_URL}
-      MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
-      MONGO_DB_NAME: ${MONGO_DB_NAME}
-      MONGO_MEDIA_COLLECTION: ${MONGO_MEDIA_COLLECTION}
-      MONGO_SPEAKER_COLLECTION: ${MONGO_SPEAKER_COLLECTION}
-      MONGO_SUBTITLE_COLLECTION: ${MONGO_SUBTITLE_COLLECTION}
-      MONGO_SEGMENT_COLLECTION: ${MONGO_SEGMENT_COLLECTION}
-      S3_SERVER: ${S3_SERVER}
-      S3_BUCKET_NAME: ${S3_BUCKET_NAME}
-      S3_FRONTEND_BASE_URL: ${S3_FRONTEND_BASE_URL}
-      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
-      S3_SECRET_KEY: ${S3_SECRET_KEY}
-      REDIS_URL: ${REDIS_URL}
-      TASK_CONVERT: ${TASK_CONVERT}
-      TASK_TRANSCRIBE: ${TASK_TASK_TRANSCRIBE}
-      TASK_UPLOAD: ${TASK_UPLOAD}
+      <<: *backend-env
+    command: ["uvicorn", "app.main:api", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - 8082:8000
     depends_on:
@@ -52,3 +58,21 @@ services:
     networks:
       - debates_network
     command: ["node", "build"]
+
+  workers:
+    build: ./components/backend
+    command: rq worker --url redis://redis:6379
+    container_name: workers
+    labels:
+      - "dev.dozzle.name=Workers"
+      - "dev.dozzle.group=App"
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      <<: *backend-env
+      HF_TOKEN: ${HF_TOKEN}
+      HF_SPACE_URL: ${HF_SPACE_URL}
+      HF_MODEL: ${HF_MODEL}
+    networks:
+      - debates_network

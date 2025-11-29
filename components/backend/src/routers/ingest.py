@@ -1,10 +1,10 @@
 import logging
 import uuid
 from fastapi import APIRouter, HTTPException, Depends
-from common.s3 import get_s3_manager, S3Manager
-from common.queue import get_queue_manager, QueueManager
-from common.mongo import get_mongo_manager, MongoManager
-from common.models import S3PostRequest, S3PostResponse, ProcessRequest
+from services.s3 import get_s3_manager, S3Manager
+from services.queue import get_queue_manager, QueueManager
+from services.mongo import get_mongo_manager, MongoManager
+from models.ingest import S3PostRequest, S3PostResponse, ProcessRequest
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +54,15 @@ async def get_presigned_post(
 async def start_processing(
     request: ProcessRequest,
     rq: QueueManager = Depends(get_queue_manager),
-    mongo_client: MongoManager = Depends(get_mongo_manager),
+    mongo: MongoManager = Depends(get_mongo_manager),
 ):
+    """
+    [POST] Starts processing: starts redis queue with first task: converting
+    the video to audio. Updates status on Mongo DB.
+    Status -> 'preparing'
+    """
     media_id = request.media_id
+    s3_key = request.s3_key
     job = None
     logger.info(f"Starting processing for media_id: {media_id}")
 
@@ -64,19 +70,21 @@ async def start_processing(
         logger.info(f"Creating job for media_id: {media_id}")
         job = rq.enqueue_video_processing(
             media_id=media_id,
-            s3_key=request.s3_key,
+            s3_key=s3_key,
         )
         job_id = job.get_id()
         logger.info(f"Enqueuing job {job_id} for media_id: {media_id}")
 
         logger.info(f"Updating status on mongodb for: {media_id}")
-        result = mongo_client.update_media_processing_status(
+        result = mongo.update_processing_status(
             media_id=media_id,
             status="queued",
             job_id=job_id,
         )
 
-        # Validation: If MongoDB didn't find the document, manually trigger the error flow
+        # Validation: If MongoDB didn't find the document:
+        # manually trigger the error flow,
+        # so that no job runs without monitoring
         if not result:
             raise ValueError(f"Media ID {media_id} not found in MongoDB")
 
@@ -89,9 +97,7 @@ async def start_processing(
         }
 
     except Exception as e:
-        # --- Unified Rollback Logic ---
-
-        # 3. Check if 'job' was created before the error happened
+        # roll job back in case of an exception.
         if job:
             logger.warning(f"Error occurred. Rolling back job {job.get_id()}")
             try:

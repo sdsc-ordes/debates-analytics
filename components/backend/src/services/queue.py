@@ -2,7 +2,7 @@ import logging
 from redis import Redis
 from rq import Queue
 from functools import lru_cache
-from common.config import get_settings
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,6 @@ class QueueManager:
         Specific method for processing videos.
         Abstraction: The caller doesn't need to know the task function path.
         """
-        # We delegate to RQ here
         job = self.q.enqueue(
             self.task_convert,
             media_id=media_id,
@@ -27,8 +26,16 @@ class QueueManager:
         )
         return job
 
+    def enqueue(self, function_name, **kwargs):
+        """
+        Wrapper to enqueue jobs.
+        Accepts kwargs directly and passes them to the worker function.
+        """
+        return self.q.enqueue(function_name, **kwargs)
+
     def get_connection(self):
         return self.conn
+
 
 @lru_cache()
 def get_queue_manager() -> QueueManager:

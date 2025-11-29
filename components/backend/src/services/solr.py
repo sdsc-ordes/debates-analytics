@@ -2,9 +2,9 @@ import logging
 from typing import List, Dict, Any
 from functools import lru_cache
 from pysolr import Solr
-from common.config import get_settings
+from config.settings import get_settings
 
-from common.models import SolrRequest
+from models.search import SolrRequest
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +24,8 @@ class SolrManager:
             speaker_name = speaker.get("name", None)
             speaker_role_tag = speaker.get("role_tag", None)
 
-            # Query to find documents to update
             query = f'speaker_id:{speaker_id} AND s3_prefix:{s3_prefix}'
 
-            # Search existing docs
             results = self.client.search(query)
 
             if results.hits > 0:
@@ -40,7 +38,6 @@ class SolrManager:
                     }
                     docs_to_update.append(updated_doc)
 
-                # Commit updates (commit=True ensures immediate availability)
                 if docs_to_update:
                     self.client.add(docs_to_update, commit=True)
 
@@ -89,7 +86,6 @@ class SolrManager:
         if request.sortBy:
             params["sort"] = request.sortBy
 
-        # Use the shared client
         return self.client.search(request.queryTerm if request.queryTerm else "*:*", **params)
 
     @staticmethod
@@ -101,7 +97,7 @@ class SolrManager:
             if subtitle["segment_nr"] == segment_nr
             and subtitle.get("content")
         ]
-        return " ".join(subtitles_for_segment) # Assuming you want to join them string?
+        return " ".join(subtitles_for_segment)
 
 
 @lru_cache()
