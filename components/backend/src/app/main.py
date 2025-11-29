@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 # 1. Import your settings
-from common.config import get_settings
+from config.settings import get_settings
 
 # 2. Import your separate router files
 # (Make sure your routers folder has an __init__.py file, even if empty)

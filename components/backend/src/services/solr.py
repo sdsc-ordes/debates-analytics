@@ -2,9 +2,9 @@ import logging
 from typing import List, Dict, Any
 from functools import lru_cache
 from pysolr import Solr
-from common.config import get_settings
+from config.settings import get_settings
 
-from common.models import SolrRequest
+from models import SolrRequest
 
 logger = logging.getLogger(__name__)
 

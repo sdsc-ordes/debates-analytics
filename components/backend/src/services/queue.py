@@ -2,7 +2,7 @@ import logging
 from redis import Redis
 from rq import Queue
 from functools import lru_cache
-from common.config import get_settings
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -27,8 +27,30 @@ class QueueManager:
         )
         return job
 
+    def enqueue(self, function_name, **kwargs):
+        """
+        Wrapper to enqueue jobs.
+        Accepts kwargs directly and passes them to the worker function.
+        """
+        return self.q.enqueue(function_name, **kwargs)
+
     def get_connection(self):
         return self.conn
+
+    def get_job_status(self, job_id: str):
+        """
+        Fetches real-time info from Redis.
+        """
+        try:
+            job = Job.fetch(job_id, connection=self.redis_conn)
+            return {
+                "state": job.get_status(),
+                "progress": job.meta.get('progress', 'unknown'),
+                "error": job.meta.get('error') or str(job.exc_info) if job.is_failed else None
+            }
+        except NoSuchJobError:
+            return None
+
 
 @lru_cache()
 def get_queue_manager() -> QueueManager:

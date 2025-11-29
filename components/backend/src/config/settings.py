@@ -2,7 +2,6 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 class Settings(BaseSettings):
-    # App Config
     host: str = "0.0.0.0"
     port: int = 8000
     log_level: str = "info"
@@ -28,7 +27,8 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str
     redis_queue_name: str = "default"
-    task_convert: str = "converter.process_video"
+    task_convert: str = "tasks.convert.process_video"
+    task_transcribe: str = "tasks.transcribe.process_transcription"
 
     class Config:
         env_file = ".env"

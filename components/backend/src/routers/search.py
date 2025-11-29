@@ -1,8 +1,8 @@
 import logging
 from fastapi import APIRouter, HTTPException, Depends
 
-from common.solr import get_solr_manager, SolrManager
-from common.models import SolrRequest
+from services.solr import get_solr_manager, SolrManager
+from models import SolrRequest
 
 logger = logging.getLogger(__name__)
 

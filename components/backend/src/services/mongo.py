@@ -5,7 +5,7 @@ from functools import lru_cache
 from datetime import datetime
 
 # 1. Import settings instead of os.getenv
-from common.config import get_settings
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -139,13 +139,25 @@ class MongoManager:
         )
         return result.modified_count > 0 or result.matched_count > 0
 
-    def update_media_processing_status(self, media_id: str, job_id: str, status: str):
+    def update_processing_status(
+        self,
+        media_id: str,
+        status: str,
+        job_id: str = None,
+        metadata: Dict = None,
+    ):
         """Update the status of the media processing."""
         update_fields = {
             "status": status,
-            "job_id": job_id,
             "updated_at": datetime.utcnow()
         }
+
+        if job_id:
+            update_fields["job_id"] = job_id
+
+        if metadata:
+            for key, value in metadata.items():
+                update_fields[key] = value
 
         return self.media_collection.find_one_and_update(
             {"_id": media_id},
@@ -167,36 +179,6 @@ class MongoManager:
 
         return self.media_collection.insert_one(document)
 
-    def update_status(self, media_id: str, status: str, job_id: str = None, metadata: dict = None):
-        """
-        Updates the status of a media entry.
-
-        Args:
-            media_id: The UUID of the media.
-            status: The new status string (e.g., 'converting', 'transcribing').
-            job_id: (Optional) The Redis Job ID associated with this step.
-            metadata: (Optional) Dictionary of extra data to merge (e.g., {'wav_key': '...'})
-        """
-        update_fields = {
-            "status": status,
-            "updated_at": datetime.utcnow()
-        }
-
-        if job_id:
-            update_fields["current_job_id"] = job_id
-
-        if metadata:
-            for key, value in metadata.items():
-                update_fields[key] = value
-
-        logger.info(f"Updating Media {media_id} -> Status: {status}")
-
-        return self.collection.find_one_and_update(
-            {"media_id": media_id},
-            {"$set": update_fields},
-            return_document=ReturnDocument.AFTER
-        )
-
     def mark_failed(self, media_id: str, error_message: str):
         """Special helper to mark a job as failed with an error reason."""
         logger.error(f"Marking Media {media_id} as FAILED: {error_message}")
@@ -209,6 +191,31 @@ class MongoManager:
                 "updated_at": datetime.utcnow()
             }}
         )
+
+    def get_all_media(self):
+        """Returns all media documents sorted by date"""
+        cursor = self.media_collection.find().sort("created_at", -1)
+        return list(cursor)
+
+    def delete_everything(self, media_id: str):
+        """
+        Deletes media doc AND all related speakers/subtitles/segments.
+        """
+        # 1. Get the internal ObjectId to find relations
+        doc = self.media_collection.find_one({"media_id": media_id})
+        if not doc:
+            return False
+
+        internal_id = doc["_id"]
+
+        # 2. Delete Related Data first
+        self.speakers_collection.delete_many({"debate_id": internal_id})
+        self.subtitles_collection.delete_many({"debate_id": internal_id})
+        self.segments_collection.delete_many({"debate_id": internal_id})
+
+        # 3. Delete the Media Doc
+        self.media_collection.delete_one({"media_id": media_id})
+        return True
 
 
 @lru_cache()

@@ -2,7 +2,7 @@ import boto3
 from dotenv import load_dotenv
 import logging
 from functools import lru_cache
-from common.config import get_settings
+from config.settings import get_settings
 from typing import List, Union, Dict, Any
 from botocore.exceptions import NoCredentialsError, DataNotFoundError
 
@@ -140,6 +140,46 @@ class S3Manager:
         except Exception as e:
             logging.error(f"Error generating presigned POST: {e}")
             return None
+
+    def download_file(self, s3_key: str, local_path: str):
+        """Used by Workers to download source files"""
+        try:
+            logger.info(f"Downloading {s3_key} -> {local_path}")
+            self.s3.download_file(self.bucket_name, s3_key, local_path)
+        except ClientError as e:
+            logger.error(f"Failed to download {s3_key}: {e}")
+            raise e
+
+    def upload_file(self, local_path: str, s3_key: str):
+        """Used by Workers to upload results"""
+        try:
+            logger.info(f"Uploading {local_path} -> {s3_key}")
+            self.s3.upload_file(local_path, self.bucket_name, s3_key)
+        except ClientError as e:
+            logger.error(f"Failed to upload {s3_key}: {e}")
+            raise e
+
+    def delete_media_folder(self, media_id: str):
+        """
+        Deletes the entire folder for a media_id (video + transcripts).
+        """
+        prefix = f"{media_id}/"
+        try:
+            # List all objects in the folder
+            response = self.s3_client.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix)
+
+            if 'Contents' in response:
+                objects_to_delete = [{'Key': obj['Key']} for obj in response['Contents']]
+
+                # Delete in batch
+                self.s3_client.delete_objects(
+                    Bucket=self.bucket_name,
+                    Delete={'Objects': objects_to_delete}
+                )
+                logger.info(f"Deleted {len(objects_to_delete)} objects from S3 for {media_id}")
+        except Exception as e:
+            logger.error(f"Failed to delete S3 folder {media_id}: {e}")
+            # Don't raise, we want to continue deleting other resources
 
 
 @lru_cache()

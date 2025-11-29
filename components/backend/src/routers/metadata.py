@@ -1,9 +1,9 @@
 import logging
 from fastapi import APIRouter, HTTPException, Depends
-from common.mongo import get_mongo_manager, MongoManager
-from common.s3 import get_s3_manager, S3Manager
-from common.solr import get_solr_manager, SolrManager
-from common.models import (
+from services.mongo import get_mongo_manager, MongoManager
+from services.s3 import get_s3_manager, S3Manager
+from services.solr import get_solr_manager, SolrManager
+from models import (
     S3MediaUrlRequest, S3MediaUrlResponse,
     MongoMetadataRequest, MongoMetadataResponse,
     UpdateSpeakersRequest, UpdateSubtitlesRequest

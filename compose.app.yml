@@ -16,11 +16,6 @@ x-backend-env: &backend-env
   S3_SECRET_KEY: ${S3_SECRET_KEY}
   REDIS_URL: ${REDIS_URL}
 
-  # Shared Tasks
-  TASK_CONVERT: ${TASK_CONVERT}
-  TASK_TRANSCRIBE: ${TASK_TRANSCRIBE}
-  TASK_UPLOAD: ${TASK_UPLOAD}
-
   # Python Path (Critical for sharing code)
   PYTHONPATH: /app/src
 
@@ -37,7 +32,7 @@ services:
       - "dev.dozzle.group=App"
     environment:
       <<: *backend-env
-    command: ["python", "api.py", "serve"]
+    command: ["uvicorn", "app.main:api", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - 8082:8000
     depends_on:
@@ -71,7 +66,7 @@ services:
     container_name: workers
     labels:
       - "dev.dozzle.name=Workers"
-      - "dev.dozzle.group=Ingestion"
+      - "dev.dozzle.group=App"
     depends_on:
       redis:
         condition: service_healthy
