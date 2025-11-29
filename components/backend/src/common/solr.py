@@ -103,6 +103,21 @@ class SolrManager:
         ]
         return " ".join(subtitles_for_segment) # Assuming you want to join them string?
 
+    def delete_by_media_id(self, media_id: str):
+        """
+        Deletes all segments associated with a specific media_id.
+        Crucial for re-processing: clean up old data before adding new data.
+        """
+        # 1. Construct the query
+        # We use quotes around the ID to be safe
+        query = f'media_id_s:"{media_id}"'
+
+        logger.info(f"Deleting Solr documents for query: {query}")
+
+        # 2. Execute Delete by Query
+        # commit=True ensures the deletion happens immediately
+        self.client.delete(q=query, commit=True)
+
 
 @lru_cache()
 def get_solr_manager() -> SolrManager:

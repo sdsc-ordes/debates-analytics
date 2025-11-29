@@ -22,6 +22,16 @@ services:
       - HF_TOKEN=${HF_TOKEN}
       - HF_SPACE_URL=${HF_SPACE_URL}
       - HF_MODEL=${HF_MODEL}
+      - HF_SRT_ORIGINAL="subtitles_original.srt"
+      - HF_SRT_TRANSLATION="subtitles_original.srt"
+      - HF_SUBTITLES_ORIGINAL_JSON=="subtitles_original.srt"
+      - HF_SUBTITLES_TRANSLATION_JSON=="subtitles_translation.srt"
+      - HF_SEGMENTS_ORIGINAL_PDF=="segments_original.pdf"
+      - HF_SEGMENTS_TRANSLATION_PDF=="segments_translation.pdf"
+      - HF_SEGMENTS_ORIGINAL_JSON=="segments_original.json"
+      - HF_TRANSLATION_JSON=="segments_translation.json"
+      - HF_SEGMENTS_ORIGINAL_MD=="segments_original.md"
+      - HF_SEGMENTS_TRANSLATION_MD=="segments_translation.md"
       # Make sure Python can find your modules
       - PYTHONPATH=/app/src
     networks:
