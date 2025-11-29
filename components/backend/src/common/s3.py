@@ -1,5 +1,4 @@
 import boto3
-from dotenv import load_dotenv
 import logging
 from functools import lru_cache
 from common.config import get_settings
@@ -8,9 +7,6 @@ from botocore.exceptions import NoCredentialsError, DataNotFoundError
 
 # Setup Logging
 logger = logging.getLogger(__name__)
-
-load_dotenv()
-
 
 class S3Manager:
     def __init__(self):
@@ -21,9 +17,6 @@ class S3Manager:
         self.server_url = settings.s3_server
         self.bucket_name = settings.s3_bucket_name
         self.s3_frontend_base_url = settings.s3_frontend_base_url
-
-        if not all([self.access_key, self.secret_key, self.server_url]):
-            logger.error("Missing S3 environment variables!")
 
         self.s3 = boto3.client(
             's3',

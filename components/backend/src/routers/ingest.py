@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from common.s3 import get_s3_manager, S3Manager
 from common.queue import get_queue_manager, QueueManager
 from common.mongo import get_mongo_manager, MongoManager
-from common.models import S3PostRequest, S3PostResponse, ProcessRequest
+from common.models.storage import S3PostRequest, S3PostResponse, ProcessRequest
 
 logger = logging.getLogger(__name__)
 

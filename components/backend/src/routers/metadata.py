@@ -3,8 +3,10 @@ from fastapi import APIRouter, HTTPException, Depends
 from common.mongo import get_mongo_manager, MongoManager
 from common.s3 import get_s3_manager, S3Manager
 from common.solr import get_solr_manager, SolrManager
-from common.models import (
-    S3MediaUrlRequest, S3MediaUrlResponse,
+from common.models.storage import (
+    S3MediaUrlRequest, S3MediaUrlResponse
+)
+from common.models.metadata import (
     MongoMetadataRequest, MongoMetadataResponse,
     UpdateSpeakersRequest, UpdateSubtitlesRequest
 )
