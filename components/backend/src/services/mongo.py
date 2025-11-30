@@ -186,20 +186,22 @@ class MongoManager:
         """
         Deletes media doc AND all related speakers/subtitles/segments.
         """
+        logger.info(f"delete mongo for {media_id}")
         # 1. Get the internal ObjectId to find relations
-        doc = self.media_collection.find_one({"media_id": media_id})
+        doc = self.media_collection.find_one({"_id": media_id})
+        logger.info(f"found doc {doc}")
         if not doc:
             return False
 
-        internal_id = doc["_id"]
+        #internal_id = doc["_id"]
 
         # 2. Delete Related Data first
-        self.speakers_collection.delete_many({"debate_id": internal_id})
-        self.subtitles_collection.delete_many({"debate_id": internal_id})
-        self.segments_collection.delete_many({"debate_id": internal_id})
+        ##self.speakers_collection.delete_many({"debate_id": internal_id})
+        #self.subtitles_collection.delete_many({"debate_id": internal_id})
+        #self.segments_collection.delete_many({"debate_id": internal_id})
 
         # 3. Delete the Media Doc
-        self.media_collection.delete_one({"media_id": media_id})
+        self.media_collection.delete_one({"_id": media_id})
         return True
 
 

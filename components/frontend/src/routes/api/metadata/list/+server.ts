@@ -10,7 +10,7 @@ export async function GET({ fetch }) {
   try {
       // Based on your curl command, the path is /list
       // If you added a prefix in python (like /admin), update this to `${BackendUrl}/admin/list`
-      const response = await fetch(`${BackendUrl}/list`, {
+      const response = await fetch(`${BackendUrl}/admin/list`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });

@@ -167,13 +167,13 @@ class S3Manager:
         prefix = f"{media_id}/"
         try:
             # List all objects in the folder
-            response = self.s3_client.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix)
+            response = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix)
 
             if 'Contents' in response:
                 objects_to_delete = [{'Key': obj['Key']} for obj in response['Contents']]
 
                 # Delete in batch
-                self.s3_client.delete_objects(
+                self.s3.delete_objects(
                     Bucket=self.bucket_name,
                     Delete={'Objects': objects_to_delete}
                 )

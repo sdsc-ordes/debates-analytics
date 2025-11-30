@@ -16,6 +16,17 @@ class MediaListResponse(BaseModel):
     total: int
 
 
+class DeleteMediaRequest(BaseModel):
+    mediaId: str
+
+
+class DeleteMediaResponse(BaseModel):
+    status: str
+    mediaId: str
+    warnings: Optional[List[str]] = None
+    errors: Optional[List[str]] = None
+
+
 class ProcessingStatusResponse(BaseModel):
     media_id: str
     status: str

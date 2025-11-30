@@ -1,9 +1,15 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
-from models.admin import MediaListResponse, MediaListItem, ProcessingStatusResponse
+from models.admin import (
+    MediaListResponse, MediaListItem, ProcessingStatusResponse,
+    DeleteMediaRequest, DeleteMediaResponse,
+)
 from services.mongo import get_mongo_manager, MongoManager
 from services.queue import get_queue_manager, QueueManager
 from services.s3 import get_s3_manager, S3Manager
 from services.solr import get_solr_manager, SolrManager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -63,23 +69,57 @@ async def check_processing_status(
     )
 
 
-@router.delete("/{media_id}")
+@router.post("/delete", response_model=DeleteMediaResponse)
 async def delete_media(
-    media_id: str,
+    request: DeleteMediaRequest,
     mongo: MongoManager = Depends(get_mongo_manager),
     s3: S3Manager = Depends(get_s3_manager),
-    solr: SolrManager = Depends(get_solr_manager)
+    solr: SolrManager = Depends(get_solr_manager),
 ):
     """
-    Nuclear Option: Deletes EVERYTHING associated with this media_id.
+    Nuclear Option: Deletes EVERYTHING.
+    Uses 'Best Effort' strategy: if one service fails, it logs the error
+    but continues trying to delete the others.
     """
-    s3.delete_media_folder(media_id)
+    logger.info(f"request delete: {request}")
+    media_id = request.mediaId
+    cleanup_errors = []
 
-    solr.delete_by_media_id(media_id)
+    # 1. Try S3 (Soft Fail)
+    try:
+        s3.delete_media_folder(media_id)
+    except Exception as e:
+        logger.error(f"Failed to delete S3 files for {media_id}: {e}")
+        cleanup_errors.append("S3 cleanup failed")
 
-    deleted = mongo.delete_everything(media_id)
+    # 2. Try Solr (Soft Fail)
+    try:
+        solr.delete_by_media_id(media_id)
+    except Exception as e:
+        logger.error(f"Failed to delete Solr index for {media_id}: {e}")
+        cleanup_errors.append("Solr cleanup failed")
 
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Media not found in DB")
+    # 3. Try MongoDB (The Source of Truth)
+    # We attempt this even if S3/Solr failed, because we want to remove it from the UI.
+    try:
+        deleted = mongo.delete_everything(media_id)
+        if not deleted:
+            # If it wasn't in Mongo, we consider it a 404 (Not Found)
+            raise HTTPException(status_code=404, detail="Media not found in DB")
 
-    return {"status": "deleted", "media_id": media_id}
+    except HTTPException:
+        raise # Re-raise 404
+    except Exception as e:
+        logger.error(f"Failed to delete MongoDB docs for {media_id}: {e}")
+        raise HTTPException(status_code=500, detail="Database deletion failed")
+
+    # 4. Return Status
+    if cleanup_errors:
+        # Return 200 but warn the frontend that some cleanup failed (Ghost files might remain)
+        return {
+            "status": "partial_deleted",
+            "media_id": media_id,
+            "warnings": cleanup_errors
+        }
+
+    return {"status": "deleted", "mediaId": media_id}

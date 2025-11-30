@@ -37,10 +37,14 @@
   // 2. Handle Delete
   async function handleDelete(mediaId: string) {
     if (!confirm('Are you sure? This will delete files from S3, Solr, and MongoDB.')) return;
-    
+
     isDeleting = mediaId;
     try {
-      const res = await fetch(`/api/metadata/${mediaId}`, { method: 'DELETE' });
+      const res = await fetch('/api/metadata/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mediaId })
+      });
       if (!res.ok) throw new Error('Delete failed');
       items = items.filter(i => i.media_id !== mediaId);
     } catch (e: any) {
@@ -60,7 +64,7 @@
   function getStatusClass(status: string) {
     if (status.includes('completed') || status === 'success') return 'status-success';
     if (status.includes('failed') || status.includes('error')) return 'status-error';
-    return 'status-processing'; 
+    return 'status-processing';
   }
 
   onMount(() => {
@@ -123,7 +127,7 @@
                 <td>
                   <div class="file-cell">
                     <FileVideo size={16} color="var(--primary-color)" />
-                    <span class="filename" title={item.media_id}>{item.filename}</span>
+                    <span class="filename" title={item.media_id}>{item.filename} {item.media_id}</span>
                   </div>
                   <div class="mobile-meta card-subtle">{formatDate(item.created_at)}</div>
                 </td>

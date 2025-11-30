@@ -43,6 +43,7 @@ api.include_router(
 
 api.include_router(
     admin.router,
+    prefix="/admin",
     tags=["Admin"]
 )
 

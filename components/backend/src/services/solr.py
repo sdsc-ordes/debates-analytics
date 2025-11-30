@@ -88,6 +88,24 @@ class SolrManager:
 
         return self.client.search(request.queryTerm if request.queryTerm else "*:*", **params)
 
+    def delete_by_media_id(self, media_id: str):
+        """
+        Deletes all segments associated with a specific media_id.
+        """
+        # We query the 'media_id_s' field (dynamic string field).
+        # We wrap the ID in quotes to handle any special characters safely.
+        query = f'media_id_s:"{media_id}"'
+
+        logger.info(f"Deleting Solr documents for query: {query}")
+
+        try:
+            # commit=True ensures the deletion is immediately visible in search results
+            self.client.delete(q=query, commit=True)
+        except Exception as e:
+            logger.error(f"Failed to delete documents for {media_id} from Solr: {e}")
+            # Re-raise so the API knows it failed
+            raise e
+
     @staticmethod
     def _get_statement_from_subtitles(segment_nr: int, subtitles: List[dict]) -> str:
         """Helper to extract text from subtitles"""
