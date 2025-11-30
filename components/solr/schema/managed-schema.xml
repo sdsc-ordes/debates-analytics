@@ -458,6 +458,7 @@
   <field name="debate_type" type="string" uninvertible="false" docValues="true" indexed="true" stored="true"/>
   <field name="end" type="pfloat" uninvertible="false" docValues="true" indexed="true" stored="true"/>
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
+  <field name="media_id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="original" type="boolean" uninvertible="true" indexed="true" stored="true"/>
   <field name="s3_prefix" type="string" uninvertible="false" docValues="true" indexed="true" stored="true"/>
   <field name="segment_language" type="text_general"/>
