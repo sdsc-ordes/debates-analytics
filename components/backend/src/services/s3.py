@@ -182,6 +182,11 @@ class S3Manager:
             logger.error(f"Failed to delete S3 folder {media_id}: {e}")
             # Don't raise, we want to continue deleting other resources
 
+    def get_file_content(self, s3_path):
+        response = self.s3.get_object(Bucket=self.bucket_name, Key=s3_path)
+        data = response['Body'].read().decode('utf-8')
+        return data
+
 
 @lru_cache()
 def get_s3_manager() -> S3Manager:

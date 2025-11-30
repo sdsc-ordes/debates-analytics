@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from models.admin import (
     MediaListResponse, MediaListItem, ProcessingStatusResponse,
     DeleteMediaRequest, DeleteMediaResponse,
@@ -8,6 +8,7 @@ from services.mongo import get_mongo_manager, MongoManager
 from services.queue import get_queue_manager, QueueManager
 from services.s3 import get_s3_manager, S3Manager
 from services.solr import get_solr_manager, SolrManager
+from tasks.reindex import reindex_solr
 
 logger = logging.getLogger(__name__)
 
@@ -123,3 +124,24 @@ async def delete_media(
         }
 
     return {"status": "deleted", "mediaId": media_id}
+
+
+@router.post("/reindex/{media_id}")
+async def trigger_reindex(
+    media_id: str,
+    background_tasks: BackgroundTasks,
+    mongo: MongoManager = Depends(get_mongo_manager)
+):
+    """
+    Triggers the Solr Indexing process manually.
+    Useful if you changed the Solr schema or parser logic.
+    """
+    # 1. Validate ID exists
+    doc = mongo.media_collection.find_one({"media_id": media_id})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Media not found")
+
+    # 2. Run in background (don't block the HTTP request)
+    background_tasks.add_task(reindex_solr, media_id)
+
+    return {"status": "indexing_started", "media_id": media_id}

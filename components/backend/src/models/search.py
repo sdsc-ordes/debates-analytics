@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 
 
 class FacetFilter(BaseModel):
@@ -17,3 +18,22 @@ class SolrRequest(BaseModel):
     facetFilters: List[FacetFilter]  = Field(
         ..., description="Solr facet filters with set values"
     )
+
+
+class SolrSegmentDocument(BaseModel):
+    """
+    The exact shape Solr expects.
+    We use the DebateSegment logic to populate this.
+    """
+    id: str
+    media_id: str
+    segment_nr: int
+    speaker_id: str
+    statement: str
+    statement_type: str
+    start: float
+    end: float
+
+    # Manual fields (can be populated later via update)
+    debate_name: Optional[str] = None
+    debate_date: Optional[datetime] = None
