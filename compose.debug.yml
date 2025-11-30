@@ -3,7 +3,7 @@ services:
     image: alpine/curl
     # Override the default entrypoint to keep the container running indefinitely
     # This allows to exec into it later.
-    container_name: debug
+    container_name: debug-cli
     labels:
       - "dev.dozzle.name=Cli"
       - "dev.dozzle.group=Debug"

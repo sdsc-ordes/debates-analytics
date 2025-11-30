@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime
 
 
 class MediaListItem(BaseModel):
     media_id: str
     filename: str
     status: str
-    created_at: datetime
+    created_at: Optional[datetime] = None
     title: Optional[str] = None
 
 

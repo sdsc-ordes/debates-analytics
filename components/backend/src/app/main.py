@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from config.settings import get_settings
-from routers import ingest, metadata, search
+from routers import ingest, metadata, search, admin
 
 settings = get_settings()
 
@@ -40,6 +40,12 @@ api.include_router(
     search.router,
     tags=["Search"]
 )
+
+api.include_router(
+    admin.router,
+    tags=["Admin"]
+)
+
 
 
 def serve():

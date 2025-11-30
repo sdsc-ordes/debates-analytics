@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-
-from models.metadata import MediaListResponse, MediaListItem, ProcessingStatusResponse
+from models.admin import MediaListResponse, MediaListItem, ProcessingStatusResponse
 from services.mongo import get_mongo_manager, MongoManager
 from services.queue import get_queue_manager, QueueManager
 from services.s3 import get_s3_manager, S3Manager
