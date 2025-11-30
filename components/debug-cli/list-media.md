@@ -1,4 +1,5 @@
 ## List media
+
 4.  **Execute the API call from the CLI container:** (Replace `[CONTAINER_ID]`
     with the ID from the previous step.)
 

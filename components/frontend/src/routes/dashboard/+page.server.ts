@@ -1,31 +1,31 @@
-import type { PageServerLoad } from './$types';
+import type { PageServerLoad } from "./$types"
 
 export const load: PageServerLoad = async ({ fetch }) => {
-  console.log("Server Load: Fetching media list...");
+  console.log("Server Load: Fetching media list...")
 
   try {
-    const res = await fetch(`/api/metadata/list`);
+    const res = await fetch(`/api/metadata/list`)
 
     if (!res.ok) {
-      console.error(`Backend error: ${res.status}`);
-      return { mediaItems: [], error: "Failed to fetch from backend" };
+      console.error(`Backend error: ${res.status}`)
+      return { mediaItems: [], error: "Failed to fetch from backend" }
     }
 
-    const data = await res.json();
+    const data = await res.json()
 
     // 2. Sort on the server
-    const sortedItems = data.items.sort((a: any, b: any) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+    const sortedItems = data.items.sort(
+      (a: any, b: any) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )
 
     // 3. Return data to the page
     return {
       mediaItems: sortedItems,
-      error: null
-    };
-
+      error: null,
+    }
   } catch (err) {
-    console.error("Network error in load function:", err);
-    return { mediaItems: [], error: "Backend unreachable" };
+    console.error("Network error in load function:", err)
+    return { mediaItems: [], error: "Backend unreachable" }
   }
-};
+}

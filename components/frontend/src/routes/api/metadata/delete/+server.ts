@@ -8,7 +8,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
   try {
     const bodyObject = await request.json()
-    const mediaId = bodyObject.mediaId;
+    const mediaId = bodyObject.mediaId
 
     if (!mediaId || typeof mediaId !== "string") {
       logger.warn(
@@ -22,9 +22,7 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     const backendApiUrl = `${BackendUrl}/admin/delete`
-    logger.info(
-      `Delete ${backendApiUrl} for mediaId: ${mediaId}`,
-    )
+    logger.info(`Delete ${backendApiUrl} for mediaId: ${mediaId}`)
 
     const backendResponse = await fetch(backendApiUrl, {
       method: "POST",
@@ -41,8 +39,7 @@ export const POST: RequestHandler = async ({ request }) => {
       )
     }
 
-    return backendResponse;
-
+    return backendResponse
   } catch (error) {
     const err = error as Error
     logger.error(`API Error: ${err.message}`, { error: err })
