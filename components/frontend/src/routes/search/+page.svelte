@@ -62,13 +62,14 @@
 <div class="container">
   <div class="row">
     <div class="col-md-4">
-      <SearchForm {solrQuery}
-        on:submit={handleSearch}
-        on:reset={handleReset}
+      <SearchForm
+        bind:solrQuery={solrQuery}
+        onsubmit={handleSearch}
+        onreset={handleReset}
       />
       {#if facetCounts}
       <FacetCounts
-        {solrQuery}
+        bind:solrQuery={solrQuery}
         onSearch={handleSearch}
         {facetCounts}
       />

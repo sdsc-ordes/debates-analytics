@@ -1,13 +1,13 @@
 import type { DebateMetadata } from "$lib/interfaces/metadata.interface"
 import { BackendUrl } from "$lib/config"
 
-export async function fetchMetadata(s3Prefix: string): DebateMetadata {
+export async function fetchMetadata(mediaId: string): DebateMetadata {
   try {
     // FastAPI endpoint to fetch metadata
     const apiUrl = `${BackendUrl}/mongo-metadata`
 
     // Request payload for fetching metadata
-    const payload = JSON.stringify({ prefix: s3Prefix, expiration: 3600 })
+    const payload = JSON.stringify({ prefix: mediaId, expiration: 3600 })
 
     // Fetch metadata from FastAPI backend
     const response = await fetch(apiUrl, {

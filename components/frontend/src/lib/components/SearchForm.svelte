@@ -1,44 +1,51 @@
 <script lang="ts">
-    import { preventDefault } from 'svelte/legacy';
-
-    import { createEventDispatcher } from "svelte";
     import type { SolrQuery } from "$lib/interfaces/search.interface";
 
-    interface Props {
+    // 1. Define Props with Callbacks instead of EventDispatcher
+    let {
+        solrQuery = $bindable(),
+        onsubmit,
+        onreset
+    }: {
         solrQuery: SolrQuery;
+        onsubmit?: () => void;
+        onreset?: () => void;
+    } = $props();
+
+    // 2. Handle Submit natively
+    function handleSubmit(event: SubmitEvent) {
+        event.preventDefault(); // Replaces 'svelte/legacy'
+        onsubmit?.(); // Call the prop function if it exists
     }
 
-    let { solrQuery = $bindable() }: Props = $props();
-
-    const dispatch = createEventDispatcher();
-
-    function submitForm() {
-        dispatch("submit");
-    }
-
-    function resetForm() {
+    function handleReset() {
         solrQuery.queryTerm = "";
-        dispatch("reset");`~`
+        onreset?.();
     }
 </script>
 
-<div>
-    <form onsubmit={preventDefault(submitForm)} class="search-form">
-        <input
-            class="search-input"
-            type="text"
-            bind:value={solrQuery.queryTerm}
-            placeholder="Enter search term"
-        />
-        <button class="option-button" type="button" onclick={resetForm}>
-            <i class="fa fa-xmark"></i>
-        </button>
-        <button class="button-primary" type="submit">
-            <i class="fa fa-search"></i> Search
-        </button>
-    </form>
-</div>
+<form onsubmit={handleSubmit} class="search-form" role="search">
+    <input
+        class="search-input"
+        type="text"
+        bind:value={solrQuery.queryTerm}
+        placeholder="Enter search term"
+        aria-label="Search term"
+    />
 
+    <button
+        class="option-button"
+        type="button"
+        onclick={handleReset}
+        aria-label="Clear search"
+    >
+        <i class="fa fa-xmark" aria-hidden="true"></i>
+    </button>
+
+    <button class="button-primary" type="submit">
+        <i class="fa fa-search" aria-hidden="true"></i> Search
+    </button>
+</form>
 <style>
     .search-form {
         display: flex;
