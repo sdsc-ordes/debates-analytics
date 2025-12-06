@@ -15,20 +15,20 @@
     let { highlighting, doc }: Props = $props();
 
     const navigateToVideoPlayer = () => {
-        goto(`/mediaplayer/${encodeURIComponent(doc.s3_prefix)}?start=${encodeURIComponent(doc.start)}`);
+        goto(`/mediaplayer/${encodeURIComponent(doc.media_id)}?start=${encodeURIComponent(doc.start)}`);
     };
+    $inspect("doc", doc);
 </script>
 
 <div class="statement">
-    <!-- <hr /> -->
     <div
         class="card"
-        onclick={() => navigateToVideoPlayer(doc.s3_prefix)}
+        onclick={() => navigateToVideoPlayer(doc.media_id)}
         role="button"
         tabindex="0"
         onkeydown={(e) =>
             (e.key === "Enter" || e.key === " ") &&
-            navigateToVideoPlayer(doc.s3_prefix)}
+            navigateToVideoPlayer(doc.media_id)}
     >
         <div class="card-body">
             <div class="card-title-large">{doc.debate_type} {doc.debate_session}</div>
@@ -43,12 +43,14 @@
                 {/if}
             </p>
             <div class="datetime-container">
+                {#if doc.debate_schedule}
                 <div class="date-time-item">
                     <i class="fa fa-calendar" aria-hidden="true"></i>
                     <small class="card-subtle"
                         >{displayIsoDate(doc.debate_schedule)}</small
                     >
                 </div>
+                {/if}
                 <div class="date-time-item">
                     <i class="fa fa-clock" aria-hidden="true"></i>
                     <small class="card-subtle"

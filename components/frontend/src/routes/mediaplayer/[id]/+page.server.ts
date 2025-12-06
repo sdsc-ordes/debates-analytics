@@ -9,10 +9,10 @@ import { error } from "@sveltejs/kit" // Import the error function
 
 export const load: PageServerLoad = async ({ params }) => {
   try {
-    const s3Prefix: string = params.id
+    const mediaId: string = params.id
 
     // Fetch metadata FIRST.  If it fails, it's a 404.
-    const metadata: ResponseMetadata = await fetchMetadata(s3Prefix) // Await here
+    const metadata = (await fetchMetadata(mediaId)) as ResponseMetadata
 
     // Check if metadata exists. If not, it's a 404
     if (

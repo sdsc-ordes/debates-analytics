@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { handlers } from 'svelte/legacy';
-
   import type { SolrQuery, SolrFacetCounts } from "$lib/interfaces/search.interface";
   import { displayIsoDate } from "$lib/utils/displayUtils";
+  import { SearchXIcon } from 'lucide-svelte';
 
   interface Props {
     solrQuery: SolrQuery;
@@ -12,61 +11,62 @@
 
   let { solrQuery = $bindable(), facetCounts, onSearch }: Props = $props();
 
-  const displayFunctions: { [key: string]: (label: string) => string } = {
-    debate_schedule: (label) => displayIsoDate(label),
+  // --- Display Logic ---
+  const displayFunctions: Record<string, (label: string) => string> = {
+    debate_schedule: displayIsoDate,
   };
 
-  // Default display function if no specific function is found for a facet field
-  const defaultDisplayFunction = (label: string) => label;
-
-  function getDisplayFunction(fieldKey: string): (label: string) => string {
-    return displayFunctions[fieldKey] || defaultDisplayFunction;
+  function getLabel(fieldKey: string, label: string): string {
+    const formatter = displayFunctions[fieldKey];
+    return formatter ? formatter(label) : label;
   }
 
-  // Helper function to get facet values as key-value pairs
-  const getFacetFields = (
-    facetFields: Record<string, Array<string | number>>,
-  ) => {
-    let fields = [];
-    for (const [key, values] of Object.entries(facetFields)) {
-      let facets = [];
+  // --- Data Transformation ($derived) ---
+  // Calculates the list of fields/facets automatically when facetCounts changes
+  let processedFields = $derived.by(() => {
+    if (!facetCounts?.facet_fields) return [];
+
+    const fields = [];
+    for (const [key, values] of Object.entries(facetCounts.facet_fields)) {
+      const facets = [];
       for (let i = 0; i < values.length; i += 2) {
+        // Create the object structure expected by your template
         facets.push({ label: values[i], count: values[i + 1] });
       }
       fields.push({ key, facets });
     }
     return fields;
-  };
+  });
 
+  // --- Actions ---
   function handleFacetAddClick(facetField: string, facetValue: string) {
     if (!solrQuery.facetFieldValues) {
-            solrQuery.facetFieldValues = [];
+      solrQuery.facetFieldValues = [];
     }
-    solrQuery.facetFieldValues.push({ facetField: facetField, facetValue: facetValue });
+    solrQuery.facetFieldValues.push({ facetField, facetValue });
     onSearch(solrQuery);
   }
 
   function handleFacetRemoveClick(facetField: string, facetValue: string) {
     if (!solrQuery.facetFieldValues) return;
 
-    // Filter out the facet that matches both field and value
     solrQuery.facetFieldValues = solrQuery.facetFieldValues.filter(
-        (facet) => !(facet.facetField === facetField && facet.facetValue === facetValue)
+      (facet) => !(facet.facetField === facetField && facet.facetValue === facetValue)
     );
-
-      onSearch(solrQuery);
+    onSearch(solrQuery);
   }
 
   function isActive(facetField: string, facetLabel: string): boolean {
     return solrQuery.facetFieldValues?.some(
-        (facet) => facet.facetField === facetField && facet.facetValue === facetLabel
+      (facet) => facet.facetField === facetField && facet.facetValue === facetLabel
     ) ?? false;
   }
 </script>
 
 {#if facetCounts}
   <div class="filters">
-    {#each getFacetFields(facetCounts.facet_fields) as field}
+    {#each processedFields as field}
+    {#if field.facets.length > 0}
       <h4 class="facet-title">
         {field.key.replace(/_/g, " ")}
       </h4>
@@ -75,27 +75,26 @@
           {#if facet.count && facet.label}
             <div class="facet-row">
               <button
-                class="facet-item {isActive(field.key, facet.label)
-                  ? 'active'
-                  : ''}"
-                onclick={handlers(() => handleFacetAddClick(field.key, facet.label), () => handleFacetAddClick(field.key, facet.label))}
+                class="facet-item {isActive(field.key, String(facet.label)) ? 'active' : ''}"
+                onclick={() => isActive(field.key, String(facet.label))
+                  ? handleFacetRemoveClick(field.key, String(facet.label))
+                  : handleFacetAddClick(field.key, String(facet.label))
+                }
               >
-                {getDisplayFunction(field.key)(facet.label)}
+                {getLabel(field.key, String(facet.label))}
+                {#if isActive(field.key, String(facet.label))}
+                  <span class="remove-icon">
+                    <i class="fa fa-xmark" aria-hidden="true"></i>
+                  </span>
+                {/if}
               </button>
+
               <small class="card-subtle">{facet.count}</small>
-              {#if isActive(field.key, facet.label)}
-                <button
-                  class="option-button"
-                  type="button"
-                  onclick={() => handleFacetRemoveClick(field.key, facet.label)}
-                >
-                  <i class="fa fa-xmark" style="color:var(--primary-dark-color)"></i>
-                </button>
-              {/if}
             </div>
           {/if}
         {/each}
       </div>
+    {/if}
     {/each}
   </div>
 {:else}
@@ -146,5 +145,15 @@
   .facet-item.active {
     background-color: var(--primary-color);
     color: var(--on-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* Space between text and X */
+    padding-right: 8px; /* Ensure padding on the right */
+  }
+
+  .remove-icon {
+    display: inline-flex;
+    margin-left: 6px;
+    opacity: 0.9;
   }
 </style>
