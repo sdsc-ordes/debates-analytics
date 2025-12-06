@@ -69,3 +69,7 @@ ps *args:
 restart *args:
     @echo "Restarting services..."
     docker compose {{docker_compose_files}} restart {{args}}
+
+# Load or reindex solr for a media_id
+reindex *args:
+    docker exec -it backend python cli.py {{args}}

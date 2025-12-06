@@ -44,3 +44,9 @@ config/.env.*
 
 # allow template/example files
 !*.env.example
+
+# Ignore all example files by default
+example/
+
+# But, *allow* our shared test config file
+!example/*.mp4
