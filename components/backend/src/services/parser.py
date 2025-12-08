@@ -26,6 +26,8 @@ class JsonTranscriptParser:
             # Format: {media_id}_{index}_{type}
             unique_id = f"{media_id}_{index}_{subtitle_type}"
 
+            text_content = seg.get("text", "").strip()
+
             doc = SearchDocument(
                 id=unique_id,
                 media_id=media_id,
@@ -33,7 +35,7 @@ class JsonTranscriptParser:
 
                 # Field Mapping
                 speaker_id=seg.get("speaker", "UNKNOWN"),
-                statement=seg.get("text", "").strip(),
+                statement=[text_content] if text_content else [],
                 statement_language=seg.get("language", "en"), # Map language
                 statement_type=subtitle_type,
 
