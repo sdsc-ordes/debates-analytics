@@ -1,42 +1,56 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { replaceWithHighlightedVersion } from '$lib/utils/highlightSearchTerms';
-    import type { SolrDocument, SolrHighlighting } from "$lib/interfaces/search.interface";
+    import type { components } from '$lib/api/schema';
     import {
         formatTimeForDisplay,
         displayIsoDate,
     } from "$lib/utils/displayUtils";
 
+    type SearchDocument = components['schemas']['SearchDocument'];
+    type HighlightedDoc = components['schemas']['HighlightedDoc'];
     interface Props {
-        highlighting: SolrHighlighting;
-        doc: SolrDocument;
+        highlighting: Record<string, HighlightedDoc>;
+        doc: SearchDocument;
     }
 
     let { highlighting, doc }: Props = $props();
+    let docId: string = doc.id;
 
     const navigateToVideoPlayer = () => {
         goto(`/mediaplayer/${encodeURIComponent(doc.media_id)}?start=${encodeURIComponent(doc.start)}`);
     };
-    $inspect("doc", doc);
+
+    const get_debate_title = () => {
+        if (doc.debate_session && doc.debate_type) {
+            return `${doc.debate_session} ${doc.debate_type}`
+        } else if (doc.debate_session) {
+            return doc.debate_session
+        } else {
+            return doc.media_id
+        }
+    }
 </script>
 
 <div class="statement">
     <div
         class="card"
-        onclick={() => navigateToVideoPlayer(doc.media_id)}
+        onclick={() => navigateToVideoPlayer()}
         role="button"
         tabindex="0"
         onkeydown={(e) =>
             (e.key === "Enter" || e.key === " ") &&
-            navigateToVideoPlayer(doc.media_id)}
+            navigateToVideoPlayer()}
     >
         <div class="card-body">
-            <div class="card-title-large">{doc.debate_type} {doc.debate_session}</div>
+            <div class="card-title-large">
+                {get_debate_title()}
+            </div>
             <p class="card-body-large truncated">
                 {#if highlighting}
                     {@html replaceWithHighlightedVersion(
                         doc.statement,
-                        highlighting?.[doc.id]?.statement,
+                        highlighting[docId]?.statement ?? []
                     ).join(" ")}
                 {:else}
                     {doc.statement.join(" ")}

@@ -1,31 +1,46 @@
-import type { PageServerLoad } from "./$types"
+import { fail } from '@sveltejs/kit';
+import type { PageServerLoad, Actions } from './$types';
+import { client } from '$lib/api/client';
+import { logger } from "$lib/utils/logger";
+import type { components } from '$lib/api/schema';
+type MediaListItem = components["schemas"]["MediaListItem"]
 
 export const load: PageServerLoad = async ({ fetch }) => {
-  console.log("Server Load: Fetching media list...")
+  const { data, error } = await client.GET("/admin/list", {
+    fetch: fetch
+  });
 
-  try {
-    const res = await fetch(`/api/metadata/list`)
-
-    if (!res.ok) {
-      console.error(`Backend error: ${res.status}`)
-      return { mediaItems: [], error: "Failed to fetch from backend" }
-    }
-
-    const data = await res.json()
-
-    // 2. Sort on the server
-    const sortedItems = data.items.sort(
-      (a: any, b: any) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    )
-
-    // 3. Return data to the page
-    return {
-      mediaItems: sortedItems,
-      error: null,
-    }
-  } catch (err) {
-    console.error("Network error in load function:", err)
-    return { mediaItems: [], error: "Backend unreachable" }
+  if (error || !data) {
+    console.error("Load Error:", error);
+    return { items: [] };
   }
-}
+
+  const sortedItems = (data.items || []).sort((a: MediaListItem, b: MediaListItem) =>
+    new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
+  );
+
+  return {
+    items: sortedItems
+  };
+};
+
+export const actions: Actions = {
+  delete: async ({ request, fetch }) => {
+    logger.info("IN DELETE");
+    const formData = await request.formData();
+    const mediaId = formData.get('mediaId') as string;
+
+    if (!mediaId) return fail(400, { missing: true });
+
+    const { error } = await client.POST("/admin/delete", {
+      body: { mediaId: mediaId },
+      fetch: fetch
+    });
+
+    if (error) {
+      return fail(500, { error: "Delete failed on server" });
+    }
+
+    return { success: true };
+  }
+};
