@@ -5,7 +5,6 @@ from pymongo import MongoClient, ReturnDocument
 from functools import lru_cache
 from datetime import datetime
 from config.settings import get_settings
-from pymongo.errors import CursorNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +72,7 @@ class MongoManager:
                 "subtitles": self._clean_document(sub_transcript, keys_to_remove=["type", "language"]),
                 "subtitles_en": self._clean_document(sub_translation, keys_to_remove=["type", "language"])
             }
-        except Exception as e:
+        except Exception:
             return {
                 "debate": debate,
             }

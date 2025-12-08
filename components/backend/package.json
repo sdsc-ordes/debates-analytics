@@ -1,8 +1,8 @@
 {
-	"dependencies": {
-		"openapi-fetch": "^0.15.0"
-	},
-	"devDependencies": {
-		"openapi-typescript": "^7.10.1"
-	}
+  "dependencies": {
+    "openapi-fetch": "^0.15.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.10.1"
+  }
 }

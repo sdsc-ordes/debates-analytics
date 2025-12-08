@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends
 
 from services.solr import get_solr_manager, SolrManager
 from models.search import SearchQuery, SearchResponse, FacetField, FacetValue
