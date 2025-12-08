@@ -1,46 +1,48 @@
-import { fail } from '@sveltejs/kit';
-import type { PageServerLoad, Actions } from './$types';
-import { client } from '$lib/api/client';
-import { logger } from "$lib/utils/logger";
-import type { components } from '$lib/api/schema';
+import { fail } from "@sveltejs/kit"
+import type { PageServerLoad, Actions } from "./$types"
+import { client } from "$lib/api/client"
+import { logger } from "$lib/utils/logger"
+import type { components } from "$lib/api/schema"
 type MediaListItem = components["schemas"]["MediaListItem"]
 
 export const load: PageServerLoad = async ({ fetch }) => {
   const { data, error } = await client.GET("/admin/list", {
-    fetch: fetch
-  });
+    fetch: fetch,
+  })
 
   if (error || !data) {
-    console.error("Load Error:", error);
-    return { items: [] };
+    console.error("Load Error:", error)
+    return { items: [] }
   }
 
-  const sortedItems = (data.items || []).sort((a: MediaListItem, b: MediaListItem) =>
-    new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
-  );
+  const sortedItems = (data.items || []).sort(
+    (a: MediaListItem, b: MediaListItem) =>
+      new Date(b.created_at ?? 0).getTime() -
+      new Date(a.created_at ?? 0).getTime(),
+  )
 
   return {
-    items: sortedItems
-  };
-};
+    items: sortedItems,
+  }
+}
 
 export const actions: Actions = {
   delete: async ({ request, fetch }) => {
-    logger.info("IN DELETE");
-    const formData = await request.formData();
-    const mediaId = formData.get('mediaId') as string;
+    logger.info("IN DELETE")
+    const formData = await request.formData()
+    const mediaId = formData.get("mediaId") as string
 
-    if (!mediaId) return fail(400, { missing: true });
+    if (!mediaId) return fail(400, { missing: true })
 
     const { error } = await client.POST("/admin/delete", {
       body: { mediaId: mediaId },
-      fetch: fetch
-    });
+      fetch: fetch,
+    })
 
     if (error) {
-      return fail(500, { error: "Delete failed on server" });
+      return fail(500, { error: "Delete failed on server" })
     }
 
-    return { success: true };
-  }
-};
+    return { success: true }
+  },
+}
