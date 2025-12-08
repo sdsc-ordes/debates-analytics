@@ -46,6 +46,9 @@ up *args:
     @echo "Starting services..."
     docker compose {{docker_compose_files}} up -d {{args}}
 
+build *args:
+    docker compose {{docker_compose_files}} build --no-cache {{args}}
+
 # View live logs for all or specific services.
 logs *args:
     @echo "Tailing logs..."
@@ -73,3 +76,8 @@ restart *args:
 # Load or reindex solr for a media_id
 reindex *args:
     docker exec -it backend python cli.py {{args}}
+
+api:
+    @echo "Fetching OpenAPI spec from backend..."
+    cd components/frontend && \
+    pnpm dlx openapi-typescript http://localhost:8082/openapi.json -o ./src/lib/api/schema.d.ts
