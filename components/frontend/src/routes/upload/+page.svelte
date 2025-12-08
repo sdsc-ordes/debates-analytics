@@ -5,8 +5,5 @@
 <svelte:head>
   <title>Upload Video</title>
 </svelte:head>
-<section>
-  <div class="info upload-card">
-    <VideoUploader/>
-  </div>
-</section>
+
+<VideoUploader />

@@ -30,9 +30,6 @@
 					<a href="/search">Search</a>
 				</li>
 			    {#if $canEdit}
-					<li aria-current={$page.url.pathname === '/upload' ? 'page' : undefined}>
-						<a href="/upload">Upload</a>
-					</li>
 					<li aria-current={$page.url.pathname === '/dashboard' ? 'page' : undefined}>
 						<a href="/dashboard">Dashboard</a>
 					</li>
