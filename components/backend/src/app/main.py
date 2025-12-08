@@ -28,16 +28,19 @@ api = FastAPI(
 
 api.include_router(
     ingest.router,
+    prefix="/ingest",
     tags=["Ingestion"]
 )
 
 api.include_router(
     metadata.router,
+    prefix="/db",
     tags=["Metadata"]
 )
 
 api.include_router(
     search.router,
+    prefix="/search",
     tags=["Search"]
 )
 

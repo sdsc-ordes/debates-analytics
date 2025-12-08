@@ -1,11 +1,11 @@
 import logging
-from fastapi import APIRouter, HTTPException, Depends
-from services.mongo import get_mongo_manager, MongoManager
+from fastapi import APIRouter, HTTPException, Depends, Query
+from services.mongo import get_mongo_manager, MongoManager, DocumentNotFoundError
 from services.s3 import get_s3_manager, S3Manager
 from services.solr import get_solr_manager, SolrManager
 from models.media import S3MediaUrlRequest, S3MediaUrlResponse
 from models.metadata import (
-    MongoMetadataRequest, MongoMetadataResponse,
+    MetadataResponse,
     UpdateSpeakersRequest, UpdateSubtitlesRequest,
 )
 
@@ -14,24 +14,26 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/get-signed-urls", response_model=S3MediaUrlResponse)
+@router.get("/get-signed-urls", response_model=S3MediaUrlResponse)
 async def get_media_urls(
-    request: S3MediaUrlRequest,
+    media_id: str = Query(..., description="The UUID of the media"),
     s3_client: S3Manager = Depends(get_s3_manager),
 ):
     """
     Get signed media urls for a debate.
     """
-    logger.info(f"Fetching signed URLs for media_id: {request.media_id}")
+    logger.info(f"Fetching signed URLs for media_id: {media_id}")
 
     try:
-        transcript_keys = s3_client.list_objects_by_prefix(f"{request.media_id}/transcripts")
-        media_keys = s3_client.list_objects_by_prefix(f"{request.media_id}/media")
+        transcript_keys = s3_client.list_objects_by_prefix(f"{media_id}/transcripts")
+        media_keys = s3_client.list_objects_by_prefix(f"{media_id}")
+        logger.info(f"media_keys: {media_keys}")
+        logger.info(f"transcript_keys: {transcript_keys}")
 
         logger.info(f"Found {len(transcript_keys)} transcripts and {len(media_keys)} media files.")
 
     except Exception:
-        logger.exception(f"Failed to list objects from S3 for {request.media_id}")
+        logger.exception(f"Failed to list objects from S3 for {media_id}")
         raise HTTPException(status_code=500, detail="Storage service unavailable.")
 
     media_url = ""
@@ -68,25 +70,24 @@ async def get_media_urls(
     return response
 
 
-@router.post("/get-metadata", response_model=MongoMetadataResponse)
+@router.get("/get-metadata", response_model=MetadataResponse)
 async def mongo_metadata(
-    request: MongoMetadataRequest,
+    media_id: str = Query(..., description="The UUID of the media"),
     mongo_client: MongoManager = Depends(get_mongo_manager),
 ):
-    logger.info(f"Fetching metadata for media_id: {request.media_id}")
+    logger.info(f"Fetching metadata for media_id: {media_id}")
 
     try:
-        metadata = mongo_client.get_full_metadata(request.media_id)
-
-        if not metadata:
-            logger.warning(f"No debate found for media_id: {request.media_id}")
-            raise HTTPException(status_code=404, detail="Media not found")
-
-        return MongoMetadataResponse(**metadata)
-
+        metadata = mongo_client.get_full_metadata(media_id)
+        logger.info(f"metadata: {metadata}")
+    except DocumentNotFoundError:
+        logger.exception(f"Metadata for {media_id} not found in db")
+        raise HTTPException(status_code=404, detail="Media not found")
     except Exception:
-        logger.exception(f"Error fetching metadata for {request.media_id}")
+        logger.exception(f"Error fetching metadata for {media_id}")
         raise HTTPException(status_code=500, detail="Database error")
+
+    return metadata
 
 
 @router.post("/update-speakers", include_in_schema=False)

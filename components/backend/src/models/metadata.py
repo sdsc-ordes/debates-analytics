@@ -1,11 +1,21 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 from .base import Speaker, Subtitle, EnumSubtitleType
-from .documents import DebateDocument, SpeakersDocument, SegmentsDocument, SubtitlesDocument
+from datetime import datetime
+from .documents import SpeakersDocument, SegmentsDocument, SubtitlesDocument
 
 
-class MongoMetadataRequest(BaseModel):
-    media_id: str = Field(..., description="media_id", examples=["df2afc83-7e69-4868-ba4c-b7c4afed6218"])
+class DebateDocument(BaseModel):
+    media_id: str
+    s3_key: str
+    original_filename: str
+    status: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+    job_id: Optional[str] = None
+    s3_audio_key: Optional[str] = None
+    transcript_s3_keys: Dict[str, str] = {}
 
 
 class UpdateSpeakersRequest(BaseModel):
@@ -20,8 +30,8 @@ class UpdateSubtitlesRequest(BaseModel):
     subtitleType: EnumSubtitleType
 
 
-class MongoMetadataResponse(BaseModel):
-    debate: Optional[DebateDocument] = None
+class MetadataResponse(BaseModel):
+    debate: DebateDocument
     speakers: Optional[SpeakersDocument] = None
     segments: Optional[SegmentsDocument] = None
     subtitles: Optional[SubtitlesDocument] = None

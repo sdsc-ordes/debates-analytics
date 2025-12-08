@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Dict, Any, Optional
 from datetime import datetime
+from enum import Enum
 
 
 class FacetFilter(BaseModel):
@@ -8,7 +9,7 @@ class FacetFilter(BaseModel):
     facetValue: str = Field(..., description="Solr facet field value", examples=["translation"])
 
 
-class SolrRequest(BaseModel):
+class SearchQuery(BaseModel):
     queryTerm: str = Field(..., description="Solr query term can be empty", examples=["honor"])
     sortBy: str = Field(..., description="Solr sort option", examples=["start asc"])
     facetFields: List[str] = Field(
@@ -20,20 +21,43 @@ class SolrRequest(BaseModel):
     )
 
 
-class SolrSegmentDocument(BaseModel):
-    """
-    The exact shape Solr expects.
-    We use the DebateSegment logic to populate this.
-    """
+class StatementType(str, Enum):
+    ORIGINAL = "original"
+    TRANSLATION = "translation"
+
+
+class FacetValue(BaseModel):
+    label: str
+    count: int
+
+
+class FacetField(BaseModel):
+    field_name: str         # e.g. "speaker_name"
+    values: List[FacetValue] # e.g. [{"label": "Alice", "count": 10}, ...]
+
+
+class HighlightedDoc(BaseModel):
+    statement: Optional[List[str]] = None
+
+
+class SearchDocument(BaseModel):
     id: str
     media_id: str
     segment_nr: int
     speaker_id: str
-    statement: str
-    statement_type: str
+    statement: List[str]
+    statement_type: StatementType
     start: float
     end: float
+    debate_schedule: Optional[datetime]= None
+    debate_type: Optional[str]= None
+    debate_session: Optional[str]= None
+    debate_name: Optional[str]= None
+    statement_language: Optional[str]= None
 
-    # Manual fields (can be populated later via update)
-    debate_name: Optional[str] = None
-    debate_date: Optional[datetime] = None
+
+class SearchResponse(BaseModel):
+    items: List[SearchDocument]
+    total: int
+    facets: List[FacetField] = []
+    highlighting: Dict[str, HighlightedDoc] = {}

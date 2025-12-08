@@ -39,7 +39,7 @@ class S3Manager:
         Generate a presigned URL for an S3 object.
         """
         try:
-            print(f"uploading data for s3 key {object_key}")
+            print(f"presign download url for s3 key {object_key}")
             response = self.s3.generate_presigned_url(
                 "get_object",
                 Params={
