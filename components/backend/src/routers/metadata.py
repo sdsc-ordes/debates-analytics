@@ -46,7 +46,7 @@ async def get_media_urls(
         except Exception as e:
             logger.error(f"Failed to sign media url for {mp4_key}: {e}")
     else:
-        logger.warning(f"No .mp4 media file found for media_id: {request.media_id}")
+        logger.warning(f"No .mp4 media file found for media_id: {media_id}")
 
     download_urls = []
     for object_key in transcript_keys:
@@ -66,7 +66,7 @@ async def get_media_urls(
         "signedMediaUrl": media_url
     }
 
-    logger.debug(f"Returning response for {request.media_id}")
+    logger.debug(f"Returning response for {media_id}")
     return response
 
 
