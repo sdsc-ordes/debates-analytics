@@ -1,6 +1,7 @@
 import logging
 from typing import Optional, Dict, Any
 from pymongo import MongoClient, ReturnDocument
+
 from functools import lru_cache
 from datetime import datetime
 from config.settings import get_settings
@@ -9,6 +10,11 @@ logger = logging.getLogger(__name__)
 
 SUBTITLE_TYPE_TRANSCRIPT = "transcript"
 SUBTITLE_TYPE_TRANSLATION = "translation"
+
+
+class DocumentNotFoundError(Exception):
+    pass
+
 
 class MongoManager:
     def __init__(self):
@@ -36,34 +42,40 @@ class MongoManager:
         Aggregates data from Media, Speakers, Segments, and Subtitles collections.
         Returns a dictionary ready for the Pydantic model, or None if media not found.
         """
-        debate = self.media_collection.find_one({"media_id": media_id})
+        logger.info(f"get metadata for media_id {media_id}")
+        debate = self.media_collection.find_one({"_id": media_id})
+        logger.info(f"found debate {debate}")
         if not debate:
-            return None
-
-        debate_clean = self._clean_document(debate)
+            raise DocumentNotFoundError(f"Debate for {media_id} does not exist in db")
 
         internal_id = debate["_id"]
+        debate = self._clean_document(debate)
 
-        speakers = self.speakers_collection.find_one({"debate_id": internal_id})
-        segments = self.segments_collection.find_one({"debate_id": internal_id})
+        try:
+            speakers = self.speakers_collection.find_one({"debate_id": internal_id})
+            segments = self.segments_collection.find_one({"debate_id": internal_id})
 
-        sub_transcript = self.subtitles_collection.find_one({
-            "debate_id": internal_id,
-            "type": SUBTITLE_TYPE_TRANSCRIPT
-        })
+            sub_transcript = self.subtitles_collection.find_one({
+                "debate_id": internal_id,
+                "type": SUBTITLE_TYPE_TRANSCRIPT
+            })
 
-        sub_translation = self.subtitles_collection.find_one({
-            "debate_id": internal_id,
-            "type": SUBTITLE_TYPE_TRANSLATION
-        })
+            sub_translation = self.subtitles_collection.find_one({
+                "debate_id": internal_id,
+                "type": SUBTITLE_TYPE_TRANSLATION
+            })
 
-        return {
-            "debate": debate_clean,
-            "speakers": self._clean_document(speakers),
-            "segments": self._clean_document(segments),
-            "subtitles": self._clean_document(sub_transcript, keys_to_remove=["type", "language"]),
-            "subtitles_en": self._clean_document(sub_translation, keys_to_remove=["type", "language"])
-        }
+            return {
+                "debate": debate,
+                "speakers": self._clean_document(speakers),
+                "segments": self._clean_document(segments),
+                "subtitles": self._clean_document(sub_transcript, keys_to_remove=["type", "language"]),
+                "subtitles_en": self._clean_document(sub_translation, keys_to_remove=["type", "language"])
+            }
+        except Exception:
+            return {
+                "debate": debate,
+            }
 
     def _clean_document(self, doc: dict, keys_to_remove: list = None) -> Optional[dict]:
         """
@@ -75,11 +87,14 @@ class MongoManager:
         cleaned = doc.copy()
 
         if "_id" in cleaned:
-            cleaned["_id"] = str(cleaned["_id"])
+            cleaned["media_id"] = str(cleaned["_id"])
+            cleaned.pop("_id", None)
 
         if keys_to_remove:
             for key in keys_to_remove:
                 cleaned.pop(key, None)
+
+        logger.info(f"cleaned document {doc} -> {cleaned}")
 
         return cleaned
 

@@ -1,59 +1,63 @@
 import type { PageServerLoad } from "./$types"
-import type {
-  SignedUrls,
-  ResponseMetadata,
-} from "$lib/interfaces/metadata.interface"
-import { fetchMedia } from "$lib/server/fetchMedia"
-import { fetchMetadata } from "$lib/server/fetchMetadata"
-import { error } from "@sveltejs/kit" // Import the error function
+import { client } from "$lib/api/client"
+import { error } from "@sveltejs/kit"
+import { logger } from "$lib/utils/logger"
+import type { components } from "$lib/api/schema"
 
-export const load: PageServerLoad = async ({ params }) => {
+type MetadataResponse = components["schemas"]["MetadataResponse"]
+
+export const load: PageServerLoad = async ({ params, fetch }) => {
   try {
-    const mediaId: string = params.id
+    // 1. Rename first error to 'metadataError'
+    const { data, error: metadataError } = await client.GET(
+      "/db/get-metadata",
+      {
+        params: {
+          query: {
+            media_id: params.id,
+          },
+        },
+        fetch: fetch,
+      },
+    )
 
-    // Fetch metadata FIRST.  If it fails, it's a 404.
-    const metadata = (await fetchMetadata(mediaId)) as ResponseMetadata
-
-    // Check if metadata exists. If not, it's a 404
-    if (
-      !metadata ||
-      !metadata.debate ||
-      !metadata.debate.s3_keys ||
-      !metadata.debate.media
-    ) {
-      throw error(404, "Not Found") // Throw 404 if metadata is missing or incomplete
+    if (metadataError || !data) {
+      logger.error(metadataError, "API Error:")
+      throw error(404, "Media not found")
     }
 
-    const objectKeys: string[] = metadata.debate.s3_keys.map(
-      (item) => item.name,
+    const metadata = data?.metadata
+    logger.info(metadata, "Metadata received")
+
+    //const mediaKey = metadata.s3_key;
+    //const objectKey = metadata.transcript_s3_keys;
+
+    // 2. Rename second error to 'signedUrlsError'
+    const { data: signedUrlsData, error: signedUrlsError } = await client.GET(
+      "/db/get-signed-urls",
+      {
+        params: {
+          query: {
+            media_id: params.id,
+          },
+        },
+        fetch: fetch,
+      },
     )
-    const mediaKey = metadata.debate.media.key
-    const signedUrls: SignedUrls = await fetchMedia(
-      s3Prefix,
-      objectKeys,
-      mediaKey,
-    )
+
+    if (signedUrlsError) {
+      logger.error(signedUrlsError, "Signed URL Error:")
+      // Handle this error appropriately, maybe you still return metadata but without URLs?
+    }
 
     return {
-      prefix: s3Prefix,
-      media: metadata.debate.media,
-      debate: metadata.debate,
-      speakers: metadata.speakers.speakers,
-      segments: metadata.segments.segments,
-      subtitles: metadata.subtitles.subtitles,
-      subtitles_en: metadata.subtitles_en.subtitles,
-      signedUrls: signedUrls,
+      metadata: metadata,
+      signedUrls: signedUrlsData, // Don't forget to return this if you need it!
     }
   } catch (err) {
-    // Check if the error is already a 404. If so, re-throw it.
-    if (err.status === 404) {
-      throw err
-    }
+    if (err?.status) throw err
 
-    // Log the error for debugging purposes
-    console.error("Error loading collections:", err)
-
-    // For other errors (not 404), throw a 500 error.
+    console.error(err, "Load Error")
     throw error(500, "Internal Server Error")
   }
 }

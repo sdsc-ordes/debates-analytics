@@ -54,5 +54,8 @@ def reindex_solr(media_id: str):
     process_file(translation_key, "translation")
 
     # 5. Update Mongo
-    mongo.update_status(media_id, "indexing_completed")
+    mongo.update_processing_status(
+            media_id=media_id,
+            status="indexing_completed",
+        )
     logger.info(f"Loader task finished for {media_id}")

@@ -1,10 +1,12 @@
 <script lang="ts">
   import SearchResultItem from "$lib/components/SearchResultItem.svelte";
-  import type { SolrDocument, SolrHighlighting } from "$lib/interfaces/search.interface";
+  import type { components } from '$lib/api/schema';
+  type SearchDocument = components['schemas']['SearchDocument'];
+  type HighlightedDoc = components['schemas']['HighlightedDoc'];
 
   interface Props {
-    docs: SolrDocument[];
-    highlighting: SolrHighlighting;
+    docs: SearchDocument[];
+    highlighting: Record<string, HighlightedDoc>;
   }
 
   let { docs, highlighting }: Props = $props();

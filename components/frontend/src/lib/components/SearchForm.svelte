@@ -1,25 +1,24 @@
 <script lang="ts">
-    import type { SolrQuery } from "$lib/interfaces/search.interface";
+    import type { components } from '$lib/api/schema';
+    type searchQuery = components['schemas']['SearchQuery'];
 
-    // 1. Define Props with Callbacks instead of EventDispatcher
     let {
-        solrQuery = $bindable(),
+        searchQuery = $bindable(),
         onsubmit,
         onreset
     }: {
-        solrQuery: SolrQuery;
+        searchQuery: searchQuery;
         onsubmit?: () => void;
         onreset?: () => void;
     } = $props();
 
-    // 2. Handle Submit natively
     function handleSubmit(event: SubmitEvent) {
-        event.preventDefault(); // Replaces 'svelte/legacy'
-        onsubmit?.(); // Call the prop function if it exists
+        event.preventDefault();
+        onsubmit?.();
     }
 
     function handleReset() {
-        solrQuery.queryTerm = "";
+        searchQuery.queryTerm = "";
         onreset?.();
     }
 </script>
@@ -28,7 +27,7 @@
     <input
         class="search-input"
         type="text"
-        bind:value={solrQuery.queryTerm}
+        bind:value={searchQuery.queryTerm}
         placeholder="Enter search term"
         aria-label="Search term"
     />

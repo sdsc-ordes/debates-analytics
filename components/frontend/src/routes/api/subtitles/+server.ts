@@ -1,9 +1,8 @@
-import type { SubtitleUpdateRequest } from "$lib/interfaces/api.interface"
 import { updateSubtitles } from "$lib/server/updateSubtitles"
 
 export async function POST({ request }) {
   try {
-    const subtitleUpdateRequest: SubtitleUpdateRequest = await request.json()
+    const subtitleUpdateRequest: any = await request.json()
     await updateSubtitles(
       subtitleUpdateRequest.prefix,
       subtitleUpdateRequest.segmentNr,

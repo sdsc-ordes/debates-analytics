@@ -33,6 +33,7 @@ async def list_media(
             created_at=d.get("created_at"),
             title=d.get("title")
         ))
+    logger.info(f"media list {items}")
 
     return MediaListResponse(items=items, total=len(items))
 

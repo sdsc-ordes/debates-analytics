@@ -1,13 +1,13 @@
 import json
 import logging
 from typing import List
-from models.search import SolrSegmentDocument
+from models.search import SearchDocument
 
 logger = logging.getLogger(__name__)
 
 
 class JsonTranscriptParser:
-    def parse(self, json_content: str, media_id: str, subtitle_type: str) -> List[SolrSegmentDocument]:
+    def parse(self, json_content: str, media_id: str, subtitle_type: str) -> List[SearchDocument]:
         """
         Parses the JSON output from Whisper/Transcription service.
         Input format: [{"start": "00:00:00", "end": "00:00:09", "text": "...", "speaker": "SPEAKER_01", "language": "en"}, ...]
@@ -26,14 +26,16 @@ class JsonTranscriptParser:
             # Format: {media_id}_{index}_{type}
             unique_id = f"{media_id}_{index}_{subtitle_type}"
 
-            doc = SolrSegmentDocument(
+            text_content = seg.get("text", "").strip()
+
+            doc = SearchDocument(
                 id=unique_id,
                 media_id=media_id,
                 segment_nr=index + 1, # 1-based index for humans
 
                 # Field Mapping
                 speaker_id=seg.get("speaker", "UNKNOWN"),
-                statement=seg.get("text", "").strip(),
+                statement=[text_content] if text_content else [],
                 statement_language=seg.get("language", "en"), # Map language
                 statement_type=subtitle_type,
 

@@ -4,7 +4,7 @@ from functools import lru_cache
 from pysolr import Solr
 from config.settings import get_settings
 
-from models.search import SolrRequest
+from models.search import SearchQuery
 
 logger = logging.getLogger(__name__)
 
@@ -61,32 +61,32 @@ class SolrManager:
 
     def search(
         self,
-        request: SolrRequest
+        query: SearchQuery
     ):
         """Fetch search results from Solr"""
         params = {
             "wt": "json",
             "indent": "true",
             "df": "statement",
-            "hl": "true" if request.queryTerm else "false",
+            "hl": "true" if query.queryTerm else "false",
             "hl.snippets": 10,
             "rows": 100,
             "start": 0,
         }
 
-        if request.facetFields:
+        if query.facetFields:
             params["facet"] = "true"
-            params["facet.field"] = request.facetFields
+            params["facet.field"] = query.facetFields
 
-        if request.facetFilters:
+        if query.facetFilters:
             params["fq"] = [
-                f'{filter.facetField}:"{filter.facetValue}"' for filter in request.facetFilters
+                f'{filter.facetField}:"{filter.facetValue}"' for filter in query.facetFilters
             ]
 
-        if request.sortBy:
-            params["sort"] = request.sortBy
+        if query.sortBy:
+            params["sort"] = query.sortBy
 
-        return self.client.search(request.queryTerm if request.queryTerm else "*:*", **params)
+        return self.client.search(query.queryTerm if query.queryTerm else "*:*", **params)
 
     def delete_by_media_id(self, media_id: str):
         """

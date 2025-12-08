@@ -55,6 +55,7 @@ services:
       - backend
     environment:
       PUBLIC_BACKEND_SERVER: ${PUBLIC_BACKEND_SERVER}
+      ORIGIN: http://localhost:3000
     networks:
       - debates_network
     command: ["node", "build"]
