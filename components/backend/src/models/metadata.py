@@ -62,6 +62,11 @@ class UpdateSpeakersRequest(BaseModel):
 
 class UpdateSubtitlesRequest(BaseModel):
     media_id: str
-    segmentNr: int
+    segment_nr: int
     subtitles: List[Subtitle]
-    subtitleType: EnumSubtitleType
+    subtitle_type: EnumSubtitleType
+
+
+class UpdateMetadataResponse(BaseModel):
+    status: str
+    media_id: str

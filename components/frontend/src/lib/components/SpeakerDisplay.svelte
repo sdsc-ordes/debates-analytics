@@ -1,5 +1,6 @@
 <script lang="ts">
   import { canEdit } from "$lib/stores/auth";
+  import { client } from '$lib/api/client';
   import type { components } from '$lib/api/schema';
 
   type Speaker = components['schemas']['Speaker'];
@@ -36,12 +37,12 @@
 
   function startEdit() {
     if (!activeSpeaker) return;
-    
+
     // Copy current values to draft
     draftName = activeSpeaker.name || '';
     draftRole = activeSpeaker.role_tag || '';
     editingSpeakerId = activeSpeaker.speaker_id || null;
-    
+
     errorMessage = null;
     editSpeakers = true;
   }
@@ -71,22 +72,17 @@
     errorMessage = null;
 
     try {
-      const response = await fetch('/api/speakers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(SpeakerUpdateRequest)
+      const { error: speakerUpdateError } = await client.POST("/db/update-speakers", {
+          body: SpeakerUpdateRequest,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        errorMessage = errorData.error || `Save failed: ${response.status}`;
-        console.error(errorMessage);
-        editSpeakers = true; // Re-open on failure so user doesn't lose text
+      if (speakerUpdateError) {
+        throw new Error("Update of speakers failed.");
       }
-    } catch (error: any) {
-      errorMessage = `An unexpected error occurred: ${error.message}`;
-      console.error(errorMessage);
-      editSpeakers = true;
+    } catch (err: any) {
+      editSpeakers = true; // Re-open on failure so user doesn't lose text
+      errorMessage = err.message || 'Unknown error occurred';
+      console.error(err);
     }
   }
 </script>
@@ -104,7 +100,7 @@
         {#if editSpeakers}
           <p class="card-subtle">Edit speaker details below:</p>
           <form class="speaker-form" onsubmit={(e) => { e.preventDefault(); saveSpeakers(); }}>
-            
+
             <label for="speaker-name" class="input-label">Name</label>
             <input
               id="speaker-name"
@@ -122,10 +118,10 @@
               bind:value={draftRole}
               class="editable-input"
             />
-            
+
             <button type="submit" style="display: none;"></button>
           </form>
-          
+
           <div class="button-group">
             <button class="secondary-button" onclick={cancelEdit} type="button">
               Cancel
