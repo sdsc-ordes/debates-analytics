@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation';
   import { client } from '$lib/api/client';
-  import { CloudUpload, CircleCheck, CircleAlert, Loader } from 'lucide-svelte';
+  import { CloudUpload, CircleCheck, CircleAlert, Loader, ArrowLeft } from 'lucide-svelte';
 
   let files = $state<FileList>();
   let status = $state<'idle' | 'preparing' | 'uploading' | 'processing' | 'success' | 'error'>('idle');
@@ -36,7 +36,7 @@
     });
   }
 
-async function handleUpload() {
+  async function handleUpload() {
     if (!file) return;
 
     try {
@@ -96,96 +96,98 @@ async function handleUpload() {
   }
 </script>
 
-<svelte:head>
-  <title>Upload Video</title>
-</svelte:head>
+<section class="page-layout">
+  <div class="upload-card">
+    <a href="/dashboard" class="back-link">
+      <ArrowLeft size={16} />
+      Back to Dashboard
+    </a>
 
-<section>
-  <div class="info upload-card">
+    <header>
+      <CloudUpload size={28} color="var(--primary-color)" />
+      <h1>Upload Video</h1>
+      <p>Select an MP4 file to add to your media library</p>
+    </header>
 
-    <div class="header">
-      <CloudUpload class="icon-primary" />
-      <h1>Video Upload</h1>
-    </div>
-
-    <div class="content-wrapper">
-      <label class="drop-zone" class:disabled={status === 'uploading' || status === 'processing' || status === 'success'}>
-        <input
-          bind:files
-          type="file"
-          accept="video/mp4"
-          disabled={status === 'uploading' || status === 'processing' || status === 'success'}
-        />
-
-        <div class="drop-zone-content">
-          {#if file}
-            <div class="file-name">{file.name}</div>
-            <div class="file-size">{(file.size / 1024 / 1024).toFixed(2)} MB</div>
-          {:else}
-            <span class="placeholder-text">Click to select a video file</span>
-          {/if}
-        </div>
-      </label>
-
-      {#if status !== 'idle'}
-        <div class="status-box">
-
-          {#if status === 'preparing'}
-            <div class="status-row loading">
-              <Loader class="animate-spin icon-small" />
-              <span>Requesting permissions...</span>
-            </div>
-          {/if}
-
-          {#if status === 'uploading'}
-            <div class="status-col">
-              <div class="progress-label">
-                <span>Uploading...</span>
-                <span>{progress}%</span>
-              </div>
-              <div class="progress-track">
-                <div class="progress-fill" style="width: {progress}%"></div>
-              </div>
-            </div>
-          {/if}
-
-          {#if status === 'processing'}
-            <div class="status-row loading">
-              <Loader class="animate-spin icon-small" />
-              <span>Queueing job...</span>
-            </div>
-          {/if}
-
-          {#if status === 'success'}
-            <div class="status-row success">
-              <CircleCheck class="icon-small" />
-              <span>Upload Complete! Media ID: {assignedMediaId}</span>
-            </div>
-          {/if}
-
-          {#if status === 'error'}
-            <div class="status-row error">
-              <CircleAlert class="icon-small" />
-              <span>Error: {errorMessage}</span>
-            </div>
-            <button class="link-button" onclick={() => status = 'idle'} type="button">
-              Try again
-            </button>
-          {/if}
-        </div>
+    <label class="drop-zone" class:disabled={status === 'uploading' || status === 'processing' || status === 'success'}>
+      <input bind:files type="file" accept="video/mp4" disabled={status === 'uploading' || status === 'processing' || status === 'success'} />
+      {#if file}
+        <strong>{file.name}</strong>
+        <small>{(file.size / 1024 / 1024).toFixed(2)} MB</small>
+      {:else}
+        <CloudUpload size={40} color="#9ca3af" />
+        <span>Click to select a video file</span>
       {/if}
+    </label>
 
-      {#if file && (status === 'idle' || status === 'error')}
-        <button
-          class="button-primary full-width"
-          disabled={!file}
-          onclick={handleUpload}
-          type="button"
-        >
-          Upload
-        </button>
-      {/if}
+    {#if status === 'preparing' || status === 'processing'}
+      <div class="status loading">
+        <Loader class="animate-spin" size={18} />
+        {status === 'preparing' ? 'Requesting permissions...' : 'Queueing job...'}
+      </div>
+    {/if}
 
-    </div>
+    {#if status === 'uploading'}
+      <div class="status">
+        <div class="progress-label">Uploading... <strong>{progress}%</strong></div>
+        <div class="progress-track"><div class="progress-fill" style="width: {progress}%"></div></div>
+      </div>
+    {/if}
+
+    {#if status === 'success'}
+      <div class="status success">
+        <CircleCheck size={18} /> Upload Complete!
+      </div>
+      <small class="media-id">Media ID: <code>{assignedMediaId}</code></small>
+      <a href="/dashboard" class="button-primary">Go to Library</a>
+    {/if}
+
+    {#if status === 'error'}
+      <div class="status error">
+        <CircleAlert size={18} /> {errorMessage}
+      </div>
+      <button class="link-button" onclick={() => status = 'idle'} type="button">Try again</button>
+    {/if}
+
+    {#if file && (status === 'idle' || status === 'error')}
+      <button class="button-primary" disabled={!file} onclick={handleUpload} type="button">Upload Video</button>
+    {/if}
   </div>
 </section>
+
+<style>
+  .page-layout { display: flex; justify-content: center; padding: 2rem 1rem; }
+  .upload-card { background: #fff; width: 100%; max-width: 480px; border-radius: 12px; padding: 1.5rem; border: 1px solid #eaeaea; }
+  
+  .back-link { display: inline-flex; align-items: center; gap: 6px; color: grey; font-size: 13px; text-decoration: none; margin-bottom: 1rem; }
+  .back-link:hover { color: var(--primary-color); }
+  
+  header { text-align: center; margin-bottom: 1.5rem; }
+  header h1 { font-size: 22px; padding: 0; margin: 0.5rem 0 0.25rem; }
+  header p { color: grey; font-size: 14px; margin: 0; }
+  
+  .drop-zone { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; border: 2px dashed #d1d5db; border-radius: 10px; padding: 2rem; cursor: pointer; background: #fafafa; margin-bottom: 1rem; }
+  .drop-zone:hover:not(.disabled) { border-color: var(--primary-color); background: #f0f4ff; }
+  .drop-zone.disabled { opacity: 0.6; cursor: not-allowed; }
+  .drop-zone input { display: none; }
+  .drop-zone strong { color: var(--primary-color); word-break: break-all; text-align: center; }
+  .drop-zone small { color: grey; font-size: 13px; }
+  
+  .status { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 1rem; }
+  .status.loading { color: var(--primary-color); }
+  .status.success { color: #059669; }
+  .status.error { color: #dc2626; }
+  
+  .progress-label { display: flex; justify-content: space-between; width: 100%; font-size: 14px; }
+  .progress-track { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; width: 100%; margin-top: 6px; }
+  .progress-fill { height: 100%; background: var(--primary-color); transition: width 0.3s; }
+  
+  .media-id { display: block; text-align: center; color: grey; margin-bottom: 1rem; }
+  .media-id code { color: var(--primary-color); }
+  
+  .button-primary { width: 100%; padding: 10px; text-align: center; text-decoration: none; display: block; }
+  .link-button { background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 13px; text-decoration: underline; padding: 0; }
+  
+  :global(.animate-spin) { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>

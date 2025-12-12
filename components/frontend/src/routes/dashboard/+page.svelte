@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { Trash2, FileIcon, Loader, RefreshCw, Upload } from 'lucide-svelte';
+  import { Trash2, FileIcon, Loader, RefreshCw, Upload, Copy, Check } from 'lucide-svelte';
   import type { PageData } from './$types';
   import { invalidateAll } from '$app/navigation';
   import type { components } from '$lib/api/schema';
@@ -11,6 +11,7 @@
   let items: MediaListItem[] = $derived(data.items);
 
   let isDeleting = $state<string | null>(null);
+  let copiedId = $state<string | null>(null);
 
   function formatDate(isoString: string) {
     if(!isoString) return "-";
@@ -24,6 +25,12 @@
     if (status.includes('failed') || status.includes('error')) return 'status-error';
     return 'status-processing';
   }
+
+  async function copyMediaId(id: string) {
+    await navigator.clipboard.writeText(id);
+    copiedId = id;
+    setTimeout(() => copiedId = null, 1500);
+  }
 </script>
 
 <svelte:head>
@@ -34,7 +41,7 @@
   <div class="dashboard-card">
 
     <div class="header">
-      <h1>Media Library</h1>
+      <h1>Dashboard</h1>
       <div class="actions">
       <button
           class="icon-button"
@@ -61,8 +68,8 @@
         <table>
           <thead>
             <tr>
-              <th>Media Id</th>
               <th>File Name</th>
+              <th>Media Id</th>
               <th>Status</th>
               <th class="desktop-only">Date</th>
               <th class="text-right">Action</th>
@@ -72,16 +79,26 @@
             {#each items as item (item.media_id)}
               <tr>
                 <td>
-                  {item.media_id}
-                </td>
-                <td>
                   <div class="file-cell">
                     <FileIcon size={16} color="var(--primary-color)" />
-                    <span class="filename" title={item.media_id}>
+                    <span class="filename" title={item.filename}>
                       {item.filename}
                     </span>
                   </div>
                   <div class="mobile-meta card-subtle">{formatDate(item.created_at)}</div>
+                </td>
+
+                <td>
+                  <div class="media-id-cell">
+                    <code title={item.media_id}>{item.media_id.slice(0, 8)}...</code>
+                    <button class="copy-btn" onclick={() => copyMediaId(item.media_id)} title="Copy Media ID" type="button">
+                      {#if copiedId === item.media_id}
+                        <Check size={14} color="#059669" />
+                      {:else}
+                        <Copy size={14} />
+                      {/if}
+                    </button>
+                  </div>
                 </td>
 
                 <td>
@@ -221,6 +238,36 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .media-id-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .media-id-cell code {
+    font-size: 12px;
+    color: grey;
+    background: var(--background-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: grey;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+  }
+
+  .copy-btn:hover {
+    background: var(--background-color);
+    color: var(--primary-color);
   }
 
   .badge {
