@@ -1,68 +1,63 @@
 <script lang="ts">
-  import type {
-    TimeUpdateParameters,
-  } from "$lib/interfaces/mediaplayer.interface";
-  import type {
-    Segment,
-    Speaker,
-  } from "$lib/interfaces/metadata.interface";
-  import { formatTimeForDisplay } from "$lib/utils/displayUtils";
+  import { formatTimeForDisplay, displaySpeaker } from "$lib/utils/displayUtils";
   import { jumpToTime } from "$lib/utils/mediaStartUtils";
-  import { displaySpeaker } from "$lib/utils/displayUtils";
+  import type { components } from '$lib/api/schema';
+
+  // Use the unified types from your schema
+  type Segment = components['schemas']['Segment'];
+  type Speaker = components['schemas']['Speaker'];
 
   interface Props {
-    segments?: Segment[];
-    speakers?: Speaker[];
-    timeUpdateParameters: TimeUpdateParameters;
-    mediaElement: HTMLVideoElement;
+    segments: Segment[];
+    speakers: Speaker[];
+    // We now accept just the current segment object directly
+    activeSegment?: Segment;
+    activeSpeaker?: Speaker;
+    mediaElement?: HTMLVideoElement;
   }
 
   let {
-    segments = [],
-    speakers = [],
-    timeUpdateParameters,
-    mediaElement
+    segments,
+    speakers,
+    activeSegment,
+    activeSpeaker,
+    mediaElement,
   }: Props = $props();
+
+  // Helper to check if a specific segment is the active one
+  function isCurrent(seg: Segment): boolean {
+    return activeSegment?.segment_nr === seg.segment_nr;
+  }
 </script>
 
 <div class="scrollable-container">
   <ol>
     {#each segments as segment}
-      <li>
+      <li id="segment-{segment.segment_nr}">
         <div
-          class="card text-center {segment.segment_nr ===
-          timeUpdateParameters.displaySegmentNr
-            ? 'current'
-            : 'other'}"
-          onclick={() => jumpToTime(mediaElement, segment.start)}
+          class="card text-center {isCurrent(segment) ? 'current' : 'other'}"
+          onclick={() => mediaElement && jumpToTime(mediaElement, segment.start)}
           role="button"
           tabindex="0"
           onkeydown={(e) =>
             (e.key === "Enter" || e.key === " ") &&
-            jumpToTime(mediaElement, segment.start)}
-          id='segment-{ segment.segment_nr }'
+            mediaElement && jumpToTime(mediaElement, segment.start)}
         >
           <div class="card-body">
-            <div class="card-title-small" style="color=inherit;">
-              {@html displaySpeaker(segment.speaker_id, speakers)}
+            <div class="card-title-small" style="color: inherit;">
+              {#if activeSpeaker }
+              {@html displaySpeaker(segment.speaker_id || segment.speaker_id, speakers)}
+              {/if}
             </div>
+
             <div class="date-time-item">
               <i
-                class="fa fa-clock {segment.segment_nr ===
-                timeUpdateParameters.displaySegmentNr
-                  ? 'current'
-                  : 'other'}"
+                class="fa fa-clock {isCurrent(segment) ? 'current' : 'other'}"
                 aria-hidden="true"
               ></i>
-              <small
-                class="card-subtle {segment.segment_nr ===
-                timeUpdateParameters.displaySegmentNr
-                  ? 'current'
-                  : 'other'}"
-                >{formatTimeForDisplay(segment.start)} - {formatTimeForDisplay(
-                  segment.end,
-                )}</small
-              >
+              <small class="card-subtle {isCurrent(segment) ? 'current' : 'other'}">
+                {formatTimeForDisplay(segment.start)} - {formatTimeForDisplay(segment.end)}
+              </small>
             </div>
           </div>
         </div>

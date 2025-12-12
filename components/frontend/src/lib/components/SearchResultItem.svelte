@@ -1,6 +1,5 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
-    import { replaceWithHighlightedVersion } from '$lib/utils/highlightSearchTerms';
     import type { components } from '$lib/api/schema';
     import {
         formatTimeForDisplay,
@@ -30,6 +29,31 @@
             return doc.media_id
         }
     }
+
+function replaceWithHighlightedVersion(
+      original: string | string[] | undefined,
+      highlights: string[] | undefined
+    ): string {
+        // Use Highlights if available
+        if (highlights && highlights.length > 0) {
+            return highlights[0];
+        }
+
+        // Fallback: Handle Array (Solr default)
+        if (Array.isArray(original)) {
+            return original.join(' ');
+        }
+
+        // Fallback: Handle String or Undefined
+        return original || '';
+    }
+
+    function getHighlights(docId: string): string[] | undefined {
+        // Check highlighting exists before accessing docId
+        return highlighting && highlighting[docId]?.statement
+            ? highlighting[docId].statement
+            : undefined;
+    }
 </script>
 
 <div class="statement">
@@ -50,10 +74,10 @@
                 {#if highlighting}
                     {@html replaceWithHighlightedVersion(
                         doc.statement,
-                        highlighting[docId]?.statement ?? []
-                    ).join(" ")}
+                        getHighlights(doc.id)
+                    )}
                 {:else}
-                    {doc.statement.join(" ")}
+                    {Array.isArray(doc.statement) ? doc.statement.join(' ') : doc.statement}
                 {/if}
             </p>
             <div class="datetime-container">

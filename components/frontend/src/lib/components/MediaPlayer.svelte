@@ -1,77 +1,35 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { onMediaTimeUpdate } from "$lib/utils/mediaTimeUpdate";
-  import { jumpToTime } from "$lib/utils/mediaStartUtils";
-  import type { TimeUpdateParameters } from "$lib/interfaces/mediaplayer.interface";
-  import type {
-    Subtitle,
-    Speaker,
-    Segment,
-  } from "$lib/interfaces/metadata.interface";
   interface Props {
-    startTime: number;
-    timeUpdateParameters: TimeUpdateParameters;
-    subtitles?: Subtitle[];
-    subtitles_en?: Subtitle[];
-    speakers?: Speaker[];
-    segments?: Segment[];
-    mediaElement: HTMLMediaElement;
     mediaUrl: string;
-    media: any;
+    // 1. Add currentTime to the interface
+    currentTime?: number; 
+    mediaElement?: HTMLMediaElement;
   }
 
   let {
-    startTime,
-    timeUpdateParameters = $bindable(),
-    subtitles = [],
-    subtitles_en = [],
-    speakers = [],
-    segments = [],
-    mediaElement = $bindable(),
     mediaUrl,
-    media
+    currentTime = $bindable(0),
+    mediaElement = $bindable()
   }: Props = $props();
 
-  function handleTimeUpdate() {
-    timeUpdateParameters = onMediaTimeUpdate(
-      mediaElement.currentTime,
-      subtitles,
-      subtitles_en,
-      segments,
-    );
-  }
-
-  onMount(async () => {
-    if (startTime) {
-      jumpToTime(mediaElement, startTime);
-    }
-  });
 </script>
 
 <div class="media-container">
-  {#if media.type === "video"}
-    <!-- svelte-ignore a11y_media_has_caption -->
+  {#if mediaUrl}
     <video
       class="media"
+      src={mediaUrl}
       bind:this={mediaElement}
-      ontimeupdate={handleTimeUpdate}
+      bind:currentTime={currentTime}
       controls
-      disablePictureInPicture
+      playsinline
     >
-      <source src={mediaUrl} type="{media.type}/{media.format}" />
       Your browser does not support the video tag.
     </video>
-  {:else if media.type === "audio"}
-    <audio
-      class="media"
-      bind:this={mediaElement}
-      ontimeupdate={handleTimeUpdate}
-      controls
-      autoplay
-    >
-      <source src={mediaUrl} type="{media.type}/{media.format}" />
-      Your browser does not support the audio tag.
-    </audio>
+  {:else}
+    <div class="placeholder">
+        <p>Waiting for video source...</p>
+    </div>
   {/if}
 </div>
 

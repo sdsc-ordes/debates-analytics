@@ -8,7 +8,6 @@
   }
 
   let { debate }: Props = $props();
-  console.log("debate", debate)
 
   const get_debate_title = () => {
       if (debate.session && debate.type) {

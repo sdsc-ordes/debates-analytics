@@ -1,13 +1,14 @@
 <script lang="ts">
-    import type { components } from '$lib/api/schema';
-    type searchQuery = components['schemas']['SearchQuery'];
+    interface SearchQuery {
+        queryTerm?: string | null;
+    }
 
     let {
         searchQuery = $bindable(),
         onsubmit,
         onreset
     }: {
-        searchQuery: searchQuery;
+        searchQuery: SearchQuery;
         onsubmit?: () => void;
         onreset?: () => void;
     } = $props();
