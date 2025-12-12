@@ -57,7 +57,7 @@ class SearchDocument(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    items: List[SearchDocument]
+    docs: List[SearchDocument]
     total: int
     facets: List[FacetField] = []
     highlighting: Dict[str, HighlightedDoc] = {}
