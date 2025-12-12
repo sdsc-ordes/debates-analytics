@@ -1,5 +1,4 @@
 import logging
-import json
 from services.s3 import get_s3_manager
 from services.solr import get_solr_manager
 from services.mongo import get_mongo_manager

@@ -5,7 +5,6 @@ from models.admin import (
     DeleteMediaRequest, DeleteMediaResponse,
 )
 from services.mongo import get_mongo_manager, MongoManager
-from services.queue import get_queue_manager, QueueManager
 from services.s3 import get_s3_manager, S3Manager
 from services.solr import get_solr_manager, SolrManager
 from tasks.reindex import reindex_solr

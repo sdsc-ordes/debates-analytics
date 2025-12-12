@@ -1,6 +1,6 @@
 import logging
 from typing import Optional, Dict, Any, List, Set
-from pymongo import MongoClient, ReturnDocument, UpdateOne
+from pymongo import MongoClient, ReturnDocument
 from datetime import datetime
 from config.settings import get_settings
 from functools import lru_cache
