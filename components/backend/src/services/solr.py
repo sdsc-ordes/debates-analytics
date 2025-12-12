@@ -69,8 +69,8 @@ class SolrManager:
             "indent": "true",
             "df": "statement",
             "hl": "true" if query.queryTerm else "false",
-            "hl.snippets": 10,
-            "rows": 100,
+            "hl.fragsize": 0,
+            "rows": 500,
             "start": 0,
         }
 
@@ -92,18 +92,14 @@ class SolrManager:
         """
         Deletes all segments associated with a specific media_id.
         """
-        # We query the 'media_id_s' field (dynamic string field).
-        # We wrap the ID in quotes to handle any special characters safely.
-        query = f'media_id_s:"{media_id}"'
+        query = f'media_id:"{media_id}"'
 
         logger.info(f"Deleting Solr documents for query: {query}")
 
         try:
-            # commit=True ensures the deletion is immediately visible in search results
             self.client.delete(q=query, commit=True)
         except Exception as e:
             logger.error(f"Failed to delete documents for {media_id} from Solr: {e}")
-            # Re-raise so the API knows it failed
             raise e
 
     @staticmethod

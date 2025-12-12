@@ -1,25 +1,21 @@
 import logging
-from typing import Optional, Dict, Any
-from pymongo import MongoClient, ReturnDocument
-
-from functools import lru_cache
+from typing import Optional, Dict, Any, List, Set
+from pymongo import MongoClient, ReturnDocument, UpdateOne
 from datetime import datetime
 from config.settings import get_settings
+from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
-SUBTITLE_TYPE_TRANSCRIPT = "transcript"
-SUBTITLE_TYPE_TRANSLATION = "translation"
-
+TYPE_ORIGINAL = "original"
+TYPE_TRANSLATION = "translation"
 
 class DocumentNotFoundError(Exception):
     pass
 
-
 class MongoManager:
     def __init__(self):
         settings = get_settings()
-
         self.mongo_url = settings.mongo_url
         self.db_name = settings.mongo_db_name
 
@@ -27,76 +23,103 @@ class MongoManager:
             self.client = MongoClient(self.mongo_url)
             self.db = self.client[self.db_name]
 
+            # Collections
             self.media_collection = self.db[settings.mongo_media_collection]
             self.speakers_collection = self.db[settings.mongo_speaker_collection]
-            self.segments_collection = self.db[settings.mongo_segment_collection]
+            # We use one collection for subtitles/segments, differentiated by 'type'
             self.subtitles_collection = self.db[settings.mongo_subtitle_collection]
+            self.segments_collection = self.db[settings.mongo_segment_collection]
 
             logger.info(f"MongoManager initialized for DB: {self.db_name}")
         except Exception as e:
             logger.error(f"Failed to connect to MongoDB: {e}")
             raise e
 
+    # --- 1. Processing Status ---
+    def update_processing_status(self, media_id: str, status: str, job_id: str = None, metadata: Dict = None):
+        update_fields = {"status": status, "updated_at": datetime.utcnow()}
+        if job_id: update_fields["job_id"] = job_id
+        if metadata: update_fields.update(metadata)
+
+        return self.media_collection.find_one_and_update(
+            {"_id": media_id},
+            {"$set": update_fields},
+            return_document=ReturnDocument.AFTER
+        )
+
+    def save_speakers(self, media_id: str, speaker_ids: Set[str]):
+        speakers = [{"speaker_id": sid, "name": "", "role_tag": ""} for sid in speaker_ids]
+        doc = {
+            "media_id": media_id,
+            "speakers": speakers,
+            "updated_at": datetime.utcnow()
+        }
+
+        self.speakers_collection.update_one(
+            {"media_id": media_id},
+            {"$set": doc},
+            upsert=True
+        )
+
+    # --- A. Save Search Segments (To segments_collection) ---
+    def save_subtitles(self, media_id: str, segment_type: str, subtitles: List[Dict]):
+        """
+        Saves subtitles.
+        """
+        doc = {
+            "media_id": media_id,
+            "type": segment_type, # 'original' or 'translation'
+            "subtitles": subtitles,
+            "updated_at": datetime.utcnow()
+        }
+        self.subtitles_collection.update_one(
+            {"media_id": media_id, "type": segment_type},
+            {"$set": doc},
+            upsert=True
+        )
+
+    # --- B. Save Detailed Subtitles (To subtitles_collection) ---
+    def save_segments(self, media_id: str, sub_type: str, segments: List[Dict]):
+        """
+        Saves segments
+        """
+        doc = {
+            "media_id": media_id,
+            "segments": segments,
+            "updated_at": datetime.utcnow()
+        }
+        self.segments_collection.update_one(
+            {"media_id": media_id, "type": sub_type},
+            {"$set": doc},
+            upsert=True
+        )
+
     def get_full_metadata(self, media_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Aggregates data from Media, Speakers, Segments, and Subtitles collections.
-        Returns a dictionary ready for the Pydantic model, or None if media not found.
-        """
-        logger.info(f"get metadata for media_id {media_id}")
+        # 1. Get Debate (This is still a Document, so we clean it)
         debate = self.media_collection.find_one({"_id": media_id})
-        logger.info(f"found debate {debate}")
         if not debate:
-            raise DocumentNotFoundError(f"Debate for {media_id} does not exist in db")
+            raise DocumentNotFoundError(f"Debate {media_id} not found")
 
-        internal_id = debate["_id"]
-        debate = self._clean_document(debate)
+        # Clean the debate document (handle _id -> media_id)
+        debate["media_id"] = str(debate.pop("_id"))
 
-        try:
-            speakers = self.speakers_collection.find_one({"debate_id": internal_id})
-            segments = self.segments_collection.find_one({"debate_id": internal_id})
+        # 2. Get Speakers (Document contains { "speakers": [...] })
+        speakers_doc = self.speakers_collection.find_one({"media_id": media_id})
+        segments_doc = self.segments_collection.find_one({"media_id": media_id})
 
-            sub_transcript = self.subtitles_collection.find_one({
-                "debate_id": internal_id,
-                "type": SUBTITLE_TYPE_TRANSCRIPT
-            })
+        # 4. Get Detailed Subtitles (Document contains { "segments": [...] })
+        sub_orig_doc = self.subtitles_collection.find_one({"media_id": media_id, "type": TYPE_ORIGINAL})
+        sub_trans_doc = self.subtitles_collection.find_one({"media_id": media_id, "type": TYPE_TRANSLATION})
 
-            sub_translation = self.subtitles_collection.find_one({
-                "debate_id": internal_id,
-                "type": SUBTITLE_TYPE_TRANSLATION
-            })
+        return {
+            "debate": debate,
+            "speakers": speakers_doc.get("speakers") if speakers_doc else [],
 
-            return {
-                "debate": debate,
-                "speakers": self._clean_document(speakers),
-                "segments": self._clean_document(segments),
-                "subtitles": self._clean_document(sub_transcript, keys_to_remove=["type", "language"]),
-                "subtitles_en": self._clean_document(sub_translation, keys_to_remove=["type", "language"])
-            }
-        except Exception:
-            return {
-                "debate": debate,
-            }
+            "segments": segments_doc.get("segments") if segments_doc else [],
 
-    def _clean_document(self, doc: dict, keys_to_remove: list = None) -> Optional[dict]:
-        """
-        Internal helper to clean MongoDB documents.
-        """
-        if not doc:
-            return None
-
-        cleaned = doc.copy()
-
-        if "_id" in cleaned:
-            cleaned["media_id"] = str(cleaned["_id"])
-            cleaned.pop("_id", None)
-
-        if keys_to_remove:
-            for key in keys_to_remove:
-                cleaned.pop(key, None)
-
-        logger.info(f"cleaned document {doc} -> {cleaned}")
-
-        return cleaned
+            "subtitles": sub_orig_doc.get("subtitles") if sub_orig_doc else [],
+            "subtitles_en": sub_trans_doc.get("subtitles") if sub_trans_doc else [],
+        }
 
     def _get_debate_id_by_media_id(self, media_id: str):
         """Helper to resolve public media_id to internal MongoDB _id"""
@@ -139,32 +162,6 @@ class MongoManager:
         )
         return result.modified_count > 0 or result.matched_count > 0
 
-    def update_processing_status(
-        self,
-        media_id: str,
-        status: str,
-        job_id: str = None,
-        metadata: Dict = None,
-    ):
-        """Update the status of the media processing."""
-        update_fields = {
-            "status": status,
-            "updated_at": datetime.utcnow()
-        }
-
-        if job_id:
-            update_fields["job_id"] = job_id
-
-        if metadata:
-            for key, value in metadata.items():
-                update_fields[key] = value
-
-        return self.media_collection.find_one_and_update(
-            {"_id": media_id},
-            {"$set": update_fields},
-            return_document=ReturnDocument.AFTER
-        )
-
     def insert_initial_media_document(self, media_id: str, s3_key: str, filename: str):
         """First entry of the media in the db: assumes that upload to S3 already happened."""
         document = {
@@ -201,21 +198,9 @@ class MongoManager:
         """
         Deletes media doc AND all related speakers/subtitles/segments.
         """
-        logger.info(f"delete mongo for {media_id}")
-        # 1. Get the internal ObjectId to find relations
-        doc = self.media_collection.find_one({"_id": media_id})
-        logger.info(f"found doc {doc}")
-        if not doc:
-            return False
-
-        #internal_id = doc["_id"]
-
-        # 2. Delete Related Data first
-        ##self.speakers_collection.delete_many({"debate_id": internal_id})
-        #self.subtitles_collection.delete_many({"debate_id": internal_id})
-        #self.segments_collection.delete_many({"debate_id": internal_id})
-
-        # 3. Delete the Media Doc
+        self.speakers_collection.delete_one({"media_id": media_id})
+        self.subtitles_collection.delete_many({"media_id": media_id})
+        self.segments_collection.delete_one({"media_id": media_id})
         self.media_collection.delete_one({"_id": media_id})
         return True
 

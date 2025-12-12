@@ -25,18 +25,3 @@ class DeleteMediaResponse(BaseModel):
     mediaId: str
     warnings: Optional[List[str]] = None
     errors: Optional[List[str]] = None
-
-
-class ProcessingStatusResponse(BaseModel):
-    media_id: str
-    status: str
-    job_id: Optional[str]
-
-    # Real-time info from Redis
-    job_state: Optional[str]
-    progress: Optional[str]
-    error: Optional[str]
-
-    # Timestamps
-    created_at: datetime
-    updated_at: datetime

@@ -1,8 +1,36 @@
 from pydantic import BaseModel
 from typing import List, Optional, Dict
-from .base import Speaker, Subtitle, EnumSubtitleType
 from datetime import datetime
-from .documents import SpeakersDocument, SegmentsDocument, SubtitlesDocument
+from enum import Enum
+
+
+class EnumSubtitleType(str, Enum):
+    transcript = "Transcript"
+    translation = "Translation"
+
+
+class Speaker(BaseModel):
+    speaker_id: str
+    name: str
+    role_tag: str
+
+
+class Subtitle(BaseModel):
+    start: float
+    end: float
+    text: str
+    speaker_id: str
+    language: str
+    segment_nr: int
+
+
+class Segment(BaseModel):
+    start: float
+    end: float
+    subtitles: List[str]
+    speaker_id: str
+    language: str
+    segment_nr: int
 
 
 class DebateDocument(BaseModel):
@@ -18,6 +46,15 @@ class DebateDocument(BaseModel):
     transcript_s3_keys: Dict[str, str] = {}
 
 
+class MetadataResponse(BaseModel):
+    debate: DebateDocument
+    speakers: Optional[List[Speaker]] = []
+    segments: Optional[List[Segment]] = []
+    segments_en: Optional[List[Segment]] = []
+    subtitles: Optional[List[Subtitle]] = []
+    subtitles_en: Optional[List[Subtitle]] = []
+
+
 class UpdateSpeakersRequest(BaseModel):
     media_id: str
     speakers: List[Speaker]
@@ -28,11 +65,3 @@ class UpdateSubtitlesRequest(BaseModel):
     segmentNr: int
     subtitles: List[Subtitle]
     subtitleType: EnumSubtitleType
-
-
-class MetadataResponse(BaseModel):
-    debate: DebateDocument
-    speakers: Optional[SpeakersDocument] = None
-    segments: Optional[SegmentsDocument] = None
-    subtitles: Optional[SubtitlesDocument] = None
-    subtitles_en: Optional[SubtitlesDocument] = None

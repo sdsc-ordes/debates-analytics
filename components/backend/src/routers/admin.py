@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from models.admin import (
-    MediaListResponse, MediaListItem, ProcessingStatusResponse,
+    MediaListResponse, MediaListItem,
     DeleteMediaRequest, DeleteMediaResponse,
 )
 from services.mongo import get_mongo_manager, MongoManager
@@ -36,39 +36,6 @@ async def list_media(
     logger.info(f"media list {items}")
 
     return MediaListResponse(items=items, total=len(items))
-
-
-@router.get("/status/{media_id}", response_model=ProcessingStatusResponse)
-async def check_processing_status(
-    media_id: str,
-    mongo: MongoManager = Depends(get_mongo_manager),
-    rq: QueueManager = Depends(get_queue_manager)
-):
-    """
-    Combines MongoDB Status (Persistent) with Redis Status (Real-time).
-    Frontend should poll this every 3-5 seconds.
-    """
-    doc = mongo.media_collection.find_one({"media_id": media_id})
-    if not doc:
-        raise HTTPException(status_code=404, detail="Media not found")
-
-    job_id = doc.get("job_id")
-    job_info = None
-
-    if job_id:
-        job_info = rq.get_job_status(job_id)
-
-    return ProcessingStatusResponse(
-        media_id=media_id,
-        status=doc.get("status", "unknown"),
-        job_id=job_id,
-        created_at=doc.get("created_at"),
-        updated_at=doc.get("updated_at"),
-
-        job_state=job_info.get("state") if job_info else "expired",
-        progress=job_info.get("progress") if job_info else None,
-        error=job_info.get("error") if job_info else doc.get("error_message")
-    )
 
 
 @router.post("/delete", response_model=DeleteMediaResponse)

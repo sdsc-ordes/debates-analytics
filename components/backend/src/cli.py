@@ -9,7 +9,11 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from tasks.reindex import reindex_solr
 
 # Configure logging to see output in terminal
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level="INFO",
+    format='%(asctime)s - [%(levelname)s] - (%(filename)s:%(lineno)d) - %(funcName)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 app = typer.Typer()
 
