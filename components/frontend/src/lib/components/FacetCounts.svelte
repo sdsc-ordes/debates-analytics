@@ -2,19 +2,21 @@
   import type { components } from '$lib/api/schema';
   import { displayIsoDate } from "$lib/utils/displayUtils";
 
-  // Update types to match the new clean backend structure
   type SearchQuery = components['schemas']['SearchQuery'];
   type FacetField = components['schemas']['FacetField'];
+  
+  // Helper: Extract the inner type of a single filter (e.g. {facetField: string, facetValue: string})
+  // This ensures we match whatever the backend schema generates.
+  type FacetFilter = NonNullable<SearchQuery['facetFilters']>[number];
 
   interface Props {
     searchQuery: SearchQuery;
-    facets: FacetField[]; // Renamed from facetCounts to match the list structure
+    facets: FacetField[];
     onSearch: (solrRequest: SearchQuery) => void;
   }
 
   let { searchQuery = $bindable(), facets, onSearch }: Props = $props();
 
-  // --- Display Logic ---
   const displayFunctions: Record<string, (label: string) => string> = {
     debate_schedule: displayIsoDate,
   };
@@ -24,23 +26,30 @@
     return formatter ? formatter(label) : label;
   }
 
-  // --- Actions ---
-  // No data transformation needed! We iterate directly over 'facets'.
-
   function handleFacetAddClick(facetField: string, facetValue: string) {
-    if (!searchQuery.facetFilters) {
-      searchQuery.facetFilters = [];
-    }
-    searchQuery.facetFilters.push({ facetField, facetValue });
+    // 1. Create the new filter object
+    // Casting 'as FacetFilter' keeps TypeScript happy if the schema is strict
+    const newFilter = { facetField, facetValue } as FacetFilter;
+
+    // 2. Immutable Update (Better for Svelte Reactivity)
+    // Create a NEW array instead of .push()
+    searchQuery.facetFilters = [
+        ...(searchQuery.facetFilters || []), 
+        newFilter
+    ];
+    
+    // 3. Trigger Search
     onSearch(searchQuery);
   }
 
   function handleFacetRemoveClick(facetField: string, facetValue: string) {
     if (!searchQuery.facetFilters) return;
 
+    // Immutable Update: .filter() creates a new array automatically
     searchQuery.facetFilters = searchQuery.facetFilters.filter(
       (facet) => !(facet.facetField === facetField && facet.facetValue === facetValue)
     );
+    
     onSearch(searchQuery);
   }
 
@@ -67,6 +76,7 @@
                 ? handleFacetRemoveClick(field.field_name, facet.label)
                 : handleFacetAddClick(field.field_name, facet.label)
               }
+              type="button"
             >
               {getLabel(field.field_name, facet.label)}
 

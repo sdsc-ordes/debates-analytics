@@ -54,13 +54,13 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    get?: never
-    put?: never
     /**
      * Get Media Urls
      * @description Get signed media urls for a debate.
      */
-    post: operations["get_media_urls_db_get_signed_urls_post"]
+    get: operations["get_media_urls_db_get_signed_urls_get"]
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -91,7 +91,8 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    get?: never
+    /** Search Solr */
+    get: operations["search_solr_search_search_solr_get"]
     put?: never
     /** Search Solr */
     post: operations["search_solr_search_search_solr_post"]
@@ -191,27 +192,34 @@ export interface components {
   schemas: {
     /** DebateDocument */
     DebateDocument: {
-      /** S3 Prefix */
-      s3_prefix: string
+      /** Media Id */
+      media_id: string
+      /** S3 Key */
+      s3_key: string
+      /** Original Filename */
+      original_filename: string
+      /** Status */
+      status: string
       /**
        * Created At
        * Format: date-time
        */
       created_at: string
-      /** S3 Keys */
-      s3_keys: components["schemas"]["S3Key"][]
-      media: components["schemas"]["Media"]
+      /** Updated At */
+      updated_at?: string | null
+      /** Error Message */
+      error_message?: string | null
+      /** Job Id */
+      job_id?: string | null
+      /** S3 Audio Key */
+      s3_audio_key?: string | null
       /**
-       * Schedule
-       * Format: date-time
+       * Transcript S3 Keys
+       * @default {}
        */
-      schedule: string
-      /** Public */
-      public: boolean
-      /** Type */
-      type: string
-      /** Session */
-      session: string
+      transcript_s3_keys: {
+        [key: string]: string
+      }
     }
     /** DeleteMediaRequest */
     DeleteMediaRequest: {
@@ -268,15 +276,6 @@ export interface components {
       /** Statement */
       statement?: string[] | null
     }
-    /** Media */
-    Media: {
-      /** Key */
-      key: string
-      /** Type */
-      type: string
-      /** Format */
-      format: string
-    }
     /** MediaListItem */
     MediaListItem: {
       /** Media Id */
@@ -299,12 +298,32 @@ export interface components {
     }
     /** MetadataResponse */
     MetadataResponse: {
-      [x: string]: any
       debate: components["schemas"]["DebateDocument"]
-      speakers?: components["schemas"]["SpeakersDocument"] | null
-      segments?: components["schemas"]["SegmentsDocument"] | null
-      subtitles?: components["schemas"]["SubtitlesDocument"] | null
-      subtitles_en?: components["schemas"]["SubtitlesDocument"] | null
+      /**
+       * Speakers
+       * @default []
+       */
+      speakers: components["schemas"]["Speaker"][] | null
+      /**
+       * Segments
+       * @default []
+       */
+      segments: components["schemas"]["Segment"][] | null
+      /**
+       * Segments En
+       * @default []
+       */
+      segments_en: components["schemas"]["Segment"][] | null
+      /**
+       * Subtitles
+       * @default []
+       */
+      subtitles: components["schemas"]["Subtitle"][] | null
+      /**
+       * Subtitles En
+       * @default []
+       */
+      subtitles_en: components["schemas"]["Subtitle"][] | null
     }
     /** ProcessRequest */
     ProcessRequest: {
@@ -348,24 +367,6 @@ export interface components {
        * Format: date-time
        */
       updated_at: string
-    }
-    /** S3Key */
-    S3Key: {
-      /** Name */
-      name: string
-      /** Type */
-      type: string
-      /** Description */
-      description: string
-    }
-    /** S3MediaUrlRequest */
-    S3MediaUrlRequest: {
-      /**
-       * Media Id
-       * @description media_id
-       * @example df2afc83-7e69-4868-ba4c-b7c4afed6218
-       */
-      media_id: string
     }
     /** S3MediaUrlResponse */
     S3MediaUrlResponse: {
@@ -485,8 +486,8 @@ export interface components {
     }
     /** SearchResponse */
     SearchResponse: {
-      /** Items */
-      items: components["schemas"]["SearchDocument"][]
+      /** Docs */
+      docs: components["schemas"]["SearchDocument"][]
       /** Total */
       total: number
       /**
@@ -504,19 +505,18 @@ export interface components {
     }
     /** Segment */
     Segment: {
-      /** Segment Nr */
-      segment_nr: number
-      /** Speaker Id */
-      speaker_id: string
       /** Start */
       start: number
       /** End */
       end: number
-    }
-    /** SegmentsDocument */
-    SegmentsDocument: {
-      /** Segments */
-      segments: components["schemas"]["Segment"][]
+      /** Subtitles */
+      subtitles: string[]
+      /** Speaker Id */
+      speaker_id: string
+      /** Language */
+      language: string
+      /** Segment Nr */
+      segment_nr: number
     }
     /** Speaker */
     Speaker: {
@@ -527,11 +527,6 @@ export interface components {
       /** Role Tag */
       role_tag: string
     }
-    /** SpeakersDocument */
-    SpeakersDocument: {
-      /** Speakers */
-      speakers: components["schemas"]["Speaker"][]
-    }
     /**
      * StatementType
      * @enum {string}
@@ -539,23 +534,18 @@ export interface components {
     StatementType: "original" | "translation"
     /** Subtitle */
     Subtitle: {
-      /** Index */
-      index: number
       /** Start */
       start: number
       /** End */
       end: number
-      /** Content */
-      content: string
+      /** Text */
+      text: string
       /** Speaker Id */
       speaker_id: string
+      /** Language */
+      language: string
       /** Segment Nr */
       segment_nr: number
-    }
-    /** SubtitlesDocument */
-    SubtitlesDocument: {
-      /** Subtitles */
-      subtitles: components["schemas"]["Subtitle"][]
     }
     /** ValidationError */
     ValidationError: {
@@ -641,18 +631,17 @@ export interface operations {
       }
     }
   }
-  get_media_urls_db_get_signed_urls_post: {
+  get_media_urls_db_get_signed_urls_get: {
     parameters: {
-      query?: never
+      query: {
+        /** @description The UUID of the media */
+        media_id: string
+      }
       header?: never
       path?: never
       cookie?: never
     }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["S3MediaUrlRequest"]
-      }
-    }
+    requestBody?: never
     responses: {
       /** @description Successful Response */
       200: {
@@ -693,6 +682,44 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["MetadataResponse"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  search_solr_search_search_solr_get: {
+    parameters: {
+      query?: {
+        /** @description The main search string */
+        queryTerm?: string | null
+        /** @description List of filters in 'field:value' format */
+        facetFilters?: string[]
+        facetFields?: string[]
+        sortBy?: string | null
+        rows?: number
+        start?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["SearchResponse"]
         }
       }
       /** @description Validation Error */

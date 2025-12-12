@@ -1,18 +1,64 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import DebateHeader from "$lib/components/DebateHeader.svelte";
+  import MediaPlayer from "$lib/components/MediaPlayer.svelte";
+  import SegmentList from "$lib/components/SegmentList.svelte";
+  import SegmentDisplay from "$lib/components/SegmentDisplay.svelte";
+  import SpeakerDisplay from "$lib/components/SpeakerDisplay.svelte";
+  import DebateToolBar from "$lib/components/DebateToolBar.svelte";
+
   import type { PageData } from './$types';
   import type { components } from '$lib/api/schema';
-  type MetadataResponse = components['schemas']['MetadataResponse'];
+  import type { Subtitle } from '$lib/interfaces/metadata.interface'
 
-  interface Props {
-    data: PageData;
+  type Speaker = components['schemas']['Speaker'];
+  type Segment = components['schemas']['Segment'];
+
+  interface Props { data: PageData; }
+  let { data }: Props = $props();
+  $inspect("data", data);
+
+  // --- 1. State ---
+  let debate = $state(data.metadata.debate);
+  let speakers = $state<Speaker[]>(data.metadata.speakers || []);
+  let segments = $state<Segment[]>(data.metadata.segments || []);
+  let subtitles = $state<Subtitle[]>(data.metadata.subtitles || []);
+  let subtitlesEn = $state<Subtitle[]>(data.metadata.subtitles_en || []);
+
+  // --- 2. Derived Constants ---
+  const mediaUrl = $derived(data.signedUrls?.signedMediaUrl);
+  const downloadUrls = $derived(data.signedUrls?.signedUrls || []);
+  let startTime = $derived(Number(page.url.searchParams.get("start") || 0));
+  const mediaId =  $derived(data.mediaId);
+
+  // --- 3. PLAYER STATE ---
+  let mediaElement = $state<HTMLVideoElement>();
+  let currentTime = $state(0);
+
+  // --- 4. CURRENT ITEMS (Derived from currentTime) ---
+
+  function findCurrentItem(items: Subtitle[] | Segment[], time: number): Subtitle | Segment | undefined {
+      return items.find(item => time >= item.start && time <= item.end);
   }
 
-  let { data }: Props = $props();
+  // Reactive Derived Values
+  // These update automatically whenever 'currentTime' changes
+  let currentSegment = $derived(findCurrentItem(segments, currentTime));
+  let currentSubtitle = $derived(findCurrentItem(subtitles, currentTime));
+  let currentSubtitleEn = $derived(findCurrentItem(subtitlesEn, currentTime));
+  let currentSpeaker = $derived(
+      currentSegment ? speakers.find(s => s.speaker_id === currentSegment.speaker_id) : undefined
+  );
 
-  let metadata: MetadataResponse = $derived(data.metadata);
-  const debate = metadata.debate;
-  console.log("data", data);
+  // --- 5. Sync on Navigation ---
+  $effect(() => {
+    console.log("in effect");
+    debate = data.metadata.debate;
+    speakers = data.metadata.speakers || [];
+    segments = data.metadata.segments || [];
+    subtitles = data.metadata.subtitles || [];
+    subtitlesEn = data.metadata.subtitles_en || [];
+  });
 </script>
 
 <svelte:head>
@@ -25,7 +71,47 @@
   </style>
 </svelte:head>
 
-<DebateHeader { debate } />
+<DebateHeader {debate} />
+
+<div class="video-layout">
+
+  <div class="col-md-3 segment-container">
+    <SegmentList
+      mediaElement={mediaElement}
+      segments={segments}
+      speakers={speakers}
+      activeSpeaker={currentSpeaker}
+      activeSegment={currentSegment}
+    />
+  </div>
+
+  <div class="col-md-3 speaker-container">
+    <SpeakerDisplay
+      speakers={speakers}
+      activeSpeaker={currentSpeaker}
+      mediaId={mediaId}
+    />
+  </div>
+
+  <div class="col-md-6 video-container">
+    <MediaPlayer
+      mediaUrl={mediaUrl || ''}
+      bind:mediaElement
+      bind:currentTime={currentTime} />
+  </div>
+</div>
+
+<DebateToolBar {downloadUrls} />
+
+<SegmentDisplay
+  subtitles={subtitles}
+  subtitlesEn={subtitlesEn}
+  currentSubtitle={currentSubtitle}
+  currentSubtitleEn={currentSubtitleEn}
+  activeSegment={currentSegment}
+  mediaId={mediaId}
+  mediaElement={mediaElement}
+/>
 
 <style>
 .video-layout {

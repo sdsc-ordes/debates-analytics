@@ -1,204 +1,162 @@
 <script lang="ts">
-  import type { TimeUpdateParameters } from "$lib/interfaces/mediaplayer.interface";
-  import { type Subtitle, SubtitleTypeEnum } from "$lib/interfaces/metadata.interface";
   import { canEdit } from "$lib/stores/auth";
   import { jumpToTime } from "$lib/utils/mediaStartUtils";
+  import type { components } from '$lib/api/schema';
+
+  type Subtitle = components['schemas']['Subtitle'];
+  type Segment = components['schemas']['Segment'];
+
+  // Define types locally if not exported from schema
+  const typeTranscript = "subtitles_original"
+  const typeTranslation = "subtitles_translation"
 
   interface Props {
+    // Full Datasets
     subtitles?: Subtitle[];
-    subtitles_en?: Subtitle[];
-    timeUpdateParameters: TimeUpdateParameters;
-    mediaElement: HTMLVideoElement;
-    s3Prefix: string;
+    subtitlesEn?: Subtitle[];
+
+    // Current State (Time-based)
+    currentSubtitle?: Subtitle;
+    currentSubtitleEn?: Subtitle;
+    activeSegment?: Segment;
+
+    mediaElement?: HTMLMediaElement;
+    mediaId: string;
   }
 
   let {
-    subtitles = $bindable([]),
-    subtitles_en = [],
-    timeUpdateParameters,
+    subtitles,
+    subtitlesEn,
+    currentSubtitle,
+    currentSubtitleEn,
+    activeSegment,
     mediaElement,
-    s3Prefix
+    mediaId
   }: Props = $props();
 
-  let editSubtitlesTranscription: boolean = $state(false);
-  let editSubtitlesTranslation: boolean = $state(false);
+  let editTranscript = $state(false);
+  let editTranslation = $state(false);
+  let errorMessage = $state<string | null>(null);
 
-  let errorMessage: string | null = null; // For displaying errors
+  let activeGroupOriginal = $derived(
+    activeSegment
+      ? subtitles.filter(s => s.start < activeSegment.end && s.end > activeSegment.start)
+      : []
+  );
 
-  const transcript = SubtitleTypeEnum.Transcript;
-  const translation = SubtitleTypeEnum.Translation;
+  let activeGroupTranslation = $derived(
+    activeSegment
+      ? subtitlesEn.filter(s => s.start < activeSegment.end && s.end > activeSegment.start)
+      : []
+  );
+  // --- Actions ---
 
-  function updateSubtitle(index: number, updatedText: string) {
-    subtitles[index].content = updatedText;
-  }
+  async function saveGroup(group: Segment[], type: string) {
+    if (!activeSegment) return;
 
-  function toggleEditSubtitlesTranscription() {
-    editSubtitlesTranscription = !editSubtitlesTranscription;
-  }
-  function toggleEditSubtitlesTranslation() {
-    editSubtitlesTranslation = !editSubtitlesTranslation;
-  }
-
-  function saveSubtitle$Transcription(): void {
-    updateSubtitles(s3Prefix, timeUpdateParameters.displaySegmentNr, subtitles, transcript)
-    editSubtitlesTranscription = !editSubtitlesTranscription;
-  }
-  function saveSubtitle$Translation(): void {
-    updateSubtitles(s3Prefix, timeUpdateParameters.displaySegmentNr, subtitles_en, translation)
-    editSubtitlesTranslation = !editSubtitlesTranslation;
-  }
-  async function updateSubtitles(prefix: string, segmentNr: number, subtitles: Subtitle[], type: string) {
-    const subtitleUpdateRequest = {
-      prefix: prefix,
-      segmentNr: segmentNr,
-      subtitles: subtitles,
+    const payload = {
+      media_id: mediaId,
+      segmentNr: activeSegment.segment_nr,
+      subtitles: group,
       subtitleType: type,
-    }
+    };
+
     errorMessage = null;
+
     try {
       const response = await fetch('/api/subtitles', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(subtitleUpdateRequest)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        errorMessage = errorData.error || `Search failed: ${response.status} ${response.statusText}`; // Display detailed error
-        console.error(errorMessage);
+        errorMessage = errorData.error || `Save failed: ${response.status}`;
         return;
       }
-    } catch (error) {
-      errorMessage = `An unexpected error occurred: ${error.message}`;
-      console.error(errorMessage);
+
+      if (type === typeTranscript) editTranscript = false;
+      if (type === typeTranslation) editTranslation = false;
+
+    } catch (error: any) {
+      errorMessage = `Error: ${error.message}`;
     }
   }
 </script>
 
 <div class="side-by-side">
-  <div class="text-block">
-    <div
-      style="display: flex;
-    align-items: center;
-    justify-content: start;
-    gap: 1rem;
-    width: 90%;"
-    >
-      <div class="card-title-small">Transcription</div>
-      {#if $canEdit && !editSubtitlesTranscription}
-        <button
-          class="secondary-button"
-          onclick={toggleEditSubtitlesTranscription}
-          aria-label="Edit"
-          >Edit
-        </button>
-      {:else if editSubtitlesTranscription}
-        <button
-          class="secondary-button"
-          onclick={toggleEditSubtitlesTranscription}
-          aria-label="Cancel"
-          >Cancel
-        </button>
-        <button
-          class="secondary-button"
-          onclick={() => saveSubtitle$Transcription()}
-          aria-label="Save"
-        >
-          Save
-        </button>
-      {/if}
-    </div>
-    <p>
-      {#each subtitles as subtitle, index}
-        {#if subtitle.segment_nr === timeUpdateParameters.displaySegmentNr}
+  {#if activeGroupOriginal.length > 0}
+    <div class="text-block">
+      <div class="header-row">
+        <div class="card-title-small">Transcription</div>
+        {#if $canEdit && activeSegment}
+          {#if !editTranscript}
+            <button class="secondary-button" onclick={() => editTranscript = true}>Edit</button>
+          {:else}
+            <button class="secondary-button" onclick={() => editTranscript = false}>Cancel</button>
+            <button class="secondary-button" onclick={() => saveGroup(activeGroupOriginal, typeTranscript)}>Save</button>
+          {/if}
+        {/if}
+      </div>
+
+      <p class="subtitle-content">
+        {#each activeGroupOriginal as item}
           <span
-            class={index === timeUpdateParameters.displaySubtitleIndex - 1
-              ? "highlighted"
-              : ""}
-            onclick={() => jumpToTime(mediaElement, subtitle.start)}
+            class="subtitle-span {item === currentSubtitle ? 'highlighted' : ''}"
+            onclick={() => mediaElement && jumpToTime(mediaElement, item.start)}
+            role="button"
+            tabindex="0"
+            onkeydown={() => {}}
           >
-            {#if editSubtitlesTranscription}
-              <div>
-                <textarea
-                  id={`subtitle-${index}`}
-                  bind:value={subtitle.content}
-                  oninput={(e) => updateSubtitle(index, e.target.value)}
-                  class={`editable-textarea ${
-                    index === timeUpdateParameters.displaySubtitleIndex - 1 ? "highlighted-textarea" : ""
-                  }`}
-></textarea>
-              </div>
+            {#if editTranscript}
+              <textarea bind:value={item.text} class="editable-textarea" rows="2"></textarea>
             {:else}
-              {subtitle.content}
+              {item.text}{" "}
             {/if}
           </span>
-        {/if}
-      {/each}
-    </p>
+        {/each}
+      </p>
   </div>
+  {/if}
+  {#if activeGroupTranslation.length > 0}
   <div class="text-block">
-    <div
-      style="display: flex;
-    align-items: center;
-    justify-content: start;
-    gap: 1rem;
-    width: 100%;"
-    >
+    <div class="header-row">
       <div class="card-title-small">Translation</div>
-      {#if $canEdit && !editSubtitlesTranslation}
-        <button
-          class="secondary-button"
-          onclick={toggleEditSubtitlesTranslation}
-          aria-label="Edit"
-          >Edit
-        </button>
-      {:else if editSubtitlesTranslation}
-        <button
-          class="secondary-button"
-          onclick={toggleEditSubtitlesTranslation}
-          aria-label="Cancel"
-          >Cancel
-        </button>
-        <button
-          class="secondary-button"
-          onclick={() => saveSubtitle$Translation()}
-          aria-label="Save"
-        >
-          Save
-        </button>
+      {#if $canEdit && activeSegment}
+        {#if !editTranslation}
+          <button class="secondary-button" onclick={() => editTranslation = true}>Edit</button>
+        {:else}
+          <button class="secondary-button" onclick={() => editTranslation = false}>Cancel</button>
+          <button class="secondary-button" onclick={() => saveGroup(activeGroupTranslation, typeTranslation)}>Save</button>
+        {/if}
       {/if}
     </div>
-    <p>
-      {#each subtitles_en as subtitle, index}
-        {#if subtitle.segment_nr === timeUpdateParameters.displaySegmentNr}
-          <span
-            class={index === timeUpdateParameters.displaySubtitleEnIndex - 1
-              ? "highlighted"
-              : ""}
-            onclick={() => jumpToTime(mediaElement, subtitle.start)}
-          >
-            {#if editSubtitlesTranslation}
-              <div>
-                <textarea
-                  id={`subtitle-${index}`}
-                  bind:value={subtitle.content}
-                  oninput={(e) => updateSubtitle(index, e.target.value)}
-                  class={`editable-textarea ${
-                    index === timeUpdateParameters.displaySubtitleEnIndex - 1 ? "highlighted-textarea" : ""
-                  }`}
-></textarea>
-              </div>
-            {:else}
-              {subtitle.content}
-            {/if}
-          </span>
-        {/if}
+
+    <p class="subtitle-content">
+      {#each activeGroupTranslation as item}
+        <span
+          class="subtitle-span {item === currentSubtitleEn ? 'highlighted' : ''}"
+          onclick={() => mediaElement && jumpToTime(mediaElement, item.start)}
+          role="button"
+          tabindex="0"
+          onkeydown={() => {}}
+        >
+          {#if editTranslation}
+            <textarea bind:value={item.text} class="editable-textarea" rows="2"></textarea>
+          {:else}
+            {item.text}{" "}
+          {/if}
+        </span>
       {/each}
     </p>
   </div>
+  {/if}
 </div>
+
+{#if errorMessage}
+    <div class="alert alert-danger">{errorMessage}</div>
+{/if}
 
 <style>
   .side-by-side {
