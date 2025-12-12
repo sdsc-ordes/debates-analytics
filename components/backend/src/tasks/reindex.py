@@ -81,6 +81,6 @@ def reindex_solr(media_id: str):
         except Exception:
             # If even MongoDB fails, just log it so we don't mask the original error
             logger.error("Could not update MongoDB status to failed.")
-            
+
         # Re-raise the exception so the Task Queue (e.g. Celery/RQ) knows the job failed
         raise e

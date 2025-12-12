@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     redis_queue_name: str = "default"
     task_convert: str = "tasks.convert.process_video"
     task_transcribe: str = "tasks.transcribe.process_transcription"
+    task_reindex: str = "tasks.reindex.reindex_solr"
 
     class Config:
         env_file = ".env"

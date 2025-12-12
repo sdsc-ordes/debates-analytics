@@ -78,7 +78,10 @@ def process_transcription(s3_key, media_id):
                 metadata={"transcript_s3_keys": uploaded_keys}
             )
 
-            #TODO Enqueue next job here? (e.g. Indexing to Solr)
+            rq.enqueue(
+                settings.task_reindex,
+                media_id=media_id,
+            )
 
             return {"status": "completed"}
 
