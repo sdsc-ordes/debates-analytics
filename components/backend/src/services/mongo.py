@@ -38,8 +38,10 @@ class MongoManager:
     # --- 1. Processing Status ---
     def update_processing_status(self, media_id: str, status: str, job_id: str = None, metadata: Dict = None):
         update_fields = {"status": status, "updated_at": datetime.utcnow()}
-        if job_id: update_fields["job_id"] = job_id
-        if metadata: update_fields.update(metadata)
+        if job_id:
+            update_fields["job_id"] = job_id
+        if metadata:
+            update_fields.update(metadata)
 
         return self.media_collection.find_one_and_update(
             {"_id": media_id},

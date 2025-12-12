@@ -34,9 +34,6 @@ class JsonTranscriptParser:
             return subtitle_list
 
         # 4. Initialize the first segment
-        # Note: Your input JSON uses "speaker_id", so we don't need to copy "speaker" to "speaker_id"
-        # unless you expect inconsistent keys. I assume "speaker_id" is the source of truth based on your JSON.
-        first_seg = subtitle_list[0]
         subtitle_list[0]["segment_nr"] = 1
         subtitle_list[0]["speaker_id"] = subtitle_list[0].pop("speaker", None)
 
