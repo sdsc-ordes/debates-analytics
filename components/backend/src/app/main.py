@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from config.settings import get_settings
 from routers import ingest, metadata, search, admin
+from fastapi.middleware.cors import CORSMiddleware
 
 settings = get_settings()
 
@@ -24,6 +25,18 @@ async def lifespan(app: FastAPI):
 api = FastAPI(
     title="Debate Analytics API",
     lifespan=lifespan
+)
+
+api.add_middleware(
+    CORSMiddleware,
+    # Allow your local frontend origin
+    allow_origins=[
+        "http://localhost:5173",  # Local pnpm dev
+        "http://localhost:3000",  # Docker production build
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 api.include_router(

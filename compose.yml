@@ -28,5 +28,5 @@ volumes:
 # Include other compose files
 include:
   - compose.data.yml
-  - compose.app.yml
-  - compose.debug.yml
+  - compose.backend.yml
+  - compose.frontend.yml
