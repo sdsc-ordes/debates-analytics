@@ -50,7 +50,7 @@ class JsonTranscriptParser:
                 current_seg["segment_nr"] = prev_seg["segment_nr"] + 1
             else:
                 current_seg["segment_nr"] = prev_seg["segment_nr"]
-
+        logger.info(subtitle_list)
         return subtitle_list
 
     def extract_segments(self, subtitle_list: List[Dict]) -> List[Dict]:
@@ -76,7 +76,7 @@ class JsonTranscriptParser:
             "start": first["start"],
             "end": first["end"],
             # CHANGE: Store full objects, not just text strings
-            "subtitles": [clean_sub(first)] 
+            "subtitles": [clean_sub(first)]
         }
 
         for i in range(1, len(subtitle_list)):
@@ -132,14 +132,11 @@ class JsonTranscriptParser:
 
         return solr_docs
 
-    def extract_speakers(self, segments: List[Dict]) -> List[Dict]:
+    def extract_speakers(self, segments: List[Dict]) -> List:
          # Helper to extract unique speakers for the separate speakers collection
-         # Returns List[Dict] to match your update_speakers method
          seen = set()
-         speakers = []
          for s in segments:
              sid = s.get("speaker_id")
              if sid and sid not in seen:
                  seen.add(sid)
-                 speakers.append({"speaker_id": sid, "name": "", "role_tag": ""})
-         return speakers
+         return list(seen)

@@ -7,8 +7,6 @@ from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
-TYPE_ORIGINAL = "original"
-TYPE_TRANSLATION = "translation"
 
 class DocumentNotFoundError(Exception):
     pass
@@ -18,6 +16,8 @@ class MongoManager:
         settings = get_settings()
         self.mongo_url = settings.mongo_url
         self.db_name = settings.mongo_db_name
+        self.type_original = settings.type_original
+        self.type_translation = settings.type_translation
 
         try:
             self.client = MongoClient(self.mongo_url)
@@ -35,7 +35,6 @@ class MongoManager:
             logger.error(f"Failed to connect to MongoDB: {e}")
             raise e
 
-    # --- 1. Processing Status ---
     def update_processing_status(self, media_id: str, status: str, job_id: str = None, metadata: Dict = None):
         update_fields = {"status": status, "updated_at": datetime.utcnow()}
         if job_id:
@@ -63,8 +62,7 @@ class MongoManager:
             upsert=True
         )
 
-    # --- A. Save Search Segments (To segments_collection) ---
-    def save_subtitles(
+    def save_segments(
         self,
         media_id: str,
         segment_nr: int,
@@ -72,31 +70,24 @@ class MongoManager:
         subtitles: List[Dict],
         start: float = None,
         end: float = None,
-        speaker_id: str = None
+        speaker_id: str = None,
     ):
         """
         Saves subtitles to a specific segment document.
         Optionally updates the segment's root metadata (Start/End/Speaker).
         """
-        # 1. Determine which list to update (Original vs Translation)
-        #    This ensures we don't overwrite the wrong language.
-        if subtitle_type in ["transcript", "subtitles_original", "original"]:
+        if subtitle_type == self.type_original:
             target_field = "subtitles_original"
-        elif subtitle_type in ["translation", "subtitles_translation"]:
+        elif subtitle_type == self.type_translation:
             target_field = "subtitles_translation"
         else:
             raise ValueError(f"Unknown subtitle_type: {subtitle_type}")
 
-        # 2. Build the Update Payload
-        #    We definitely want to update the text list and the timestamp.
         update_fields = {
             target_field: subtitles,
             "updated_at": datetime.utcnow()
         }
 
-        # 3. (Optional) Update Root Metadata
-        #    If this is the 'Original' transcript coming from the Reindex task,
-        #    we MUST save these fields so the document has a timeline.
         if start is not None:
             update_fields["start"] = start
         if end is not None:
@@ -104,9 +95,6 @@ class MongoManager:
         if speaker_id is not None:
             update_fields["speaker_id"] = speaker_id
 
-        # 4. Perform the Upsert
-        #    Find the document by (media_id + segment_nr).
-        #    If it doesn't exist, create it.
         self.segments_collection.update_one(
             {
                 "media_id": media_id,
@@ -118,53 +106,32 @@ class MongoManager:
             upsert=True
         )
 
-    # --- B. Save Detailed Subtitles (To subtitles_collection) ---
-    def save_segments(self, media_id: str, sub_type: str, segments: List[Dict]):
-        """
-        Saves segments
-        """
-        doc = {
-            "media_id": media_id,
-            "segments": segments,
-            "updated_at": datetime.utcnow()
-        }
-        self.segments_collection.update_one(
-            {"media_id": media_id, "type": sub_type},
-            {"$set": doc},
-            upsert=True
-        )
-
-    def get_full_metadata(self, media_id: str) -> Optional[Dict[str, Any]]:
-        # 1. Get Debate (This is still a Document, so we clean it)
+    def get_full_metadata(self, media_id: str) -> Dict[str, Any]:
+        # 1. Get Debate Document
         debate = self.media_collection.find_one({"_id": media_id})
         if not debate:
             raise DocumentNotFoundError(f"Debate {media_id} not found")
 
-        # Clean the debate document (handle _id -> media_id)
+        # Clean _id to media_id
         debate["media_id"] = str(debate.pop("_id"))
 
-        # 2. Get Speakers (Document contains { "speakers": [...] })
+        # 2. Get Speakers
+        # (Assuming your save_speakers stores a document with a "speakers" list field)
         speakers_doc = self.speakers_collection.find_one({"media_id": media_id})
-        segments_doc = self.segments_collection.find_one({"media_id": media_id})
+        speakers_list = speakers_doc.get("speakers", []) if speakers_doc else []
 
-        # 4. Get Detailed Subtitles (Document contains { "segments": [...] })
-        sub_orig_doc = self.subtitles_collection.find_one({"media_id": media_id, "type": TYPE_ORIGINAL})
-        sub_trans_doc = self.subtitles_collection.find_one({"media_id": media_id, "type": TYPE_TRANSLATION})
+        # 3. Get All Segments (Sorted)
+        # This returns the docs that ALREADY contain 'subtitles_original'
+        # and 'subtitles_translation' arrays inside them.
+        cursor = self.segments_collection.find({"media_id": media_id}).sort("segment_nr", 1)
+        segments_list = list(cursor)
 
+        # 4. Return the clean structure
         return {
             "debate": debate,
-            "speakers": speakers_doc.get("speakers") if speakers_doc else [],
-
-            "segments": segments_doc.get("segments") if segments_doc else [],
-
-            "subtitles": sub_orig_doc.get("subtitles") if sub_orig_doc else [],
-            "subtitles_en": sub_trans_doc.get("subtitles") if sub_trans_doc else [],
+            "speakers": speakers_list,
+            "segments": segments_list
         }
-
-    def _get_debate_id_by_media_id(self, media_id: str):
-        """Helper to resolve public media_id to internal MongoDB _id"""
-        doc = self.media_collection.find_one({"media_id": media_id}, {"_id": 1})
-        return doc["_id"] if doc else None
 
     def update_speakers(self, media_id: str, speakers: List[Dict[str, Any]]):
         """

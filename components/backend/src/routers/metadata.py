@@ -78,17 +78,16 @@ async def mongo_metadata(
     logger.info(f"Fetching metadata for media_id: {media_id}")
 
     try:
+        # This now returns { debate: ..., speakers: ..., segments: ... }
         metadata = mongo_client.get_full_metadata(media_id)
-        logger.info(f"metadata: {metadata}")
+        return metadata
+
     except DocumentNotFoundError:
-        logger.exception(f"Metadata for {media_id} not found in db")
+        logger.warning(f"Metadata for {media_id} not found")
         raise HTTPException(status_code=404, detail="Media not found")
-    except Exception:
+    except Exception as e:
         logger.exception(f"Error fetching metadata for {media_id}")
         raise HTTPException(status_code=500, detail="Database error")
-
-    return metadata
-
 
 @router.post("/update-speakers", response_model=UpdateMetadataResponse)
 async def update_speakers(

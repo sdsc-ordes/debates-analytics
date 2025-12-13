@@ -25,7 +25,7 @@ def reindex_solr(media_id: str):
         solr.delete_by_media_id(media_id)
 
         # 2. Helper to Process Each File Type
-        def process_transcript_type(key, subtitle_type):
+        def process_transcript_type(key, subtitle_type, is_original):
             logger.info(f"Processing {key}...")
 
             content = s3.get_file_content(key)
@@ -38,16 +38,20 @@ def reindex_solr(media_id: str):
 
             # B. Group into Segments (The new robust structure)
             segments = parser.extract_segments(raw_subtitles)
+            logger.info(segments)
             logger.info(f"Extracted {len(segments)} segments for {subtitle_type}")
 
             # C. Save to MongoDB (Segment by Segment)
             # This loop replaces the old "save_subtitles" monolithic call
             for seg in segments:
-                mongo.save_subtitles(
+                mongo.save_segments(
                     media_id=media_id,
                     segment_nr=seg["segment_nr"],
+                    speaker_id=seg["speaker_id"],
+                    start=seg["start"],
+                    end=seg["end"],
                     subtitle_type=subtitle_type,
-                    subtitles=seg["subtitles"] # Pass the full list of subtitle objects
+                    subtitles=seg["subtitles"],
                 )
 
                 # Special Case: If this is the ORIGINAL transcript, ensure
@@ -56,7 +60,7 @@ def reindex_solr(media_id: str):
                 # or just let 'save_subtitles' handle the upsert logic as we discussed)
 
             # D. Extract Speakers (Only needed once, usually from original)
-            if subtitle_type == settings.type_original:
+            if is_original:
                  unique_speakers = parser.extract_speakers(segments)
                  # Note: use update_speakers, not save_speakers (to avoid overwriting names)
                  # But for a reindex (fresh start), save_speakers might be okay
@@ -72,8 +76,8 @@ def reindex_solr(media_id: str):
                 logger.info(f"Indexed {len(payload)} docs to Solr for {subtitle_type}")
 
         # 3. Run Process
-        process_transcript_type(subtitles_original_key, settings.type_original)
-        process_transcript_type(subtitles_translation_key, settings.type_translation)
+        process_transcript_type(subtitles_original_key, settings.type_original, is_original=True)
+        process_transcript_type(subtitles_translation_key, settings.type_translation, is_original=False)
 
         # 4. Finish
         mongo.update_processing_status(media_id, "indexing_completed")
