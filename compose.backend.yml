@@ -15,6 +15,10 @@ x-backend-env: &backend-env # Shared Infrastructure
   S3_SECRET_KEY: ${S3_SECRET_KEY}
   REDIS_URL: ${REDIS_URL}
 
+  # output types
+  TYPE_TRANSLATION: ${TYPE_TRANSLATION}
+  TYPE_ORIGINAL: ${TYPE_ORIGINAL}
+
   # Python Path (Critical for sharing code)
   PYTHONPATH: /app/src
 

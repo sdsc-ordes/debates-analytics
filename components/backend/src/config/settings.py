@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     task_transcribe: str = "tasks.transcribe.process_transcription"
     task_reindex: str = "tasks.reindex.reindex_solr"
 
+    type_translation: str
+    type_original: str
+
     class Config:
         env_file = ".env"
         case_sensitive = False

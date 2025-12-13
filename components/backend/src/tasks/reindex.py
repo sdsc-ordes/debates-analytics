@@ -3,12 +3,10 @@ from services.s3 import get_s3_manager
 from services.solr import get_solr_manager
 from services.mongo import get_mongo_manager
 from services.parser import JsonTranscriptParser
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
-# Constants
-TYPE_ORIGINAL = "original"
-TYPE_TRANSLATION = "translation"
 
 def reindex_solr(media_id: str):
     logger.info(f"Starting Reindex Task for {media_id}")
@@ -18,6 +16,7 @@ def reindex_solr(media_id: str):
         solr = get_solr_manager()
         mongo = get_mongo_manager()
         parser = JsonTranscriptParser()
+        settings = get_settings()
 
         # Detailed Subtitles (Small chunks for player)
         subtitles_original_key = f"{media_id}/transcripts/subtitles-original.json"
@@ -46,7 +45,7 @@ def reindex_solr(media_id: str):
             # C. Extract Semantic Segments
             # MOVED UP: We need 'segments' for Solr indexing regardless of file_type
 
-            if file_type == TYPE_ORIGINAL:
+            if file_type == settings.type_original:
                 # Save segments specifically for the Original (Source of Truth)
                 segments = parser.extract_segments(subtitles)
                 mongo.save_segments(media_id, file_type, segments)
@@ -63,8 +62,8 @@ def reindex_solr(media_id: str):
                 logger.info(f"Indexed {len(payload)} docs to Solr for {file_type}")
 
         # 3. Process Files
-        process_file(subtitles_original_key, TYPE_ORIGINAL)
-        process_file(subtitles_translation_key, TYPE_TRANSLATION)
+        process_file(subtitles_original_key, settings.type_original)
+        process_file(subtitles_translation_key, settings.type_translation)
 
         # 4. Finish Success
         mongo.update_processing_status(media_id, "indexing_completed")

@@ -44,11 +44,6 @@ class SolrManager:
     def update_segment(self, media_id: str, segment_nr: int, subtitles: List[dict], subtitle_type: str):
         statement = self._get_statement_from_subtitles(segment_nr, subtitles)
 
-        if subtitle_type == "transcript":
-            statement_type = "original"
-        else:
-            statement_type = "translation"
-
         query = f'statement_type:{subtitle_type} AND media_id:{media_id} AND segment_nr:{segment_nr}'
         results = self.client.search(query)
 

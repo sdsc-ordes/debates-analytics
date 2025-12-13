@@ -64,18 +64,18 @@ class MongoManager:
         )
 
     # --- A. Save Search Segments (To segments_collection) ---
-    def save_subtitles(self, media_id: str, segment_type: str, subtitles: List[Dict]):
+    def save_subtitles(self, media_id: str, subtitle_type: str, subtitles: List[Dict]):
         """
         Saves subtitles.
         """
         doc = {
             "media_id": media_id,
-            "type": segment_type, # 'original' or 'translation'
+            "type": subtitle_type, # 'original' or 'translation'
             "subtitles": subtitles,
             "updated_at": datetime.utcnow()
         }
         self.subtitles_collection.update_one(
-            {"media_id": media_id, "type": segment_type},
+            {"media_id": media_id, "type": subtitle_type},
             {"$set": doc},
             upsert=True
         )

@@ -129,20 +129,23 @@ async def update_subtitles(
     """
     Update subtitles in Mongo and Solr
     """
-    logger.info(f"Updating subtitles ({request.subtitle_type}) for media_id: {request.media_id}")
-
+    subtitle_type = request.subtitle_type
+    segment_nr = request.segment_nr
+    media_id = request.media_id
     subtitles_data = [s.dict() for s in request.subtitles]
+
+    logger.info(f"Updating subtitles ({subtitle_type}) for media_id: {media_id}")
 
     try:
         mongo_client.update_subtitles(
-            media_id=request.media_id,
-            subtitle_type=request.subtitle_type,
+            media_id=media_id,
+            subtitle_type=subtitle_type,
             subtitles=subtitles_data
         )
 
         solr_client.update_segment(
-            media_id=request.media_id,
-            segment_nr=request.segmentNr,
+            media_id=media_id,
+            segment_nr=segment_nr,
             subtitles=subtitles_data,
             subtitle_type=subtitle_type,
         )
