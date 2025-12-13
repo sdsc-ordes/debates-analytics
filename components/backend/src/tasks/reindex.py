@@ -18,68 +18,72 @@ def reindex_solr(media_id: str):
         parser = JsonTranscriptParser()
         settings = get_settings()
 
-        # Detailed Subtitles (Small chunks for player)
         subtitles_original_key = f"{media_id}/transcripts/subtitles-original.json"
         subtitles_translation_key = f"{media_id}/transcripts/subtitles-translation.json"
 
         # 1. Reset Solr
         solr.delete_by_media_id(media_id)
 
-        # 2. Helper Function
-        def process_file(key, file_type):
-            logger.info(f"Processing {key} -> ...")
+        # 2. Helper to Process Each File Type
+        def process_transcript_type(key, subtitle_type):
+            logger.info(f"Processing {key}...")
 
             content = s3.get_file_content(key)
             if not content:
                 logger.warning(f"Skipping {key} (not found)")
                 return
 
-            # A. Parse and Enrich
-            subtitles = parser.enrich_subtitles(content)
-            logger.info("Subtitles received for %s", file_type)
+            # A. Parse Raw -> Enriched Subtitles
+            raw_subtitles = parser.enrich_subtitles(content)
 
-            # B. Save Raw Subtitles to Mongo
-            mongo.save_subtitles(media_id, file_type, subtitles)
-            segments = []
+            # B. Group into Segments (The new robust structure)
+            segments = parser.extract_segments(raw_subtitles)
+            logger.info(f"Extracted {len(segments)} segments for {subtitle_type}")
 
-            # C. Extract Semantic Segments
-            # MOVED UP: We need 'segments' for Solr indexing regardless of file_type
+            # C. Save to MongoDB (Segment by Segment)
+            # This loop replaces the old "save_subtitles" monolithic call
+            for seg in segments:
+                mongo.save_subtitles(
+                    media_id=media_id,
+                    segment_nr=seg["segment_nr"],
+                    subtitle_type=subtitle_type,
+                    subtitles=seg["subtitles"] # Pass the full list of subtitle objects
+                )
 
-            if file_type == settings.type_original:
-                # Save segments specifically for the Original (Source of Truth)
-                segments = parser.extract_segments(subtitles)
-                mongo.save_segments(media_id, file_type, segments)
+                # Special Case: If this is the ORIGINAL transcript, ensure
+                # the segment metadata (Start/End/Speaker) is also set correctly.
+                # (You might add a specific 'save_segment_metadata' method
+                # or just let 'save_subtitles' handle the upsert logic as we discussed)
 
-                # Extract Speakers (usually only needed from original)
-                unique_speakers = parser.extract_speakers(segments)
-                mongo.save_speakers(media_id, unique_speakers)
+            # D. Extract Speakers (Only needed once, usually from original)
+            if subtitle_type == settings.type_original:
+                 unique_speakers = parser.extract_speakers(segments)
+                 # Note: use update_speakers, not save_speakers (to avoid overwriting names)
+                 # But for a reindex (fresh start), save_speakers might be okay
+                 # if you want to reset everything.
+                 mongo.save_speakers(media_id, unique_speakers)
 
-            solr_docs = parser.parse(segments, media_id, file_type)
-
+            # E. Index to Solr
+            solr_docs = parser.parse(segments, media_id, subtitle_type)
             payload = [doc.model_dump() for doc in solr_docs]
+
             if payload:
                 solr.client.add(payload, commit=True)
-                logger.info(f"Indexed {len(payload)} docs to Solr for {file_type}")
+                logger.info(f"Indexed {len(payload)} docs to Solr for {subtitle_type}")
 
-        # 3. Process Files
-        process_file(subtitles_original_key, settings.type_original)
-        process_file(subtitles_translation_key, settings.type_translation)
+        # 3. Run Process
+        process_transcript_type(subtitles_original_key, settings.type_original)
+        process_transcript_type(subtitles_translation_key, settings.type_translation)
 
-        # 4. Finish Success
+        # 4. Finish
         mongo.update_processing_status(media_id, "indexing_completed")
         logger.info(f"Reindex task finished for {media_id}")
 
     except Exception as e:
-        # 5. Handle Failure
         logger.exception(f"Reindex Task failed for {media_id}")
-
-        # Ideally, get the mongo manager here again or rely on the outer scope if initialized
         try:
             mongo = get_mongo_manager()
             mongo.update_processing_status(media_id, "indexing_failed", error=str(e))
         except Exception:
-            # If even MongoDB fails, just log it so we don't mask the original error
-            logger.error("Could not update MongoDB status to failed.")
-
-        # Re-raise the exception so the Task Queue (e.g. Celery/RQ) knows the job failed
+            pass
         raise e

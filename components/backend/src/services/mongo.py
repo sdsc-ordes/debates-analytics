@@ -64,19 +64,57 @@ class MongoManager:
         )
 
     # --- A. Save Search Segments (To segments_collection) ---
-    def save_subtitles(self, media_id: str, subtitle_type: str, subtitles: List[Dict]):
+    def save_subtitles(
+        self,
+        media_id: str,
+        segment_nr: int,
+        subtitle_type: str,
+        subtitles: List[Dict],
+        start: float = None,
+        end: float = None,
+        speaker_id: str = None
+    ):
         """
-        Saves subtitles.
+        Saves subtitles to a specific segment document.
+        Optionally updates the segment's root metadata (Start/End/Speaker).
         """
-        doc = {
-            "media_id": media_id,
-            "type": subtitle_type, # 'original' or 'translation'
-            "subtitles": subtitles,
+        # 1. Determine which list to update (Original vs Translation)
+        #    This ensures we don't overwrite the wrong language.
+        if subtitle_type in ["transcript", "subtitles_original", "original"]:
+            target_field = "subtitles_original"
+        elif subtitle_type in ["translation", "subtitles_translation"]:
+            target_field = "subtitles_translation"
+        else:
+            raise ValueError(f"Unknown subtitle_type: {subtitle_type}")
+
+        # 2. Build the Update Payload
+        #    We definitely want to update the text list and the timestamp.
+        update_fields = {
+            target_field: subtitles,
             "updated_at": datetime.utcnow()
         }
-        self.subtitles_collection.update_one(
-            {"media_id": media_id, "type": subtitle_type},
-            {"$set": doc},
+
+        # 3. (Optional) Update Root Metadata
+        #    If this is the 'Original' transcript coming from the Reindex task,
+        #    we MUST save these fields so the document has a timeline.
+        if start is not None:
+            update_fields["start"] = start
+        if end is not None:
+            update_fields["end"] = end
+        if speaker_id is not None:
+            update_fields["speaker_id"] = speaker_id
+
+        # 4. Perform the Upsert
+        #    Find the document by (media_id + segment_nr).
+        #    If it doesn't exist, create it.
+        self.segments_collection.update_one(
+            {
+                "media_id": media_id,
+                "segment_nr": segment_nr
+            },
+            {
+                "$set": update_fields
+            },
             upsert=True
         )
 
