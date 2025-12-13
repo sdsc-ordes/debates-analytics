@@ -153,22 +153,33 @@ class MongoManager:
             {"$set": doc}
         )
 
-    def update_subtitles(self, media_id: str, subtitle_type: str, subtitles: list[dict]):
+    def update_subtitles(self, media_id: str, segment_nr: int, subtitle_type: str, subtitles: list[dict]):
         """
-        Updates subtitles based on type (transcript vs translation).
-        Handles the logic of which field to update (subtitles vs subtitles_en).
+        Updates the subtitle list for a specific segment.
+        Target: 'segments' collection.
         """
-        if subtitle_type == "transcript":
-            db_type = "original"
-            update_field = "subtitles"
+        if subtitle_type == self.type_original:
+            update_field = "subtitles_original"
+        elif subtitle_type == self.type_translation:
+            update_field = "subtitles_translation"
         else:
-            db_type = "translation"
-            update_field = "subtitles_en"
+            raise ValueError(f"Unknown subtitle_type: {subtitle_type}")
 
-        self.subtitles_collection.update_one(
-            {"media_id": media_id, "type": db_type},
-            {"$set": {update_field: subtitles}}
+        result = self.segments_collection.update_one(
+            {
+                "media_id": media_id,
+                "segment_nr": segment_nr
+            },
+            {
+                "$set": {
+                    update_field: subtitles,
+                    "updated_at": datetime.utcnow()
+                }
+            }
         )
+
+        if result.matched_count == 0:
+            raise ValueError(f"Segment {segment_nr} for media {media_id} not found.")
 
     def insert_initial_media_document(self, media_id: str, s3_key: str, filename: str):
         """First entry of the media in the db: assumes that upload to S3 already happened."""

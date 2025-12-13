@@ -8,8 +8,8 @@
   type Segment = components['schemas']['Segment'];
 
   // Define types locally if not exported from schema
-  const typeTranscript = "Transcript"
-  const typeTranslation = "Translation"
+  const typeTranscript = "original"
+  const typeTranslation = "translation"
 
   interface Props {
     activeSegment?: Segment;

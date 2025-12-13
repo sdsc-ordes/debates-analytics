@@ -4,9 +4,9 @@ from datetime import datetime
 from enum import Enum
 
 
-class EnumSubtitleType(str, Enum):
-    transcript = "Transcript"
-    translation = "Translation"
+class SubtitleType(str, Enum):
+    transcript = "original"
+    translation = "translation"
 
 
 class Speaker(BaseModel):
@@ -58,7 +58,7 @@ class UpdateSubtitlesRequest(BaseModel):
     media_id: str
     segment_nr: int
     subtitles: List[Subtitle]
-    subtitle_type: EnumSubtitleType
+    subtitle_type: SubtitleType
 
 
 class UpdateMetadataResponse(BaseModel):

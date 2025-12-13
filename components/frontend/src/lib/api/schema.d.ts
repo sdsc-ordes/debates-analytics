@@ -115,7 +115,7 @@ export interface paths {
         put?: never;
         /**
          * Update Subtitles
-         * @description Update subtitles in Mongo and Solr
+         * @description Update subtitles in Mongo (Segment-based) and Solr
          */
         post: operations["update_subtitles_db_update_subtitles_post"];
         delete?: never;
@@ -255,11 +255,6 @@ export interface components {
             /** Errors */
             errors?: string[] | null;
         };
-        /**
-         * EnumSubtitleType
-         * @enum {string}
-         */
-        EnumSubtitleType: "Transcript" | "Translation";
         /** FacetField */
         FacetField: {
             /** Field Name */
@@ -495,6 +490,11 @@ export interface components {
             /** Text */
             text: string;
         };
+        /**
+         * SubtitleType
+         * @enum {string}
+         */
+        SubtitleType: "original" | "translation";
         /** UpdateMetadataResponse */
         UpdateMetadataResponse: {
             /** Status */
@@ -517,7 +517,7 @@ export interface components {
             segment_nr: number;
             /** Subtitles */
             subtitles: components["schemas"]["Subtitle"][];
-            subtitle_type: components["schemas"]["EnumSubtitleType"];
+            subtitle_type: components["schemas"]["SubtitleType"];
         };
         /** ValidationError */
         ValidationError: {
