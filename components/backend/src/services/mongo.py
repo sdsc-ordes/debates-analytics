@@ -64,18 +64,18 @@ class MongoManager:
         )
 
     # --- A. Save Search Segments (To segments_collection) ---
-    def save_subtitles(self, media_id: str, segment_type: str, subtitles: List[Dict]):
+    def save_subtitles(self, media_id: str, subtitle_type: str, subtitles: List[Dict]):
         """
         Saves subtitles.
         """
         doc = {
             "media_id": media_id,
-            "type": segment_type, # 'original' or 'translation'
+            "type": subtitle_type, # 'original' or 'translation'
             "subtitles": subtitles,
             "updated_at": datetime.utcnow()
         }
         self.subtitles_collection.update_one(
-            {"media_id": media_id, "type": segment_type},
+            {"media_id": media_id, "type": subtitle_type},
             {"$set": doc},
             upsert=True
         )
@@ -128,41 +128,38 @@ class MongoManager:
         doc = self.media_collection.find_one({"media_id": media_id}, {"_id": 1})
         return doc["_id"] if doc else None
 
-    def update_debate_speakers(self, media_id: str, speakers: list[dict]):
+    def update_speakers(self, media_id: str, speakers: List[Dict[str, Any]]):
         """
-        Updates the speakers list for a specific debate.
+        Updates the speaker list with new names and roles.
+        Expects 'speakers' to be a list of dicts:
+        [{'speaker_id': '...', 'name': '...', 'role_tag': '...'}, ...]
         """
-        debate_id = self._get_debate_id_by_media_id(media_id)
-        if not debate_id:
-            return False
+        doc = {
+            "speakers": speakers,
+            "updated_at": datetime.utcnow()
+        }
 
-        result = self.speakers_collection.update_one(
-            {"debate_id": debate_id},
-            {"$set": {"speakers": speakers}}
+        self.speakers_collection.update_one(
+            {"media_id": media_id},
+            {"$set": doc}
         )
-        return result.modified_count > 0 or result.matched_count > 0
 
-    def update_debate_subtitles(self, media_id: str, subtitle_type_enum: str, subtitles: list[dict]):
+    def update_subtitles(self, media_id: str, subtitle_type: str, subtitles: list[dict]):
         """
         Updates subtitles based on type (transcript vs translation).
         Handles the logic of which field to update (subtitles vs subtitles_en).
         """
-        debate_id = self._get_debate_id_by_media_id(media_id)
-        if not debate_id:
-            return False
-
-        if subtitle_type_enum == "transcript":
-            db_type = "transcript"
+        if subtitle_type == "transcript":
+            db_type = "original"
             update_field = "subtitles"
         else:
             db_type = "translation"
             update_field = "subtitles_en"
 
-        result = self.subtitles_collection.update_one(
-            {"debate_id": debate_id, "type": db_type},
+        self.subtitles_collection.update_one(
+            {"media_id": media_id, "type": db_type},
             {"$set": {update_field: subtitles}}
         )
-        return result.modified_count > 0 or result.matched_count > 0
 
     def insert_initial_media_document(self, media_id: str, s3_key: str, filename: str):
         """First entry of the media in the db: assumes that upload to S3 already happened."""

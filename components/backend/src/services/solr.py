@@ -15,7 +15,7 @@ class SolrManager:
         self.client = Solr(self.solr_url, timeout=10)
         logger.info(f"SolrManager initialized with URL: {self.solr_url}")
 
-    def update_speakers(self, s3_prefix: str, speakers: List[Dict[str, Any]]):
+    def update_speakers(self, media_id: str, speakers: List[Dict[str, Any]]):
         """
         Updates speaker information in Solr documents.
         """
@@ -24,7 +24,7 @@ class SolrManager:
             speaker_name = speaker.get("name", None)
             speaker_role_tag = speaker.get("role_tag", None)
 
-            query = f'speaker_id:{speaker_id} AND s3_prefix:{s3_prefix}'
+            query = f'speaker_id:{speaker_id} AND media_id:{media_id}'
 
             results = self.client.search(query)
 
@@ -41,10 +41,10 @@ class SolrManager:
                 if docs_to_update:
                     self.client.add(docs_to_update, commit=True)
 
-    def update_segment(self, s3_prefix: str, segment_nr: int, subtitles: List[dict], subtitle_type: str):
+    def update_segment(self, media_id: str, segment_nr: int, subtitles: List[dict], subtitle_type: str):
         statement = self._get_statement_from_subtitles(segment_nr, subtitles)
 
-        query = f'statement_type:{subtitle_type} AND s3_prefix:{s3_prefix} AND segment_nr:{segment_nr}'
+        query = f'statement_type:{subtitle_type} AND media_id:{media_id} AND segment_nr:{segment_nr}'
         results = self.client.search(query)
 
         if results.hits > 0:

@@ -2,13 +2,14 @@
   import { canEdit } from "$lib/stores/auth";
   import { jumpToTime } from "$lib/utils/mediaStartUtils";
   import type { components } from '$lib/api/schema';
+  import { client } from '$lib/api/client';
 
   type Subtitle = components['schemas']['Subtitle'];
   type Segment = components['schemas']['Segment'];
 
   // Define types locally if not exported from schema
-  const typeTranscript = "subtitles_original"
-  const typeTranslation = "subtitles_translation"
+  const typeTranscript = "Transcript"
+  const typeTranslation = "Translation"
 
   interface Props {
     // Full Datasets
@@ -56,32 +57,29 @@
 
     const payload = {
       media_id: mediaId,
-      segmentNr: activeSegment.segment_nr,
+      segment_nr: activeSegment.segment_nr,
       subtitles: group,
-      subtitleType: type,
+      subtitle_type: type,
     };
+    console.log(payload);
 
     errorMessage = null;
 
     try {
-      const response = await fetch('/api/subtitles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      const { error: segmentUpdateError } = await client.POST("/db/update-subtitles", {
+          body: payload,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        errorMessage = errorData.error || `Save failed: ${response.status}`;
-        return;
+      if (segmentUpdateError) {
+        throw new Error(`Update of segment for ${type} failed.`);
       }
-
-      if (type === typeTranscript) editTranscript = false;
-      if (type === typeTranslation) editTranslation = false;
-
-    } catch (error: any) {
-      errorMessage = `Error: ${error.message}`;
+    } catch (err: any) {
+      errorMessage = err.message || 'Unknown error occurred';
+      console.error(err);
     }
+
+    if (type === typeTranscript) editTranscript = false;
+    if (type === typeTranslation) editTranslation = false;
   }
 </script>
 
@@ -110,7 +108,12 @@
             onkeydown={() => {}}
           >
             {#if editTranscript}
-              <textarea bind:value={item.text} class="editable-textarea" rows="2"></textarea>
+              <textarea 
+                bind:value={item.text} 
+                class="editable-textarea" 
+                rows="2"
+                onclick={(e) => e.stopPropagation()} 
+              ></textarea>
             {:else}
               {item.text}{" "}
             {/if}
@@ -143,7 +146,12 @@
           onkeydown={() => {}}
         >
           {#if editTranslation}
-            <textarea bind:value={item.text} class="editable-textarea" rows="2"></textarea>
+            <textarea 
+              bind:value={item.text} 
+              class="editable-textarea" 
+              rows="2"
+              onclick={(e) => e.stopPropagation()}
+            ></textarea>
           {:else}
             {item.text}{" "}
           {/if}

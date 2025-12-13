@@ -3,9 +3,11 @@ import os
 from gradio_client import Client, handle_file
 from rq import get_current_job
 from services.s3 import get_s3_manager
+from services.queue import get_queue_manager
 from services.filesystem import temp_workspace
 from services.mongo import get_mongo_manager
 from services.reporter import JobReporter
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,8 @@ def process_transcription(s3_key, media_id):
     mongo = get_mongo_manager()
     whisper_service = WhisperService()
     job = get_current_job()
+    rq = get_queue_manager()
+    settings = get_settings()
 
     reporter = JobReporter(media_id, mongo, job, logger)
 
@@ -78,7 +82,10 @@ def process_transcription(s3_key, media_id):
                 metadata={"transcript_s3_keys": uploaded_keys}
             )
 
-            #TODO Enqueue next job here? (e.g. Indexing to Solr)
+            rq.enqueue(
+                settings.task_reindex,
+                media_id=media_id,
+            )
 
             return {"status": "completed"}
 

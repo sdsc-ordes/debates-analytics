@@ -92,7 +92,8 @@ class JsonTranscriptParser:
                     "language": sub["language"],
                     "speaker_id": sub.get("speaker_id"),
                     "start": sub["start"],
-                    "subtitles": [sub["text"]]
+                    "subtitles": [sub["text"]],
+                    "end": sub["end"],
                 }
                 logger.info(current_group)
 

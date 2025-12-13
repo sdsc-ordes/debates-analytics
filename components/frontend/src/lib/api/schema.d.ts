@@ -84,6 +84,46 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/db/update-speakers": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Update Speakers
+     * @description Update speakers in Mongo and Solr
+     */
+    post: operations["update_speakers_db_update_speakers_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/db/update-subtitles": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Update Subtitles
+     * @description Update subtitles in Mongo and Solr
+     */
+    post: operations["update_subtitles_db_update_subtitles_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/search/search-solr": {
     parameters: {
       query?: never
@@ -94,8 +134,7 @@ export interface paths {
     /** Search Solr */
     get: operations["search_solr_search_search_solr_get"]
     put?: never
-    /** Search Solr */
-    post: operations["search_solr_search_search_solr_post"]
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -114,27 +153,6 @@ export interface paths {
      * @description Returns a list of all uploaded media for the dashboard.
      */
     get: operations["list_media_admin_list_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/admin/status/{media_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Check Processing Status
-     * @description Combines MongoDB Status (Persistent) with Redis Status (Real-time).
-     *     Frontend should poll this every 3-5 seconds.
-     */
-    get: operations["check_processing_status_admin_status__media_id__get"]
     put?: never
     post?: never
     delete?: never
@@ -237,27 +255,17 @@ export interface components {
       /** Errors */
       errors?: string[] | null
     }
+    /**
+     * EnumSubtitleType
+     * @enum {string}
+     */
+    EnumSubtitleType: "Transcript" | "Translation"
     /** FacetField */
     FacetField: {
       /** Field Name */
       field_name: string
       /** Values */
       values: components["schemas"]["FacetValue"][]
-    }
-    /** FacetFilter */
-    FacetFilter: {
-      /**
-       * Facetfield
-       * @description Solr facet field name
-       * @example statement_type
-       */
-      facetField: string
-      /**
-       * Facetvalue
-       * @description Solr facet field value
-       * @example translation
-       */
-      facetValue: string
     }
     /** FacetValue */
     FacetValue: {
@@ -342,31 +350,6 @@ export interface components {
        * @description filename of the media
        */
       title?: string
-    }
-    /** ProcessingStatusResponse */
-    ProcessingStatusResponse: {
-      /** Media Id */
-      media_id: string
-      /** Status */
-      status: string
-      /** Job Id */
-      job_id: string | null
-      /** Job State */
-      job_state: string | null
-      /** Progress */
-      progress: string | null
-      /** Error */
-      error: string | null
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /**
-       * Updated At
-       * Format: date-time
-       */
-      updated_at: string
     }
     /** S3MediaUrlResponse */
     S3MediaUrlResponse: {
@@ -455,35 +438,6 @@ export interface components {
       /** Statement Language */
       statement_language?: string | null
     }
-    /** SearchQuery */
-    SearchQuery: {
-      /**
-       * Queryterm
-       * @description Solr query term can be empty
-       * @example honor
-       */
-      queryTerm: string
-      /**
-       * Sortby
-       * @description Solr sort option
-       * @example start asc
-       */
-      sortBy: string
-      /**
-       * Facetfields
-       * @description Solr facet field to return
-       * @example [
-       *       "debate_schedule",
-       *       "statement_type"
-       *     ]
-       */
-      facetFields: string[]
-      /**
-       * Facetfilters
-       * @description Solr facet filters with set values
-       */
-      facetFilters: components["schemas"]["FacetFilter"][]
-    }
     /** SearchResponse */
     SearchResponse: {
       /** Docs */
@@ -546,6 +500,30 @@ export interface components {
       language: string
       /** Segment Nr */
       segment_nr: number
+    }
+    /** UpdateMetadataResponse */
+    UpdateMetadataResponse: {
+      /** Status */
+      status: string
+      /** Media Id */
+      media_id: string
+    }
+    /** UpdateSpeakersRequest */
+    UpdateSpeakersRequest: {
+      /** Media Id */
+      media_id: string
+      /** Speakers */
+      speakers: components["schemas"]["Speaker"][]
+    }
+    /** UpdateSubtitlesRequest */
+    UpdateSubtitlesRequest: {
+      /** Media Id */
+      media_id: string
+      /** Segment Nr */
+      segment_nr: number
+      /** Subtitles */
+      subtitles: components["schemas"]["Subtitle"][]
+      subtitle_type: components["schemas"]["EnumSubtitleType"]
     }
     /** ValidationError */
     ValidationError: {
@@ -695,6 +673,72 @@ export interface operations {
       }
     }
   }
+  update_speakers_db_update_speakers_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateSpeakersRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["UpdateMetadataResponse"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  update_subtitles_db_update_subtitles_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateSubtitlesRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["UpdateMetadataResponse"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
   search_solr_search_search_solr_get: {
     parameters: {
       query?: {
@@ -733,39 +777,6 @@ export interface operations {
       }
     }
   }
-  search_solr_search_search_solr_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["SearchQuery"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["SearchResponse"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
   list_media_admin_list_get: {
     parameters: {
       query?: never
@@ -782,37 +793,6 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["MediaListResponse"]
-        }
-      }
-    }
-  }
-  check_processing_status_admin_status__media_id__get: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        media_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["ProcessingStatusResponse"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
         }
       }
     }

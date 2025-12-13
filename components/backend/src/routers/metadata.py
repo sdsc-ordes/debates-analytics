@@ -5,7 +5,7 @@ from services.s3 import get_s3_manager, S3Manager
 from services.solr import get_solr_manager, SolrManager
 from models.media import S3MediaUrlResponse
 from models.metadata import (
-    MetadataResponse,
+    MetadataResponse, UpdateMetadataResponse,
     UpdateSpeakersRequest, UpdateSubtitlesRequest,
 )
 
@@ -90,7 +90,7 @@ async def mongo_metadata(
     return metadata
 
 
-@router.post("/update-speakers", include_in_schema=False)
+@router.post("/update-speakers", response_model=UpdateMetadataResponse)
 async def update_speakers(
     request: UpdateSpeakersRequest,
     mongo_client: MongoManager = Depends(get_mongo_manager),
@@ -104,13 +104,10 @@ async def update_speakers(
     speakers_data = [s.dict() for s in request.speakers]
 
     try:
-        success = mongo_client.update_debate_speakers(request.media_id, speakers_data)
-        if not success:
-            logger.warning(f"Media ID {request.media_id} not found in DB during speaker update")
-            raise HTTPException(status_code=404, detail="Media not found")
+        mongo_client.update_speakers(request.media_id, speakers_data)
 
         solr_client.update_speakers(
-            s3_prefix=request.media_id,
+            media_id=request.media_id,
             speakers=speakers_data
         )
 
@@ -123,7 +120,7 @@ async def update_speakers(
         raise HTTPException(status_code=500, detail="Error updating speakers")
 
 
-@router.post("/update-subtitles", include_in_schema=False)
+@router.post("/update-subtitles", response_model=UpdateMetadataResponse)
 async def update_subtitles(
     request: UpdateSubtitlesRequest,
     mongo_client: MongoManager = Depends(get_mongo_manager),
@@ -132,28 +129,25 @@ async def update_subtitles(
     """
     Update subtitles in Mongo and Solr
     """
-    logger.info(f"Updating subtitles ({request.subtitleType}) for media_id: {request.media_id}")
-
+    subtitle_type = request.subtitle_type
+    segment_nr = request.segment_nr
+    media_id = request.media_id
     subtitles_data = [s.dict() for s in request.subtitles]
 
+    logger.info(f"Updating subtitles ({subtitle_type}) for media_id: {media_id}")
+
     try:
-        success = mongo_client.update_debate_subtitles(
-            media_id=request.media_id,
-            subtitle_type_enum=request.subtitleType,
+        mongo_client.update_subtitles(
+            media_id=media_id,
+            subtitle_type=subtitle_type,
             subtitles=subtitles_data
         )
 
-        if not success:
-            logger.warning(f"Media ID {request.media_id} not found in DB during subtitle update")
-            raise HTTPException(status_code=404, detail="Media not found")
-
-        solr_type_str = "transcript" if request.subtitleType == "transcript" else "translation"
-
         solr_client.update_segment(
-            s3_prefix=request.media_id,
-            segment_nr=request.segmentNr,
+            media_id=media_id,
+            segment_nr=segment_nr,
             subtitles=subtitles_data,
-            subtitle_type=solr_type_str
+            subtitle_type=subtitle_type,
         )
 
         return {"status": "success", "media_id": request.media_id}
