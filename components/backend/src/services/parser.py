@@ -1,7 +1,7 @@
 import json
 import logging
 
-from typing import List, Dict, Set, Union
+from typing import List, Dict, Union
 from models.search import SearchDocument
 
 logger = logging.getLogger(__name__)

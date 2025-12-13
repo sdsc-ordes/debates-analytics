@@ -86,7 +86,7 @@ async def mongo_metadata(
     except DocumentNotFoundError:
         logger.warning(f"Metadata for {media_id} not found")
         raise HTTPException(status_code=404, detail="Media not found")
-    except Exception as e:
+    except Exception:
         logger.exception(f"Error fetching metadata for {media_id}")
         raise HTTPException(status_code=500, detail="Database error")
 
