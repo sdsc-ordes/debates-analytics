@@ -80,6 +80,7 @@ async def mongo_metadata(
     try:
         # This now returns { debate: ..., speakers: ..., segments: ... }
         metadata = mongo_client.get_full_metadata(media_id)
+        logger.info(metadata)
         return metadata
 
     except DocumentNotFoundError:
