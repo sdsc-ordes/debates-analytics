@@ -16,6 +16,7 @@
       "debate_schedule",
       "statement_type",
       "debate_session",
+      "debate_type",
       "speaker_name",
       "speaker_role_tag",
       "statement_language",
@@ -47,6 +48,7 @@
   let total = $state<number>(0);
   let errorMessage = $state<string | null>(null);
 
+  $inspect(docs);
   // Solr Search query
   async function performFetch(query: SearchQuery) {
     errorMessage = null;

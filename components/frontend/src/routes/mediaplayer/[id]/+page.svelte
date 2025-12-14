@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { page } from '$app/state';
   import DebateHeader from "$lib/components/DebateHeader.svelte";
   import MediaPlayer from "$lib/components/MediaPlayer.svelte";
   import SegmentList from "$lib/components/SegmentList.svelte";
@@ -9,7 +8,6 @@
 
   import type { PageData } from './$types';
   import type { components } from '$lib/api/schema';
-  import type { Subtitle } from '$lib/interfaces/metadata.interface'
 
   type Speaker = components['schemas']['Speaker'];
   type Segment = components['schemas']['Segment'];
@@ -26,7 +24,6 @@
   // --- 2. Derived Constants ---
   const mediaUrl = $derived(data.signedUrls?.signedMediaUrl);
   const downloadUrls = $derived(data.signedUrls?.signedUrls || []);
-  let startTime = $derived(Number(page.url.searchParams.get("start") || 0));
   const mediaId =  $derived(data.mediaId);
 
   // --- 3. PLAYER STATE ---
@@ -51,6 +48,10 @@
     debate = data.metadata.debate;
     speakers = data.metadata.speakers || [];
     segments = data.metadata.segments || [];
+
+    if (data.start) {
+      currentTime = data.start;
+    }
   });
 </script>
 

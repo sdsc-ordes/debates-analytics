@@ -124,6 +124,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/db/update-debate": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Update Debate */
+    post: operations["update_debate_db_update_debate_post"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/search/search-solr": {
     parameters: {
       query?: never
@@ -238,6 +255,14 @@ export interface components {
       updated_at?: string | null
       /** Error Message */
       error_message?: string | null
+      /** Session */
+      session?: string | null
+      /** Type */
+      type?: string | null
+      /** Schedule */
+      schedule?: string | null
+      /** Name */
+      name?: string | null
     }
     /** DeleteMediaRequest */
     DeleteMediaRequest: {
@@ -413,8 +438,6 @@ export interface components {
       debate_type?: string | null
       /** Debate Session */
       debate_session?: string | null
-      /** Debate Name */
-      debate_name?: string | null
       /** Statement Language */
       statement_language?: string | null
     }
@@ -495,6 +518,17 @@ export interface components {
      * @enum {string}
      */
     SubtitleType: "original" | "translation"
+    /** UpdateDebateRequest */
+    UpdateDebateRequest: {
+      /** Media Id */
+      media_id: string
+      /** Session */
+      session?: string | null
+      /** Type */
+      type?: string | null
+      /** Schedule */
+      schedule?: string | null
+    }
     /** UpdateMetadataResponse */
     UpdateMetadataResponse: {
       /** Status */
@@ -710,6 +744,39 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": components["schemas"]["UpdateSubtitlesRequest"]
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["UpdateMetadataResponse"]
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"]
+        }
+      }
+    }
+  }
+  update_debate_db_update_debate_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateDebateRequest"]
       }
     }
     responses: {

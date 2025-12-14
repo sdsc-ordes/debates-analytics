@@ -39,21 +39,61 @@
     onSearch(searchQuery);
   }
 
+  function isSameDate(storedValue: string, uiValue: string): boolean {
+    // 1. Normalize the stored value (e.g. 2025-12-13T16 -> 2025-12-13)
+    // This prevents "Invalid Date" errors in JS
+    const cleanStored = storedValue.length >= 10 ? storedValue.substring(0, 10) : storedValue;
+
+    const dateA = new Date(cleanStored);
+    const dateB = new Date(uiValue);
+
+    // 2. Check validity
+    if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+      return false;
+    }
+
+    // 3. Compare just the Date string (ignoring time completely)
+    return dateA.toDateString() === dateB.toDateString();
+  }
+
   function handleFacetRemoveClick(facetField: string, facetValue: string) {
     if (!searchQuery.facetFilters) return;
 
-    // Immutable Update: .filter() creates a new array automatically
-    searchQuery.facetFilters = searchQuery.facetFilters.filter(
-      (facet) => !(facet.facetField === facetField && facet.facetValue === facetValue)
-    );
+    searchQuery.facetFilters = searchQuery.facetFilters.filter((facet) => {
+      // A. Standard Exact Match (Return FALSE to remove)
+      if (facet.facetField === facetField && facet.facetValue === facetValue) {
+        return false;
+      }
+
+      // B. Date Logic (Reusing the helper)
+      if (facetField === 'debate_schedule' && facet.facetField === 'debate_schedule') {
+        // If dates match, return FALSE to remove it
+        if (isSameDate(facet.facetValue, facetValue)) {
+          return false;
+        }
+      }
+
+      // Keep everything else
+      return true;
+    });
 
     onSearch(searchQuery);
   }
 
   function isActive(facetField: string, facetLabel: string): boolean {
-    return searchQuery.facetFilters?.some(
-      (facet) => facet.facetField === facetField && facet.facetValue === facetLabel
-    ) ?? false;
+    return searchQuery.facetFilters?.some((facet) => {
+      // A. Standard Exact Match
+      if (facet.facetField === facetField && facet.facetValue === facetLabel) {
+        return true;
+      }
+
+      // B. Date Logic (Reusing the helper)
+      if (facetField === 'debate_schedule' && facet.facetField === 'debate_schedule') {
+        return isSameDate(facet.facetValue, facetLabel);
+      }
+
+      return false;
+    }) ?? false;
   }
 </script>
 

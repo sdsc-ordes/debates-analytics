@@ -41,6 +41,10 @@ class DebateDocument(BaseModel):
     transcript_s3_keys: Dict[str, str] = {}
     updated_at: Optional[datetime] = None
     error_message: Optional[str] = None
+    session: Optional[str] = None
+    type: Optional[str] = None
+    schedule: Optional[str] = None
+    name: Optional[str] = None
 
 
 class MetadataResponse(BaseModel):
@@ -64,3 +68,10 @@ class UpdateSubtitlesRequest(BaseModel):
 class UpdateMetadataResponse(BaseModel):
     status: str
     media_id: str
+
+
+class UpdateDebateRequest(BaseModel):
+    media_id: str
+    session: Optional[str] = None
+    type: Optional[str] = None
+    schedule: Optional[str] = None

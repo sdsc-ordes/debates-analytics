@@ -5,7 +5,7 @@ from services.s3 import get_s3_manager, S3Manager
 from services.solr import get_solr_manager, SolrManager
 from models.media import S3MediaUrlResponse
 from models.metadata import (
-    MetadataResponse, UpdateMetadataResponse,
+    MetadataResponse, UpdateMetadataResponse, UpdateDebateRequest,
     UpdateSpeakersRequest, UpdateSubtitlesRequest,
 )
 
@@ -165,3 +165,23 @@ async def update_subtitles(
     except Exception:
         logger.exception(f"Error updating subtitles for {request.media_id}")
         raise HTTPException(status_code=500, detail="Error updating subtitles")
+
+
+@router.post("/update-debate", response_model=UpdateMetadataResponse)
+def update_debate(
+    request: UpdateDebateRequest,
+    mongo_client: MongoManager = Depends(get_mongo_manager),
+    solr_client: SolrManager = Depends(get_solr_manager),
+):
+    media_id = request.media_id
+    logger.info(f"Updating debate details for {request.media_id}")
+
+    update_data = request.dict(exclude={"media_id"}, exclude_unset=True)
+    mongo_client.update_debate_details(media_id, update_data)
+
+    try:
+        solr_client.update_debate_details(media_id, update_data)
+    except Exception as e:
+        logger.error(f"Failed to update Solr metadata: {e}")
+
+    return {"status": "success", "media_id": request.media_id}
