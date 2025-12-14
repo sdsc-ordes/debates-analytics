@@ -14,7 +14,6 @@
 
   interface Props { data: PageData; }
   let { data }: Props = $props();
-  $inspect("data", data);
 
   // --- 1. State ---
   let debate = $state(data.metadata.debate);
@@ -25,6 +24,7 @@
   const mediaUrl = $derived(data.signedUrls?.signedMediaUrl);
   const downloadUrls = $derived(data.signedUrls?.signedUrls || []);
   const mediaId =  $derived(data.mediaId);
+  const term = $derived(data.term);
 
   // --- 3. PLAYER STATE ---
   let mediaElement = $state<HTMLVideoElement>();
@@ -102,6 +102,7 @@
   activeSegment={currentSegment}
   mediaId={mediaId}
   mediaElement={mediaElement}
+  term={term}
 />
 
 <style>

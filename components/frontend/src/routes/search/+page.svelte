@@ -7,10 +7,22 @@
   import { client } from '$lib/api/client';
 
   import type { components } from '$lib/api/schema';
-  type SearchQuery = components['schemas']['SearchQuery'];
   type SearchDocument = components['schemas']['SearchDocument'];
   type FacetField = components['schemas']['FacetField'];
-  type FacetFilter = NonNullable<SearchQuery['facetFilters']>[number];
+  type FacetValue = components['schemas']['FacetValue'];
+
+  interface FacetFilter {
+    facetField: string;
+    facetValue: string;
+  }
+
+  // Define the main Search Query object
+  interface SearchQuery {
+    queryTerm: string;
+    sortBy?: string;
+    facetFields?: string[];
+    facetFilters?: FacetFilter[];
+  }
 
   const DEFAULT_FACET_FIELDS = [
       "debate_schedule",
@@ -145,6 +157,7 @@
         <SearchResultContainer
           {docs}
           {highlighting}
+          queryTerm={searchQuery.queryTerm}
         />
       {:else if !errorMessage}
         <p>No results found.</p>
