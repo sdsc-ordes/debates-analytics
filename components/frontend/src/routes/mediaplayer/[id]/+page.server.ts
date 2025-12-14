@@ -3,8 +3,9 @@ import { client } from "$lib/api/client"
 import { error } from "@sveltejs/kit"
 import { logger } from "$lib/utils/logger"
 
-export const load: PageServerLoad = async ({ params, fetch }) => {
+export const load: PageServerLoad = async ({ params, url, fetch }) => {
   const mediaId = params.id
+  const start = Number(url.searchParams.get("start")) || 0
 
   try {
     const [metadataResponse, signedUrlsResponse] = await Promise.all([
@@ -33,6 +34,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 
     return {
       mediaId: mediaId,
+      start: start,
       metadata: metadata,
       signedUrls: signedUrls || null,
     }

@@ -53,6 +53,7 @@ async def search_solr(
 
     # Extract Basic Data
     docs = raw.get("response", {}).get("docs", [])
+    logger.info(docs)
     num_found = raw.get("response", {}).get("numFound", 0)
     highlighting = raw.get("highlighting", {})
 

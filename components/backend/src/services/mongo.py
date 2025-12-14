@@ -153,6 +153,24 @@ class MongoManager:
             {"$set": doc}
         )
 
+    def update_debate_details(self, media_id: str, update_data: Dict[str, Any]):
+        """
+        Updates arbitrary fields in the debate document (session, type, schedule, etc.).
+        """
+        # 1. Prepare the Update Payload
+        #    We copy the input data so we don't mutate the original dictionary
+        fields_to_set = update_data.copy()
+
+        # 2. Add the timestamp automatically
+        fields_to_set["updated_at"] = datetime.utcnow()
+
+        # 3. Perform the Update
+        #    Note: In your media_collection, the UUID is stored as "_id".
+        self.media_collection.update_one(
+            {"_id": media_id},
+            {"$set": fields_to_set}
+        )
+
     def update_subtitles(self, media_id: str, segment_nr: int, subtitle_type: str, subtitles: list[dict]):
         """
         Updates the subtitle list for a specific segment.

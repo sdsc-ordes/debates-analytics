@@ -52,7 +52,6 @@ class SearchDocument(BaseModel):
     debate_schedule: Optional[datetime]= None
     debate_type: Optional[str]= None
     debate_session: Optional[str]= None
-    debate_name: Optional[str]= None
     statement_language: Optional[str]= None
 
 
