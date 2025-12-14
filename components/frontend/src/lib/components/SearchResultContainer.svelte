@@ -7,9 +7,10 @@
   interface Props {
     docs: SearchDocument[];
     highlighting: Record<string, HighlightedDoc>;
+    queryTerm: string;
   }
 
-  let { docs, highlighting }: Props = $props();
+  let { docs, highlighting, queryTerm }: Props = $props();
 
 </script>
 
@@ -17,7 +18,7 @@
   <div class="statements">
     {#if docs && docs.length > 0}
       {#each docs as doc}
-        <SearchResultItem {doc} {highlighting} />
+        <SearchResultItem {doc} {highlighting} {queryTerm} />
       {/each}
     {:else}
       <p>No statements available.</p>

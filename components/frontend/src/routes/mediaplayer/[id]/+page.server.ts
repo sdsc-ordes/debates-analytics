@@ -6,6 +6,7 @@ import { logger } from "$lib/utils/logger"
 export const load: PageServerLoad = async ({ params, url, fetch }) => {
   const mediaId = params.id
   const start = Number(url.searchParams.get("start")) || 0
+  const term = url.searchParams.get("term") || null
 
   try {
     const [metadataResponse, signedUrlsResponse] = await Promise.all([
@@ -35,6 +36,7 @@ export const load: PageServerLoad = async ({ params, url, fetch }) => {
     return {
       mediaId: mediaId,
       start: start,
+      term: term,
       metadata: metadata,
       signedUrls: signedUrls || null,
     }

@@ -11,13 +11,14 @@
     interface Props {
         highlighting: Record<string, HighlightedDoc>;
         doc: SearchDocument;
+        queryTerm: string;
     }
 
-    let { highlighting, doc }: Props = $props();
+    let { highlighting, doc, queryTerm }: Props = $props();
     let docId: string = doc.id;
 
     const navigateToVideoPlayer = () => {
-        goto(`/mediaplayer/${encodeURIComponent(doc.media_id)}?start=${encodeURIComponent(doc.start)}`);
+        goto(`/mediaplayer/${encodeURIComponent(doc.media_id)}?start=${encodeURIComponent(doc.start+0.001)}&term=${encodeURIComponent(queryTerm)}`);
     };
 
     const get_debate_title = () => {

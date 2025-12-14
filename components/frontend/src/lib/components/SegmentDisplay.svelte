@@ -16,6 +16,7 @@
     mediaElement?: HTMLMediaElement;
     mediaId: string;
     currentTime: number,
+    term: string,
   }
 
   let {
@@ -23,6 +24,7 @@
     mediaElement,
     mediaId,
     currentTime,
+    term,
   }: Props = $props();
 
   let editTranscript = $state(false);
@@ -70,6 +72,11 @@
     if (type === typeTranscript) editTranscript = false;
     if (type === typeTranslation) editTranslation = false;
   }
+
+  function hasTerm(text: string): boolean {
+    if (!term) return false;
+    return text.toLowerCase().includes(term.toLowerCase());
+  }
 </script>
 
 <div class="side-by-side">
@@ -90,7 +97,9 @@
       <p class="subtitle-content">
         {#each activeGroupOriginal as item}
           <span
-            class="subtitle-span {item === currentSubtitle ? 'highlighted' : ''}"
+            class="subtitle-span
+            {item === currentSubtitle ? 'highlighted' : ''}
+            {hasTerm(item.text) ? 'term-found' : ''}"
             onclick={() => mediaElement && jumpToTime(mediaElement, item.start)}
             role="button"
             tabindex="0"
@@ -128,7 +137,9 @@
     <p class="subtitle-content">
       {#each activeGroupTranslation as item}
         <span
-          class="subtitle-span {item === currentSubtitleEn ? 'highlighted' : ''}"
+          class="subtitle-span
+          {hasTerm(item.text) ? 'term-found' : ''}
+          {item === currentSubtitleEn ? 'highlighted' : ''}"
           onclick={() => mediaElement && jumpToTime(mediaElement, item.start)}
           role="button"
           tabindex="0"
@@ -191,6 +202,18 @@
     margin: 0;
     padding: 0;
     word-wrap: break-word;
+  }
+
+  .highlighted {
+    color: var(--secondary-color);
+    font-weight: bold; /* Optional: makes active line pop more */
+  }
+
+  /* NEW STYLE for search term matches */
+  .term-found {
+    background-color: #fff9c4; /* Light Yellow Highlight */
+    border-radius: 2px;
+    box-shadow: 0 0 2px #fbc02d; /* Optional: adds a subtle glow */
   }
 
 </style>
