@@ -8,49 +8,38 @@
   type Segment = components['schemas']['Segment'];
 
   // Define types locally if not exported from schema
-  const typeTranscript = "Transcript"
-  const typeTranslation = "Translation"
+  const typeTranscript = "original"
+  const typeTranslation = "translation"
 
   interface Props {
-    // Full Datasets
-    subtitles?: Subtitle[];
-    subtitlesEn?: Subtitle[];
-
-    // Current State (Time-based)
-    currentSubtitle?: Subtitle;
-    currentSubtitleEn?: Subtitle;
     activeSegment?: Segment;
-
     mediaElement?: HTMLMediaElement;
     mediaId: string;
+    currentTime: number,
   }
 
   let {
-    subtitles,
-    subtitlesEn,
-    currentSubtitle,
-    currentSubtitleEn,
     activeSegment,
     mediaElement,
-    mediaId
+    mediaId,
+    currentTime,
   }: Props = $props();
 
   let editTranscript = $state(false);
   let editTranslation = $state(false);
   let errorMessage = $state<string | null>(null);
 
-  let activeGroupOriginal = $derived(
-    activeSegment
-      ? subtitles.filter(s => s.start < activeSegment.end && s.end > activeSegment.start)
-      : []
+  let activeGroupOriginal = $derived(activeSegment?.subtitles_original || []);
+  let activeGroupTranslation = $derived(activeSegment?.subtitles_translation || []);
+
+  // 2. Find the specific subtitle INSIDE that segment
+  let currentSubtitle = $derived(
+    activeSegment?.subtitles_original.find(s => currentTime >= s.start && currentTime <= s.end)
   );
 
-  let activeGroupTranslation = $derived(
-    activeSegment
-      ? subtitlesEn.filter(s => s.start < activeSegment.end && s.end > activeSegment.start)
-      : []
+  let currentSubtitleEn = $derived(
+    activeSegment?.subtitles_translation.find(s => currentTime >= s.start && currentTime <= s.end)
   );
-  // --- Actions ---
 
   async function saveGroup(group: Segment[], type: string) {
     if (!activeSegment) return;
@@ -108,11 +97,11 @@
             onkeydown={() => {}}
           >
             {#if editTranscript}
-              <textarea 
-                bind:value={item.text} 
-                class="editable-textarea" 
+              <textarea
+                bind:value={item.text}
+                class="editable-textarea"
                 rows="2"
-                onclick={(e) => e.stopPropagation()} 
+                onclick={(e) => e.stopPropagation()}
               ></textarea>
             {:else}
               {item.text}{" "}
@@ -146,9 +135,9 @@
           onkeydown={() => {}}
         >
           {#if editTranslation}
-            <textarea 
-              bind:value={item.text} 
-              class="editable-textarea" 
+            <textarea
+              bind:value={item.text}
+              class="editable-textarea"
               rows="2"
               onclick={(e) => e.stopPropagation()}
             ></textarea>

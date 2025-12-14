@@ -78,17 +78,17 @@ async def mongo_metadata(
     logger.info(f"Fetching metadata for media_id: {media_id}")
 
     try:
+        # This now returns { debate: ..., speakers: ..., segments: ... }
         metadata = mongo_client.get_full_metadata(media_id)
-        logger.info(f"metadata: {metadata}")
+        logger.info(metadata)
+        return metadata
+
     except DocumentNotFoundError:
-        logger.exception(f"Metadata for {media_id} not found in db")
+        logger.warning(f"Metadata for {media_id} not found")
         raise HTTPException(status_code=404, detail="Media not found")
     except Exception:
         logger.exception(f"Error fetching metadata for {media_id}")
         raise HTTPException(status_code=500, detail="Database error")
-
-    return metadata
-
 
 @router.post("/update-speakers", response_model=UpdateMetadataResponse)
 async def update_speakers(
@@ -127,33 +127,41 @@ async def update_subtitles(
     solr_client: SolrManager = Depends(get_solr_manager),
 ):
     """
-    Update subtitles in Mongo and Solr
+    Update subtitles in Mongo (Segment-based) and Solr
     """
-    subtitle_type = request.subtitle_type
+    # Extract values safely from the Pydantic model
+    # (If using Enum, .value gives the string, e.g. "Transcript")
+    subtitle_type_str = request.subtitle_type.value if hasattr(request.subtitle_type, 'value') else request.subtitle_type
+
     segment_nr = request.segment_nr
     media_id = request.media_id
     subtitles_data = [s.dict() for s in request.subtitles]
 
-    logger.info(f"Updating subtitles ({subtitle_type}) for media_id: {media_id}")
+    logger.info(f"Updating segment {segment_nr} ({subtitle_type_str}) for {media_id}")
 
     try:
+        # 1. Update MongoDB (The Source of Truth)
         mongo_client.update_subtitles(
             media_id=media_id,
-            subtitle_type=subtitle_type,
+            segment_nr=segment_nr,  # <--- Now passing this!
+            subtitle_type=subtitle_type_str,
             subtitles=subtitles_data
         )
 
+        # 2. Update Solr (Search Index)
         solr_client.update_segment(
             media_id=media_id,
             segment_nr=segment_nr,
             subtitles=subtitles_data,
-            subtitle_type=subtitle_type,
+            subtitle_type=subtitle_type_str,
         )
 
         return {"status": "success", "media_id": request.media_id}
 
-    except HTTPException:
-        raise
+    except ValueError as ve:
+        # Handle the case where segment wasn't found in Mongo
+        logger.warning(f"Validation error: {ve}")
+        raise HTTPException(status_code=404, detail=str(ve))
     except Exception:
         logger.exception(f"Error updating subtitles for {request.media_id}")
         raise HTTPException(status_code=500, detail="Error updating subtitles")

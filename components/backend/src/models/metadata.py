@@ -4,33 +4,30 @@ from datetime import datetime
 from enum import Enum
 
 
-class EnumSubtitleType(str, Enum):
-    transcript = "Transcript"
-    translation = "Translation"
+class SubtitleType(str, Enum):
+    transcript = "original"
+    translation = "translation"
 
 
 class Speaker(BaseModel):
     speaker_id: str
-    name: str
-    role_tag: str
+    name: Optional[str] = ""
+    role_tag: Optional[str] = ""
 
 
 class Subtitle(BaseModel):
     start: float
     end: float
     text: str
-    speaker_id: str
-    language: str
-    segment_nr: int
 
 
 class Segment(BaseModel):
+    segment_nr: int
     start: float
     end: float
-    subtitles: List[str]
-    speaker_id: str
-    language: str
-    segment_nr: int
+    speaker_id: Optional[str] = "UNKNOWN"
+    subtitles_original: List[Subtitle] = []
+    subtitles_translation: List[Subtitle] = []
 
 
 class DebateDocument(BaseModel):
@@ -39,20 +36,17 @@ class DebateDocument(BaseModel):
     original_filename: str
     status: str
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    error_message: Optional[str] = None
     job_id: Optional[str] = None
     s3_audio_key: Optional[str] = None
     transcript_s3_keys: Dict[str, str] = {}
+    updated_at: Optional[datetime] = None
+    error_message: Optional[str] = None
 
 
 class MetadataResponse(BaseModel):
     debate: DebateDocument
-    speakers: Optional[List[Speaker]] = []
-    segments: Optional[List[Segment]] = []
-    segments_en: Optional[List[Segment]] = []
-    subtitles: Optional[List[Subtitle]] = []
-    subtitles_en: Optional[List[Subtitle]] = []
+    speakers: List[Speaker] = []
+    segments: List[Segment] = []
 
 
 class UpdateSpeakersRequest(BaseModel):
@@ -64,7 +58,7 @@ class UpdateSubtitlesRequest(BaseModel):
     media_id: str
     segment_nr: int
     subtitles: List[Subtitle]
-    subtitle_type: EnumSubtitleType
+    subtitle_type: SubtitleType
 
 
 class UpdateMetadataResponse(BaseModel):

@@ -22,8 +22,6 @@
   let debate = $state(data.metadata.debate);
   let speakers = $state<Speaker[]>(data.metadata.speakers || []);
   let segments = $state<Segment[]>(data.metadata.segments || []);
-  let subtitles = $state<Subtitle[]>(data.metadata.subtitles || []);
-  let subtitlesEn = $state<Subtitle[]>(data.metadata.subtitles_en || []);
 
   // --- 2. Derived Constants ---
   const mediaUrl = $derived(data.signedUrls?.signedMediaUrl);
@@ -35,17 +33,14 @@
   let mediaElement = $state<HTMLVideoElement>();
   let currentTime = $state(0);
 
-  // --- 4. CURRENT ITEMS (Derived from currentTime) ---
-
-  function findCurrentItem(items: Subtitle[] | Segment[], time: number): Subtitle | Segment | undefined {
-      return items.find(item => time >= item.start && time <= item.end);
+  // Simple helper
+  function findCurrentSegment(time: number) {
+      return segments.find(s => time >= s.start && time <= s.end);
   }
 
   // Reactive Derived Values
   // These update automatically whenever 'currentTime' changes
-  let currentSegment = $derived(findCurrentItem(segments, currentTime));
-  let currentSubtitle = $derived(findCurrentItem(subtitles, currentTime));
-  let currentSubtitleEn = $derived(findCurrentItem(subtitlesEn, currentTime));
+  let currentSegment = $derived(findCurrentSegment(currentTime));
   let currentSpeaker = $derived(
       currentSegment ? speakers.find(s => s.speaker_id === currentSegment.speaker_id) : undefined
   );
@@ -56,8 +51,6 @@
     debate = data.metadata.debate;
     speakers = data.metadata.speakers || [];
     segments = data.metadata.segments || [];
-    subtitles = data.metadata.subtitles || [];
-    subtitlesEn = data.metadata.subtitles_en || [];
   });
 </script>
 
@@ -104,10 +97,7 @@
 <DebateToolBar {downloadUrls} />
 
 <SegmentDisplay
-  subtitles={subtitles}
-  subtitlesEn={subtitlesEn}
-  currentSubtitle={currentSubtitle}
-  currentSubtitleEn={currentSubtitleEn}
+  currentTime={currentTime}
   activeSegment={currentSegment}
   mediaId={mediaId}
   mediaElement={mediaElement}

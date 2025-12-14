@@ -4,9 +4,6 @@
 
   type SearchQuery = components['schemas']['SearchQuery'];
   type FacetField = components['schemas']['FacetField'];
-  
-  // Helper: Extract the inner type of a single filter (e.g. {facetField: string, facetValue: string})
-  // This ensures we match whatever the backend schema generates.
   type FacetFilter = NonNullable<SearchQuery['facetFilters']>[number];
 
   interface Props {
@@ -34,10 +31,10 @@
     // 2. Immutable Update (Better for Svelte Reactivity)
     // Create a NEW array instead of .push()
     searchQuery.facetFilters = [
-        ...(searchQuery.facetFilters || []), 
+        ...(searchQuery.facetFilters || []),
         newFilter
     ];
-    
+
     // 3. Trigger Search
     onSearch(searchQuery);
   }
@@ -49,7 +46,7 @@
     searchQuery.facetFilters = searchQuery.facetFilters.filter(
       (facet) => !(facet.facetField === facetField && facet.facetValue === facetValue)
     );
-    
+
     onSearch(searchQuery);
   }
 
@@ -69,6 +66,7 @@
 
       <div class="facets">
         {#each field.values as facet}
+          {#if facet.label}
           <div class="facet-row">
             <button
               class="facet-item {isActive(field.field_name, facet.label) ? 'active' : ''}"
@@ -89,6 +87,7 @@
 
             <small class="card-subtle">{facet.count}</small>
           </div>
+          {/if}
         {/each}
       </div>
     {/each}

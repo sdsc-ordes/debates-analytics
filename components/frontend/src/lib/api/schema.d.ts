@@ -115,7 +115,7 @@ export interface paths {
     put?: never
     /**
      * Update Subtitles
-     * @description Update subtitles in Mongo and Solr
+     * @description Update subtitles in Mongo (Segment-based) and Solr
      */
     post: operations["update_subtitles_db_update_subtitles_post"]
     delete?: never
@@ -223,10 +223,6 @@ export interface components {
        * Format: date-time
        */
       created_at: string
-      /** Updated At */
-      updated_at?: string | null
-      /** Error Message */
-      error_message?: string | null
       /** Job Id */
       job_id?: string | null
       /** S3 Audio Key */
@@ -238,6 +234,10 @@ export interface components {
       transcript_s3_keys: {
         [key: string]: string
       }
+      /** Updated At */
+      updated_at?: string | null
+      /** Error Message */
+      error_message?: string | null
     }
     /** DeleteMediaRequest */
     DeleteMediaRequest: {
@@ -255,11 +255,6 @@ export interface components {
       /** Errors */
       errors?: string[] | null
     }
-    /**
-     * EnumSubtitleType
-     * @enum {string}
-     */
-    EnumSubtitleType: "Transcript" | "Translation"
     /** FacetField */
     FacetField: {
       /** Field Name */
@@ -311,27 +306,12 @@ export interface components {
        * Speakers
        * @default []
        */
-      speakers: components["schemas"]["Speaker"][] | null
+      speakers: components["schemas"]["Speaker"][]
       /**
        * Segments
        * @default []
        */
-      segments: components["schemas"]["Segment"][] | null
-      /**
-       * Segments En
-       * @default []
-       */
-      segments_en: components["schemas"]["Segment"][] | null
-      /**
-       * Subtitles
-       * @default []
-       */
-      subtitles: components["schemas"]["Subtitle"][] | null
-      /**
-       * Subtitles En
-       * @default []
-       */
-      subtitles_en: components["schemas"]["Subtitle"][] | null
+      segments: components["schemas"]["Segment"][]
     }
     /** ProcessRequest */
     ProcessRequest: {
@@ -459,27 +439,42 @@ export interface components {
     }
     /** Segment */
     Segment: {
+      /** Segment Nr */
+      segment_nr: number
       /** Start */
       start: number
       /** End */
       end: number
-      /** Subtitles */
-      subtitles: string[]
-      /** Speaker Id */
-      speaker_id: string
-      /** Language */
-      language: string
-      /** Segment Nr */
-      segment_nr: number
+      /**
+       * Speaker Id
+       * @default UNKNOWN
+       */
+      speaker_id: string | null
+      /**
+       * Subtitles Original
+       * @default []
+       */
+      subtitles_original: components["schemas"]["Subtitle"][]
+      /**
+       * Subtitles Translation
+       * @default []
+       */
+      subtitles_translation: components["schemas"]["Subtitle"][]
     }
     /** Speaker */
     Speaker: {
       /** Speaker Id */
       speaker_id: string
-      /** Name */
-      name: string
-      /** Role Tag */
-      role_tag: string
+      /**
+       * Name
+       * @default
+       */
+      name: string | null
+      /**
+       * Role Tag
+       * @default
+       */
+      role_tag: string | null
     }
     /**
      * StatementType
@@ -494,13 +489,12 @@ export interface components {
       end: number
       /** Text */
       text: string
-      /** Speaker Id */
-      speaker_id: string
-      /** Language */
-      language: string
-      /** Segment Nr */
-      segment_nr: number
     }
+    /**
+     * SubtitleType
+     * @enum {string}
+     */
+    SubtitleType: "original" | "translation"
     /** UpdateMetadataResponse */
     UpdateMetadataResponse: {
       /** Status */
@@ -523,7 +517,7 @@ export interface components {
       segment_nr: number
       /** Subtitles */
       subtitles: components["schemas"]["Subtitle"][]
-      subtitle_type: components["schemas"]["EnumSubtitleType"]
+      subtitle_type: components["schemas"]["SubtitleType"]
     }
     /** ValidationError */
     ValidationError: {

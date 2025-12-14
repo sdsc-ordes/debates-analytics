@@ -42,7 +42,7 @@ class SolrManager:
                     self.client.add(docs_to_update, commit=True)
 
     def update_segment(self, media_id: str, segment_nr: int, subtitles: List[dict], subtitle_type: str):
-        statement = self._get_statement_from_subtitles(segment_nr, subtitles)
+        statement = [s.get("text", "") for s in subtitles]
 
         query = f'statement_type:{subtitle_type} AND media_id:{media_id} AND segment_nr:{segment_nr}'
         results = self.client.search(query)
@@ -101,17 +101,6 @@ class SolrManager:
         except Exception as e:
             logger.error(f"Failed to delete documents for {media_id} from Solr: {e}")
             raise e
-
-    @staticmethod
-    def _get_statement_from_subtitles(segment_nr: int, subtitles: List[dict]) -> str:
-        """Helper to extract text from subtitles"""
-        subtitles_for_segment = [
-            subtitle["content"]
-            for subtitle in subtitles
-            if subtitle["segment_nr"] == segment_nr
-            and subtitle.get("content")
-        ]
-        return " ".join(subtitles_for_segment)
 
 
 @lru_cache()
