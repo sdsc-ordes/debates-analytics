@@ -14,6 +14,7 @@
 
   interface Props { data: PageData; }
   let { data }: Props = $props();
+  $inspect("data", data);
 
   // --- state ---
   let debate = $state(data.metadata.debate);
@@ -23,10 +24,10 @@
   let currentTime = $state(0);
 
   // --- derived constants ---
-  const videoUrl = $derived(data.signedUrls?.signedVideoUrl);
-  const audioUrl = $derived(data.signedUrls?.signedAudioUrl);
+  const mediaUrl = $derived(data.signedUrls?.signedMediaUrl);
   const downloadUrls = $derived(data.signedUrls?.signedUrls || []);
-  const mediaId =  $derived(data.mediaId);
+  const mediaId = $derived(data.mediaId);
+  const mediaType = $derived(data.metadata.debate.media_type);
   const term = $derived(data.term);
   let currentSegment = $derived(findCurrentSegment(currentTime));
   let currentSpeaker = $derived(
@@ -84,7 +85,8 @@
 
   <div class="col-md-6 video-container">
     <MediaPlayer
-      mediaUrl={videoUrl || ''}
+      mediaUrl={mediaUrl || ''}
+      mediaType={mediaType || 'video'}
       bind:mediaElement
       bind:currentTime={currentTime} />
   </div>

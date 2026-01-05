@@ -6,7 +6,6 @@ from services.s3 import get_s3_manager
 from services.queue import get_queue_manager
 from services.filesystem import temp_workspace
 from services.mongo import get_mongo_manager
-from config.settings import get_settings
 from services.reporter import JobReporter
 
 logger = logging.getLogger(__name__)
@@ -18,7 +17,6 @@ def process_video(s3_key, media_id):
     s3 = get_s3_manager()
     rq = get_queue_manager()
     mongo = get_mongo_manager()
-    settings = get_settings()
     job = get_current_job()
 
     reporter = JobReporter(media_id, mongo, job, logger)
@@ -51,11 +49,9 @@ def process_video(s3_key, media_id):
 
             logger.info(f"Job {media_id}: Enqueuing transcription...")
 
-            rq.enqueue(
-                settings.task_transcribe,
+            rq.enqueue_audio_processing(
                 media_id=media_id,
                 s3_key=s3_wav_key,
-                job_timeout=-1
             )
 
             return {"status": "completed", "wav_key": s3_wav_key}

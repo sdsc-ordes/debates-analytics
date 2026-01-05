@@ -38,6 +38,11 @@
 
   async function handleUpload() {
     if (!file) return;
+    if (!checkFileType(file)) {
+      errorMessage = 'Invalid file type. Please upload an MP4 video or WAV audio file.';
+      status = 'error';
+      return;
+    }
 
     try {
       errorMessage = null;
@@ -75,6 +80,7 @@
               media_id: mediaId,
               s3_key: s3Key,
               title: file.name,
+              file_type: file.type,
           }
       });
 
@@ -92,6 +98,11 @@
       console.error(err);
     }
   }
+
+  function checkFileType(file: File): boolean {
+    const allowedTypes = ['video/mp4', 'audio/wav'];
+    return allowedTypes.includes(file.type);
+  }
 </script>
 
 <section class="page-layout">
@@ -103,18 +114,18 @@
 
     <header>
       <CloudUpload size={28} color="var(--primary-color)" />
-      <h1>Upload Video</h1>
-      <p>Select an MP4 file to add to your media library</p>
+      <h1>Upload Media</h1>
+      <p>Select an MP4 or WAV file to add to your media library</p>
     </header>
 
     <label class="drop-zone" class:disabled={status === 'uploading' || status === 'processing' || status === 'success'}>
-      <input bind:files type="file" accept="video/mp4" disabled={status === 'uploading' || status === 'processing' || status === 'success'} />
+      <input bind:files type="file" accept="video/mp4 audio/wav" disabled={status === 'uploading' || status === 'processing' || status === 'success'} />
       {#if file}
         <strong>{file.name}</strong>
         <small>{(file.size / 1024 / 1024).toFixed(2)} MB</small>
       {:else}
         <CloudUpload size={40} color="#9ca3af" />
-        <span>Click to select a video file</span>
+        <span>Click to select a video or audio file in mp4 or wav format.</span>
       {/if}
     </label>
 
@@ -148,7 +159,9 @@
     {/if}
 
     {#if file && (status === 'idle' || status === 'error')}
-      <button class="button-primary" disabled={!file} onclick={handleUpload} type="button">Upload Video</button>
+      <button class="button-primary" disabled={!file} onclick={handleUpload} type="button">
+        Upload mediafile
+      </button>
     {/if}
   </div>
 </section>
@@ -156,36 +169,36 @@
 <style>
   .page-layout { display: flex; justify-content: center; padding: 2rem 1rem; }
   .upload-card { background: #fff; width: 100%; max-width: 480px; border-radius: 12px; padding: 1.5rem; border: 1px solid #eaeaea; }
-  
+
   .back-link { display: inline-flex; align-items: center; gap: 6px; color: grey; font-size: 13px; text-decoration: none; margin-bottom: 1rem; }
   .back-link:hover { color: var(--primary-color); }
-  
+
   header { text-align: center; margin-bottom: 1.5rem; }
   header h1 { font-size: 22px; padding: 0; margin: 0.5rem 0 0.25rem; }
   header p { color: grey; font-size: 14px; margin: 0; }
-  
+
   .drop-zone { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; border: 2px dashed #d1d5db; border-radius: 10px; padding: 2rem; cursor: pointer; background: #fafafa; margin-bottom: 1rem; }
   .drop-zone:hover:not(.disabled) { border-color: var(--primary-color); background: #f0f4ff; }
   .drop-zone.disabled { opacity: 0.6; cursor: not-allowed; }
   .drop-zone input { display: none; }
   .drop-zone strong { color: var(--primary-color); word-break: break-all; text-align: center; }
   .drop-zone small { color: grey; font-size: 13px; }
-  
+
   .status { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 1rem; }
   .status.loading { color: var(--primary-color); }
   .status.success { color: #059669; }
   .status.error { color: #dc2626; }
-  
+
   .progress-label { display: flex; justify-content: space-between; width: 100%; font-size: 14px; }
   .progress-track { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; width: 100%; margin-top: 6px; }
   .progress-fill { height: 100%; background: var(--primary-color); transition: width 0.3s; }
-  
+
   .media-id { display: block; text-align: center; color: grey; margin-bottom: 1rem; }
   .media-id code { color: var(--primary-color); }
-  
+
   .button-primary { width: 100%; padding: 10px; text-align: center; text-decoration: none; display: block; }
   .link-button { background: none; border: none; color: var(--primary-color); cursor: pointer; font-size: 13px; text-decoration: underline; padding: 0; }
-  
+
   :global(.animate-spin) { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>

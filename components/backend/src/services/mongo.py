@@ -23,10 +23,8 @@ class MongoManager:
             self.client = MongoClient(self.mongo_url)
             self.db = self.client[self.db_name]
 
-            # Collections
             self.media_collection = self.db[settings.mongo_media_collection]
             self.speakers_collection = self.db[settings.mongo_speaker_collection]
-            # We use one collection for subtitles/segments, differentiated by 'type'
             self.subtitles_collection = self.db[settings.mongo_subtitle_collection]
             self.segments_collection = self.db[settings.mongo_segment_collection]
 
@@ -107,31 +105,32 @@ class MongoManager:
         )
 
     def get_full_metadata(self, media_id: str) -> Dict[str, Any]:
-        # 1. Get Debate Document
         debate = self.media_collection.find_one({"_id": media_id})
         if not debate:
             raise DocumentNotFoundError(f"Debate {media_id} not found")
 
-        # Clean _id to media_id
         debate["media_id"] = str(debate.pop("_id"))
 
-        # 2. Get Speakers
-        # (Assuming your save_speakers stores a document with a "speakers" list field)
         speakers_doc = self.speakers_collection.find_one({"media_id": media_id})
         speakers_list = speakers_doc.get("speakers", []) if speakers_doc else []
 
-        # 3. Get All Segments (Sorted)
-        # This returns the docs that ALREADY contain 'subtitles_original'
-        # and 'subtitles_translation' arrays inside them.
         cursor = self.segments_collection.find({"media_id": media_id}).sort("segment_nr", 1)
         segments_list = list(cursor)
 
-        # 4. Return the clean structure
         return {
             "debate": debate,
             "speakers": speakers_list,
             "segments": segments_list
         }
+
+    def get_debate_metadata(self, media_id: str) -> Dict[str, Any]:
+        debate = self.media_collection.find_one({"_id": media_id})
+        debate["media_id"] = str(debate.pop("_id"))
+        if not debate:
+            raise DocumentNotFoundError(f"Debate {media_id} not found")
+
+        return debate
+
 
     def update_speakers(self, media_id: str, speakers: List[Dict[str, Any]]):
         """
@@ -153,15 +152,10 @@ class MongoManager:
         """
         Updates arbitrary fields in the debate document (session, type, schedule, etc.).
         """
-        # 1. Prepare the Update Payload
-        #    We copy the input data so we don't mutate the original dictionary
         fields_to_set = update_data.copy()
 
-        # 2. Add the timestamp automatically
         fields_to_set["updated_at"] = datetime.utcnow()
 
-        # 3. Perform the Update
-        #    Note: In your media_collection, the UUID is stored as "_id".
         self.media_collection.update_one(
             {"_id": media_id},
             {"$set": fields_to_set}
@@ -195,12 +189,13 @@ class MongoManager:
         if result.matched_count == 0:
             raise ValueError(f"Segment {segment_nr} for media {media_id} not found.")
 
-    def insert_initial_media_document(self, media_id: str, s3_key: str, filename: str):
+    def insert_initial_media_document(self, media_id: str, s3_key: str, filename: str, media_type: str):
         """First entry of the media in the db: assumes that upload to S3 already happened."""
         document = {
             "_id": media_id,
             "s3_key": s3_key,
             "original_filename": filename,
+            "media_type": media_type,
             "status": "preparing",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),

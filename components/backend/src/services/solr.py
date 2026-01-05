@@ -9,7 +9,7 @@ from models.search import SearchQuery
 
 DEBATE_DETAILS_MAPPING = {
     "session": "debate_session",
-    "type": "debate_type",
+    "debate_type": "debate_type",
     "schedule": "debate_schedule",
 }
 

@@ -4,6 +4,11 @@ from datetime import datetime
 from enum import Enum
 
 
+class MediaType(str, Enum):
+    video = "video"
+    audio = "audio"
+
+
 class SubtitleType(str, Enum):
     transcript = "original"
     translation = "translation"
@@ -34,6 +39,7 @@ class DebateDocument(BaseModel):
     media_id: str
     s3_key: str
     original_filename: str
+    media_type: MediaType
     status: str
     created_at: datetime
     job_id: Optional[str] = None
@@ -42,7 +48,7 @@ class DebateDocument(BaseModel):
     updated_at: Optional[datetime] = None
     error_message: Optional[str] = None
     session: Optional[str] = None
-    type: Optional[str] = None
+    debate_type: Optional[str] = None
     schedule: Optional[str] = None
     name: Optional[str] = None
 
@@ -73,5 +79,5 @@ class UpdateMetadataResponse(BaseModel):
 class UpdateDebateRequest(BaseModel):
     media_id: str
     session: Optional[str] = None
-    type: Optional[str] = None
+    debate_type: Optional[str] = None
     schedule: Optional[str] = None
