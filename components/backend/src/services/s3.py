@@ -80,7 +80,7 @@ class S3Manager:
             for obj in response['Contents']:
                 keys.append(obj['Key'])
 
-        logging.info(f"Found {len(keys)} objects with prefix '{prefix}' in bucket '{self.bucket_name}': {keys}")
+        logging.debug(f"Found {len(keys)} objects with prefix '{prefix}' in bucket '{self.bucket_name}': {keys}")
         return keys
 
     def list_top_level_prefixes(self) -> List[str]:
@@ -99,7 +99,7 @@ class S3Manager:
                 for prefix_data in page['CommonPrefixes']:
                     media_ids.append(prefix_data['Prefix'])
 
-        logging.info(f"Found {len(media_ids)} top-level prefixes (media_ids) in bucket '{self.bucket_name}'.")
+        logging.debug(f"Found {len(media_ids)} top-level prefixes (media_ids) in bucket '{self.bucket_name}'.")
         return media_ids
 
     def get_presigned_post(self, object_key: str, expiration: int = 3600) -> Union[Dict[str, Any], None]:

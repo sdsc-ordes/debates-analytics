@@ -15,34 +15,30 @@
   interface Props { data: PageData; }
   let { data }: Props = $props();
 
-  // --- 1. State ---
+  // --- state ---
   let debate = $state(data.metadata.debate);
   let speakers = $state<Speaker[]>(data.metadata.speakers || []);
   let segments = $state<Segment[]>(data.metadata.segments || []);
+  let mediaElement = $state<HTMLVideoElement>();
+  let currentTime = $state(0);
 
-  // --- 2. Derived Constants ---
-  const mediaUrl = $derived(data.signedUrls?.signedMediaUrl);
+  // --- derived constants ---
+  const videoUrl = $derived(data.signedUrls?.signedVideoUrl);
+  const audioUrl = $derived(data.signedUrls?.signedAudioUrl);
   const downloadUrls = $derived(data.signedUrls?.signedUrls || []);
   const mediaId =  $derived(data.mediaId);
   const term = $derived(data.term);
-
-  // --- 3. PLAYER STATE ---
-  let mediaElement = $state<HTMLVideoElement>();
-  let currentTime = $state(0);
+  let currentSegment = $derived(findCurrentSegment(currentTime));
+  let currentSpeaker = $derived(
+      currentSegment ? speakers.find(s => s.speaker_id === currentSegment.speaker_id) : undefined
+  );
 
   // Simple helper
   function findCurrentSegment(time: number) {
       return segments.find(s => time >= s.start && time <= s.end);
   }
 
-  // Reactive Derived Values
-  // These update automatically whenever 'currentTime' changes
-  let currentSegment = $derived(findCurrentSegment(currentTime));
-  let currentSpeaker = $derived(
-      currentSegment ? speakers.find(s => s.speaker_id === currentSegment.speaker_id) : undefined
-  );
-
-  // --- 5. Sync on Navigation ---
+  // Sync on Navigation ---
   $effect(() => {
     console.log("in effect");
     debate = data.metadata.debate;
@@ -89,7 +85,7 @@
 
   <div class="col-md-6 video-container">
     <MediaPlayer
-      mediaUrl={mediaUrl || ''}
+      mediaUrl={videoUrl || ''}
       bind:mediaElement
       bind:currentTime={currentTime} />
   </div>

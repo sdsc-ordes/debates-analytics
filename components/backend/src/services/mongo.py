@@ -114,13 +114,10 @@ class MongoManager:
 
         # Clean _id to media_id
         debate["media_id"] = str(debate.pop("_id"))
-        logger.info(debate)
 
         # 2. Get Speakers
         # (Assuming your save_speakers stores a document with a "speakers" list field)
-        logger.info(f"media_id = {media_id}")
         speakers_doc = self.speakers_collection.find_one({"media_id": media_id})
-        logger.info(f"found: {speakers_doc}")
         speakers_list = speakers_doc.get("speakers", []) if speakers_doc else []
 
         # 3. Get All Segments (Sorted)
@@ -128,7 +125,6 @@ class MongoManager:
         # and 'subtitles_translation' arrays inside them.
         cursor = self.segments_collection.find({"media_id": media_id}).sort("segment_nr", 1)
         segments_list = list(cursor)
-        logger.info(segments_list)
 
         # 4. Return the clean structure
         return {

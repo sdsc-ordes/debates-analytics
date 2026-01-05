@@ -25,49 +25,54 @@ async def get_media_urls(
     logger.info(f"Fetching signed URLs for media_id: {media_id}")
 
     try:
-        transcript_keys = s3_client.list_objects_by_prefix(f"{media_id}/transcripts")
-        media_keys = s3_client.list_objects_by_prefix(f"{media_id}")
-        logger.info(f"media_keys: {media_keys}")
-        logger.info(f"transcript_keys: {transcript_keys}")
-
-        logger.info(f"Found {len(transcript_keys)} transcripts and {len(media_keys)} media files.")
+        file_keys = s3_client.list_objects_by_prefix(f"{media_id}")
+        logger.info(f"file_keys: {file_keys}")
+        logger.info(f"Found {len(file_keys)} files.")
 
     except Exception:
         logger.exception(f"Failed to list objects from S3 for {media_id}")
         raise HTTPException(status_code=500, detail="Storage service unavailable.")
 
-    media_url = ""
-
-    mp4_key = next((key for key in media_keys if key.lower().endswith(".mp4")), None)
-
-    if mp4_key:
-        try:
-            media_url = s3_client.get_presigned_url(mp4_key)
-        except Exception as e:
-            logger.error(f"Failed to sign media url for {mp4_key}: {e}")
-    else:
-        logger.warning(f"No .mp4 media file found for media_id: {media_id}")
-
     download_urls = []
-    for object_key in transcript_keys:
+    video_url, audio_url = None, None
+    for object_key in file_keys:
         try:
-            filename = object_key.split('/')[-1]
+            filename = _get_file_name_from_s3_key(object_key)
             url = s3_client.get_presigned_url(object_key)
-
             download_urls.append({
                 "url": url,
                 "label": filename
             })
+            if _is_audio_file(filename):
+                audio_url = url
+            elif _is_video_file(filename):
+                video_url = url
         except Exception as e:
             logger.error(f"Failed to sign transcript url for {object_key}: {e}")
 
+    if not (audio_url or video_url):
+        logger.warning(f"No audio or video files found for media_id: {media_id}")
+
     response = {
         "signedUrls": download_urls,
-        "signedMediaUrl": media_url
+        "signedVideoUrl": video_url,
+        "signedAudioUrl": audio_url,
     }
 
-    logger.debug(f"Returning response for {media_id}")
+    logger.info(f"Returning response for {media_id}: {response}")
     return response
+
+
+def _get_file_name_from_s3_key(s3_key: str) -> str:
+    return s3_key.split('/')[-1]
+
+
+def _is_audio_file(file_key) -> bool:
+    return file_key.lower().endswith('.wav')
+
+
+def _is_video_file(file_key) -> bool:
+    return file_key.lower().endswith('.mp4')
 
 
 @router.get("/get-metadata", response_model=MetadataResponse)

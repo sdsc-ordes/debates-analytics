@@ -32,6 +32,7 @@ export const load: PageServerLoad = async ({ params, url, fetch }) => {
     if (signedUrlsError) {
       logger.error(signedUrlsError, "Signed URL Error:")
     }
+    logger.info(signedUrls, `Loaded media player for media ID: ${mediaId}`)
 
     return {
       mediaId: mediaId,
