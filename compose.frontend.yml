@@ -15,6 +15,7 @@ services:
       ORIGIN: http://localhost:3000
       TYPE_TRANSLATION: ${TYPE_TRANSLATION}
       TYPE_ORIGINAL: ${TYPE_ORIGINAL}
+      SOLR_PAGE_SIZE: ${SOLR_PAGE_SIZE}
     networks:
       - debates_network
     command: ["node", "build"]

@@ -1,5 +1,6 @@
 x-backend-env: &backend-env # Shared Infrastructure
   SOLR_URL: ${SOLR_URL}
+  SOLR_PAGE_SIZE: ${SOLR_PAGE_SIZE}
   MONGO_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb-instance:27017/
   MONGO_DB_NAME: ${MONGO_DB_NAME}
   MONGO_MEDIA_COLLECTION: ${MONGO_MEDIA_COLLECTION}

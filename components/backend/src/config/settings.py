@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     # Solr Config
     solr_url: str
+    solr_page_size: int = 20
 
     # Redis
     redis_url: str
