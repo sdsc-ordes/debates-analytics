@@ -19,7 +19,8 @@ class SearchQuery(BaseModel):
     facetFilters: List[FacetFilter]  = Field(
         ..., description="Solr facet filters with set values"
     )
-
+    start: int = Field(0, description="Pagination start index", examples=[0])
+    rows: int = Field(10, description="Number of rows to return", examples=[10])
 
 class StatementType(str, Enum):
     ORIGINAL = "original"
