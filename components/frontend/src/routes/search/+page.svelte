@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation"
-  import { page } from "$app/stores"
+  import { page } from "$app/state"
   import SearchForm from "$lib/components/SearchForm.svelte"
   import FacetCounts from "$lib/components/FacetCounts.svelte"
   import SearchResultContainer from "$lib/components/SearchResultContainer.svelte"
@@ -39,7 +39,7 @@
 
   // Helper to parse URL params into a SearchQuery object
   function getQueryFromUrl(): SearchQuery {
-    const params = $page.url.searchParams
+    const params = page.url.searchParams
     const rawFilters = params.getAll("facetFilters")
 
     const parsedFilters: FacetFilter[] = rawFilters.map((f) => {
@@ -102,9 +102,8 @@
     return pages;
   }
 
-  // 3. Update handlers to be safer
   function goToPage(p: number | string) {
-    if (typeof p === 'string') return; // Ignore clicks on "..."
+    if (typeof p === 'string') return;
     if (p < 1 || p > totalPages) return;
 
     searchQuery.page = p as number;
@@ -230,7 +229,7 @@
               </button>
             </li>
 
-            {#each getPaginationRange(searchQuery.page, totalPages) as p}
+            {#each getPaginationRange(searchQuery.page || 1, totalPages) as p}
               <li
                 class="page-item"
                 class:active={p === searchQuery.page}
@@ -248,7 +247,7 @@
             >
               <button
                 class="page-link"
-                onclick={() => goToPage(searchQuery.page + 1)}
+                onclick={() => goToPage((searchQuery.page || 1) + 1)}
                 aria-label="Next"
               >
                 <span aria-hidden="true">&raquo;</span>
