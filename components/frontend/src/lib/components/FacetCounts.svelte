@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { components } from '$lib/api/schema';
   import { displayIsoDate } from "$lib/utils/displayUtils";
+  import type { SearchQuery } from '$lib/utils/searchTypes';
 
-  type SearchQuery = components['schemas']['SearchQuery'];
   type FacetField = components['schemas']['FacetField'];
   type FacetFilter = NonNullable<SearchQuery['facetFilters']>[number];
 
@@ -16,6 +16,7 @@
 
   const displayFunctions: Record<string, (label: string) => string> = {
     debate_schedule: displayIsoDate,
+    media_id: (label) => label.slice(0, 8) + '...' + label.slice(-4),
   };
 
   function getLabel(fieldKey: string, label: string): string {
@@ -24,18 +25,13 @@
   }
 
   function handleFacetAddClick(facetField: string, facetValue: string) {
-    // 1. Create the new filter object
-    // Casting 'as FacetFilter' keeps TypeScript happy if the schema is strict
     const newFilter = { facetField, facetValue } as FacetFilter;
 
-    // 2. Immutable Update (Better for Svelte Reactivity)
-    // Create a NEW array instead of .push()
     searchQuery.facetFilters = [
         ...(searchQuery.facetFilters || []),
         newFilter
     ];
 
-    // 3. Trigger Search
     onSearch(searchQuery);
   }
 

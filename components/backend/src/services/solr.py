@@ -77,8 +77,8 @@ class SolrManager:
             "df": "statement",
             "hl": "true" if query.queryTerm else "false",
             "hl.fragsize": 0,
-            "rows": 500,
-            "start": 0,
+            "rows": query.rows,
+            "start": query.start,
         }
 
         if query.facetFields:

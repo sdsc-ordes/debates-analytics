@@ -40,7 +40,6 @@
 
   // Sync on Navigation ---
   $effect(() => {
-    console.log("in effect");
     debate = data.metadata.debate;
     speakers = data.metadata.speakers || [];
     segments = data.metadata.segments || [];

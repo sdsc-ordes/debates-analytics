@@ -44,7 +44,7 @@ async def search_solr(
         facetFields=facet_fields,
         sortBy=sort_by,
         rows=rows,
-        start=start
+        start=start,
     )
 
     # Query Solr (get raw results)

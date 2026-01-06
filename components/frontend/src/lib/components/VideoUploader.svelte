@@ -56,8 +56,6 @@
         throw new Error("Failed to get upload permissions");
       }
 
-      console.log("Presign Data:", presignData);
-
       const {
           postUrl: url,
           fields,

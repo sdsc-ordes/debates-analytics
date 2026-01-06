@@ -1,7 +1,5 @@
 <script lang="ts">
-    interface SearchQuery {
-        queryTerm?: string | null;
-    }
+    import type { SearchQuery } from '$lib/utils/searchTypes';
 
     let {
         searchQuery = $bindable(),
