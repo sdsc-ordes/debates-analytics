@@ -19,7 +19,6 @@ class SolrManager:
     def __init__(self):
         settings = get_settings()
         self.solr_url = settings.solr_url
-        self.solr_page_size = settings.solr_page_size
         self.client = Solr(self.solr_url, timeout=10)
         logger.info(f"SolrManager initialized with URL: {self.solr_url}")
 
@@ -78,7 +77,7 @@ class SolrManager:
             "df": "statement",
             "hl": "true" if query.queryTerm else "false",
             "hl.fragsize": 0,
-            "rows": self.solr_page_size,
+            "rows": query.rows,
             "start": query.start,
         }
 
