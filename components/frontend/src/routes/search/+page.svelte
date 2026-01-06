@@ -5,7 +5,7 @@
   import FacetCounts from "$lib/components/FacetCounts.svelte"
   import SearchResultContainer from "$lib/components/SearchResultContainer.svelte"
   import { client } from "$lib/api/client"
-  import { SolrPageSize } from "$lib/config"
+  import { SearchPageSize } from "$lib/config"
 
   import type { components } from "$lib/api/schema"
   type SearchDocument = components["schemas"]["SearchDocument"]
@@ -35,7 +35,7 @@
     "media_id",
   ]
 
-  const rowsPerPage = SolrPageSize
+  const rowsPerPage = SearchPageSize
 
   // Helper to parse URL params into a SearchQuery object
   function getQueryFromUrl(): SearchQuery {
