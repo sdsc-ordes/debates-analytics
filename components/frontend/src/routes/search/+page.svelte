@@ -137,7 +137,6 @@
         errorMessage = "Search failed."
         return
       }
-      console.log("data", data)
 
       docs = data?.docs ?? []
       facets = data?.facets ?? []
@@ -209,13 +208,6 @@
       {/if}
 
       {#if docs.length > 0}
-        <div class="mb-3">
-          {#if total > 0}
-            {startResult}-{endResult} / {total}
-          {:else}
-            0 results
-          {/if}
-        </div>
         {#if total > rowsPerPage }
         <nav aria-label="Page navigation">
           <ul class="pagination">
@@ -256,6 +248,13 @@
           </ul>
         </nav>
         {/if}
+        <div class="mb-3">
+          {#if total > 0}
+            {startResult}-{endResult} / {total} results
+          {:else}
+            0 results
+          {/if}
+        </div>
         <SearchResultContainer
           {docs}
           {highlighting}

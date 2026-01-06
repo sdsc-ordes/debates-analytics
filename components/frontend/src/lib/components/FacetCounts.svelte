@@ -21,7 +21,6 @@
 
   function getLabel(fieldKey: string, label: string): string {
     const formatter = displayFunctions[fieldKey];
-    console.log(formatter);
     return formatter ? formatter(label) : label;
   }
 

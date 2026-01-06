@@ -52,7 +52,6 @@
       subtitles: group,
       subtitle_type: type,
     };
-    console.log(payload);
 
     errorMessage = null;
 
