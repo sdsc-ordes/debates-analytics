@@ -233,6 +233,7 @@ export interface components {
       s3_key: string
       /** Original Filename */
       original_filename: string
+      media_type: components["schemas"]["MediaType"]
       /** Status */
       status: string
       /**
@@ -257,8 +258,8 @@ export interface components {
       error_message?: string | null
       /** Session */
       session?: string | null
-      /** Type */
-      type?: string | null
+      /** Debate Type */
+      debate_type?: string | null
       /** Schedule */
       schedule?: string | null
       /** Name */
@@ -294,6 +295,11 @@ export interface components {
       /** Count */
       count: number
     }
+    /**
+     * FileType
+     * @enum {string}
+     */
+    FileType: "video/mp4" | "audio/wav"
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -324,6 +330,11 @@ export interface components {
       /** Total */
       total: number
     }
+    /**
+     * MediaType
+     * @enum {string}
+     */
+    MediaType: "video" | "audio"
     /** MetadataResponse */
     MetadataResponse: {
       debate: components["schemas"]["DebateDocument"]
@@ -355,6 +366,7 @@ export interface components {
        * @description filename of the media
        */
       title?: string
+      file_type: components["schemas"]["FileType"]
     }
     /** S3MediaUrlResponse */
     S3MediaUrlResponse: {
@@ -365,9 +377,9 @@ export interface components {
       signedUrls: components["schemas"]["S3MediaUrls"][]
       /**
        * Signedmediaurl
-       * @description Presigned URL for the main media file
+       * @description Presigned URL for video or audio file
        */
-      signedMediaUrl: string
+      signedMediaUrl?: string
     }
     /** S3MediaUrls */
     S3MediaUrls: {
@@ -524,8 +536,8 @@ export interface components {
       media_id: string
       /** Session */
       session?: string | null
-      /** Type */
-      type?: string | null
+      /** Debate Type */
+      debate_type?: string | null
       /** Schedule */
       schedule?: string | null
     }

@@ -13,5 +13,4 @@ class S3MediaUrlRequest(BaseModel):
 
 class S3MediaUrlResponse(BaseModel):
     signedUrls: List[S3MediaUrls] = Field(..., description="List of presigned URLs")
-    signedVideoUrl: str = Field(..., description="Presigned URL for the video file")
-    signedAudioUrl: str = Field(..., description="Presigned URL for the audio file")
+    signedMediaUrl: str = Field(None, description="Presigned URL for video or audio file")

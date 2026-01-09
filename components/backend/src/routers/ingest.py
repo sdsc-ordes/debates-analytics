@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from services.s3 import get_s3_manager, S3Manager
 from services.queue import get_queue_manager, QueueManager
 from services.mongo import get_mongo_manager, MongoManager
-from models.ingest import S3PostRequest, S3PostResponse, ProcessRequest
+from models.ingest import S3PostRequest, S3PostResponse, ProcessRequest, FileType
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +22,17 @@ async def get_presigned_post(
     Status -> 'preparing'
     """
     media_id = str(uuid.uuid4())
-    s3_key = f"{media_id}/source.mp4"
+    filename = request_data.filename
+    media_type = ""
+    if _is_video_file(filename):
+        s3_key = f"{media_id}/source.mp4"
+    elif _is_audio_file(filename):
+        s3_key = f"{media_id}/source.wav"
+        media_type = "audio"
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported file type. Only MP4 and WAV are allowed.")
 
-    logging.info(f"Generating presigned POST for media_id: {media_id}")
+    logging.info(f"Generating presigned POST for media_id: {media_id}, s3 key: {s3_key}")
 
     try:
         post_data = s3_client.get_presigned_post(s3_key)
@@ -36,7 +44,8 @@ async def get_presigned_post(
         mongo_client.insert_initial_media_document(
             media_id=media_id,
             s3_key=s3_key,
-            filename=request_data.filename,
+            filename=filename,
+            media_type=media_type,
         )
     except Exception as e:
         logger.exception(f"Database insertion failed: {e}")
@@ -48,6 +57,14 @@ async def get_presigned_post(
         mediaId=media_id,
         s3Key=s3_key
     )
+
+
+def _is_video_file(filename: str) -> bool:
+    return filename.lower().endswith(('.mp4'))
+
+
+def _is_audio_file(filename: str) -> bool:
+    return filename.lower().endswith(('.wav'))
 
 
 @router.post("/process")
@@ -62,16 +79,25 @@ async def start_processing(
     Status -> 'preparing'
     """
     media_id = request.media_id
+    file_type = request.file_type
     s3_key = request.s3_key
     job = None
     logger.info(f"Starting processing for media_id: {media_id}")
 
     try:
         logger.info(f"Creating job for media_id: {media_id}")
-        job = rq.enqueue_video_processing(
-            media_id=media_id,
-            s3_key=s3_key,
-        )
+        if file_type == FileType.video:
+            job = rq.enqueue_video_processing(
+                media_id=media_id,
+                s3_key=s3_key,
+            )
+        elif file_type == FileType.audio:
+            job = rq.enqueue_audio_processing(
+                media_id=media_id,
+                s3_key=s3_key,
+            )
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_type}")
         job_id = job.get_id()
         logger.info(f"Enqueuing job {job_id} for media_id: {media_id}")
 
@@ -103,13 +129,10 @@ async def start_processing(
             try:
                 job.delete()
             except Exception as cleanup_error:
-                # Just log this, don't let it hide the real error 'e'
                 logger.error(f"Failed to cancel job during rollback: {cleanup_error}")
 
-        # 4. Handle the actual error
         logger.exception(f"Critical error processing media_id {media_id}")
 
-        # Distinguish between 404 (ValueError) and 500 (Everything else)
         if isinstance(e, ValueError):
             raise HTTPException(status_code=404, detail=str(e))
 

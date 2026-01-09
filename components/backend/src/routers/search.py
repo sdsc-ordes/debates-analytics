@@ -49,11 +49,11 @@ async def search_solr(
 
     # Query Solr (get raw results)
     results = solr.search(internal_query_model)
+    logger.info(f"Solr returned: {results}")
     raw = results.raw_response
 
     # Extract Basic Data
     docs = raw.get("response", {}).get("docs", [])
-    logger.info(docs)
     num_found = raw.get("response", {}).get("numFound", 0)
     highlighting = raw.get("highlighting", {})
 

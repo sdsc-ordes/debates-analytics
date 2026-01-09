@@ -7,7 +7,6 @@ from services.queue import get_queue_manager
 from services.filesystem import temp_workspace
 from services.mongo import get_mongo_manager
 from services.reporter import JobReporter
-from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +22,6 @@ def process_transcription(s3_key, media_id):
     whisper_service = WhisperService()
     job = get_current_job()
     rq = get_queue_manager()
-    settings = get_settings()
 
     reporter = JobReporter(media_id, mongo, job, logger)
 
@@ -82,8 +80,7 @@ def process_transcription(s3_key, media_id):
                 metadata={"transcript_s3_keys": uploaded_keys}
             )
 
-            rq.enqueue(
-                settings.task_reindex,
+            rq.enqueue_reindex(
                 media_id=media_id,
             )
 

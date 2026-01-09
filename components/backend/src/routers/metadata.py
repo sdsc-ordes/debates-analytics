@@ -6,7 +6,7 @@ from services.solr import get_solr_manager, SolrManager
 from models.media import S3MediaUrlResponse
 from models.metadata import (
     MetadataResponse, UpdateMetadataResponse, UpdateDebateRequest,
-    UpdateSpeakersRequest, UpdateSubtitlesRequest,
+    UpdateSpeakersRequest, UpdateSubtitlesRequest, MediaType
 )
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,7 @@ router = APIRouter()
 async def get_media_urls(
     media_id: str = Query(..., description="The UUID of the media"),
     s3_client: S3Manager = Depends(get_s3_manager),
+    mongo_client: MongoManager = Depends(get_mongo_manager),
 ):
     """
     Get signed media urls for a debate.
@@ -26,6 +27,7 @@ async def get_media_urls(
 
     try:
         file_keys = s3_client.list_objects_by_prefix(f"{media_id}")
+        debate = mongo_client.get_debate_metadata(media_id)
         logger.info(f"file_keys: {file_keys}")
         logger.info(f"Found {len(file_keys)} files.")
 
@@ -34,7 +36,8 @@ async def get_media_urls(
         raise HTTPException(status_code=500, detail="Storage service unavailable.")
 
     download_urls = []
-    video_url, audio_url = None, None
+    media_type = debate.get("media_type", MediaType.video.value)
+    media_url = ""
     for object_key in file_keys:
         try:
             filename = _get_file_name_from_s3_key(object_key)
@@ -43,20 +46,19 @@ async def get_media_urls(
                 "url": url,
                 "label": filename
             })
-            if _is_audio_file(filename):
-                audio_url = url
-            elif _is_video_file(filename):
-                video_url = url
+            if _is_audio_file(filename) and media_type == MediaType.audio.value:
+                media_url = url
+            elif _is_video_file(filename) and media_type == MediaType.video.value:
+                media_url = url
         except Exception as e:
             logger.error(f"Failed to sign transcript url for {object_key}: {e}")
 
-    if not (audio_url or video_url):
+    if not media_url:
         logger.warning(f"No audio or video files found for media_id: {media_id}")
 
     response = {
         "signedUrls": download_urls,
-        "signedVideoUrl": video_url,
-        "signedAudioUrl": audio_url,
+        "signedMediaUrl": media_url,
     }
 
     logger.info(f"Returning response for {media_id}: {response}")
@@ -94,6 +96,7 @@ async def mongo_metadata(
     except Exception:
         logger.exception(f"Error fetching metadata for {media_id}")
         raise HTTPException(status_code=500, detail="Database error")
+
 
 @router.post("/update-speakers", response_model=UpdateMetadataResponse)
 async def update_speakers(

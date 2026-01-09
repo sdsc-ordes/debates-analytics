@@ -214,7 +214,7 @@
             <li class="page-item" class:disabled={searchQuery.page === 1}>
               <button
                 class="page-link"
-                onclick={() => goToPage(searchQuery.page - 1)}
+                onclick={() => goToPage((searchQuery.page || 1) - 1)}
                 aria-label="Previous"
               >
                 <span aria-hidden="true">&laquo;</span>

@@ -13,11 +13,12 @@ class QueueManager:
         self.redis_conn = Redis.from_url(settings.redis_url)
         self.q = Queue(connection=self.redis_conn)
         self.task_convert = settings.task_convert
+        self.task_transcribe = settings.task_transcribe
+        self.task_reindex = settings.task_reindex
 
     def enqueue_video_processing(self, media_id: str, s3_key: str):
         """
-        Specific method for processing videos.
-        Abstraction: The caller doesn't need to know the task function path.
+        Enqueue video processing task.
         """
         job = self.q.enqueue(
             self.task_convert,
@@ -26,12 +27,26 @@ class QueueManager:
         )
         return job
 
-    def enqueue(self, function_name, **kwargs):
+    def enqueue_audio_processing(self, media_id: str, s3_key: str):
         """
-        Wrapper to enqueue jobs.
-        Accepts kwargs directly and passes them to the worker function.
+        Enqueue audio processing task.     """
+        job = self.q.enqueue(
+            self.task_transcribe,
+            media_id=media_id,
+            s3_key=s3_key,
+            job_timeout=-1
+        )
+        return job
+
+    def enqueue_reindex(self, media_id: str):
         """
-        return self.q.enqueue(function_name, **kwargs)
+        Enqueue reindexing task.
+        """
+        job = self.q.enqueue(
+            self.task_reindex,
+            media_id=media_id,
+        )
+        return job
 
     def get_connection(self):
         return self.conn

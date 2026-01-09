@@ -1,21 +1,23 @@
 <script lang="ts">
   interface Props {
     mediaUrl: string;
-    // 1. Add currentTime to the interface
-    currentTime?: number; 
+    mediaType?: 'video' | 'audio';
+    currentTime?: number;
     mediaElement?: HTMLMediaElement;
   }
 
   let {
     mediaUrl,
+    mediaType,
     currentTime = $bindable(0),
     mediaElement = $bindable()
   }: Props = $props();
 
+console.log("MediaPlayer initialized with URL:", mediaUrl);
 </script>
 
 <div class="media-container">
-  {#if mediaUrl}
+  {#if mediaType === "video"}
     <video
       class="media"
       src={mediaUrl}
@@ -24,11 +26,23 @@
       controls
       playsinline
     >
+      <source src={mediaUrl} type="{mediaType}/mp4" />
       Your browser does not support the video tag.
     </video>
+  {:else if mediaType === "audio"}
+    <audio
+      class="media"
+      bind:this={mediaElement}
+      bind:currentTime={currentTime}
+      controls
+      playsinline
+    >
+      <source src={mediaUrl} type="{mediaType}/wav" />
+      Your browser does not support the audio tag.
+    </audio>
   {:else}
     <div class="placeholder">
-        <p>Waiting for video source...</p>
+        <p>Waiting for media source...</p>
     </div>
   {/if}
 </div>
