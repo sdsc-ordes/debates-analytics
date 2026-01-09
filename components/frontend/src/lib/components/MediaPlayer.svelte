@@ -13,7 +13,6 @@
     mediaElement = $bindable()
   }: Props = $props();
 
-console.log("MediaPlayer initialized with URL:", mediaUrl);
 </script>
 
 <div class="media-container">

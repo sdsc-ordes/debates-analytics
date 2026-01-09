@@ -11,7 +11,6 @@
   }
 
   let { debate = $bindable() }: Props = $props();
-  $inspect("debate", debate);
 
   let isEditing = $state(false);
   let errorMessage = $state<string | null>(null);
