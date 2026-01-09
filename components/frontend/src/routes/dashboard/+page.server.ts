@@ -45,4 +45,22 @@ export const actions: Actions = {
 
     return { success: true }
   },
+  reindex: async ({ request, fetch }) => {
+    logger.info("IN REINDEX")
+    const formData = await request.formData()
+    const mediaId = formData.get("mediaId") as string
+
+    if (!mediaId) return fail(400, { missing: true })
+
+    const { error } = await client.POST("/admin/reindex", {
+      body: { mediaId: mediaId },
+      fetch: fetch,
+    })
+
+    if (error) {
+      return fail(500, { error: "Reindex failed on server" })
+    }
+
+    return { success: true }
+  },
 }

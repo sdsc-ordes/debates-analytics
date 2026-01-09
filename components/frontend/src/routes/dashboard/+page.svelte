@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { Trash2, FileIcon, Loader, RefreshCw, Upload, Copy, Check } from 'lucide-svelte';
-  import type { PageData } from './$types';
+  import { Trash2, FileIcon, Loader, RefreshCw, Upload, Copy, Check, ListRestart } from 'lucide-svelte';
+  import type { PageData, ActionData } from './$types';
   import { invalidateAll } from '$app/navigation';
   import type { components } from '$lib/api/schema';
   type MediaListItem = components["schemas"]["MediaListItem"]
@@ -11,7 +11,9 @@
   let items: MediaListItem[] = $derived(data.items);
 
   let isDeleting = $state<string | null>(null);
+  let isReindexing = $state<string | null>(null);
   let copiedId = $state<string | null>(null);
+  let reindexSuccessId = $state<string | null>(null);
 
   function formatDate(isoString: string) {
     if(!isoString) return "-";
@@ -141,6 +143,48 @@
                         <Loader class="animate-spin" size={16} />
                       {:else}
                         <Trash2 size={16} />
+                      {/if}
+                    </button>
+                  </form>
+                  </td>
+                  <td class="text-right">
+                  <form
+                    method="POST"
+                    action="?/reindex"
+                    style="display: inline;"
+                    use:enhance={({ cancel }) => {
+                        if (!confirm('Are you sure? This will reindex the media on Solr and MongoDB.')) {
+                            cancel();
+                            return;
+                        }
+                        isReindexing = item.media_id;
+
+                        return async ({ result, update }) => {
+                            await update();
+                            isReindexing = null;
+                            if (result.type === 'success') {
+                                reindexSuccessId = item.media_id;
+                                setTimeout(() => reindexSuccessId = null, 2000);
+                                console.log("Server Response:", result.data);
+                            } else if (result.type === 'failure') {
+                              alert('Reindex failed: ' + result.data?.message);
+                            }
+                        };
+                    }}
+                  >
+                    <input type="hidden" name="mediaId" value={item.media_id} />
+                    <button
+                      class="icon-button reindex-icon"
+                      type="submit"
+                      disabled={isReindexing === item.media_id}
+                      title="Reindex Media"
+                    >
+                      {#if isReindexing === item.media_id}
+                        <Loader class="animate-spin" size={16} />
+                      {:else if reindexSuccessId === item.media_id}
+                        <Check size={16} color="#059669" />
+                      {:else}
+                        <ListRestart size={16} />
                       {/if}
                     </button>
                   </form>

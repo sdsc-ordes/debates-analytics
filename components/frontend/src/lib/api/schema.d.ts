@@ -200,7 +200,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  "/admin/reindex/{media_id}": {
+  "/admin/reindex": {
     parameters: {
       query?: never
       header?: never
@@ -210,11 +210,11 @@ export interface paths {
     get?: never
     put?: never
     /**
-     * Trigger Reindex
+     * Reindex Media
      * @description Triggers the Solr Indexing process manually.
      *     Useful if you changed the Solr schema or parser logic.
      */
-    post: operations["trigger_reindex_admin_reindex__media_id__post"]
+    post: operations["reindex_media_admin_reindex_post"]
     delete?: never
     options?: never
     head?: never
@@ -367,6 +367,22 @@ export interface components {
        */
       title?: string
       file_type: components["schemas"]["FileType"]
+    }
+    /** ReindexMediaRequest */
+    ReindexMediaRequest: {
+      /** Mediaid */
+      mediaId: string
+    }
+    /** ReindexMediaResponse */
+    ReindexMediaResponse: {
+      /** Status */
+      status: string
+      /** Mediaid */
+      mediaId: string
+      /** Warnings */
+      warnings?: string[] | null
+      /** Errors */
+      errors?: string[] | null
     }
     /** S3MediaUrlResponse */
     S3MediaUrlResponse: {
@@ -903,16 +919,18 @@ export interface operations {
       }
     }
   }
-  trigger_reindex_admin_reindex__media_id__post: {
+  reindex_media_admin_reindex_post: {
     parameters: {
       query?: never
       header?: never
-      path: {
-        media_id: string
-      }
+      path?: never
       cookie?: never
     }
-    requestBody?: never
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ReindexMediaRequest"]
+      }
+    }
     responses: {
       /** @description Successful Response */
       200: {
@@ -920,7 +938,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          "application/json": unknown
+          "application/json": components["schemas"]["ReindexMediaResponse"]
         }
       }
       /** @description Validation Error */

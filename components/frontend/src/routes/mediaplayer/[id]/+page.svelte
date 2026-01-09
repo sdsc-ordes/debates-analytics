@@ -14,7 +14,6 @@
 
   interface Props { data: PageData; }
   let { data }: Props = $props();
-  $inspect("data", data);
 
   // --- state ---
   let debate = $state(data.metadata.debate);
