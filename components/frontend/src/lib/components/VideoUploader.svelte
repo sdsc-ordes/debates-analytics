@@ -71,6 +71,7 @@
       assignedMediaId = mediaId;
 
       status = 'uploading';
+      console.log("Uploading to S3:", url, fields, file.name);
       await uploadToS3(url, fields, file);
 
       status = 'processing';

@@ -32,10 +32,11 @@ async def get_presigned_post(
     else:
         raise HTTPException(status_code=400, detail="Unsupported file type. Only MP4 and WAV are allowed.")
 
-    logging.info(f"Generating presigned POST for media_id: {media_id}, s3 key: {s3_key}")
+    logger.info(f"Generating presigned POST for media_id: {media_id}, s3 key: {s3_key}")
 
     try:
         post_data = s3_client.get_presigned_post(s3_key)
+        logger.info(f"Presigned url generated for: {s3_key}")
     except Exception:
         logger.exception(f"Failed to generate presigned URL for {media_id}")
         raise HTTPException(status_code=500, detail="Storage service unavailable.")
@@ -47,6 +48,7 @@ async def get_presigned_post(
             filename=filename,
             media_type=media_type,
         )
+        logger.info(f"Debate document created for: {media_id}")
     except Exception as e:
         logger.exception(f"Database insertion failed: {e}")
         raise HTTPException(status_code=500, detail="Database error")
@@ -86,6 +88,7 @@ async def start_processing(
 
     try:
         logger.info(f"Creating job for media_id: {media_id}")
+        status = ""
         if file_type == FileType.video:
             job = rq.enqueue_video_processing(
                 media_id=media_id,

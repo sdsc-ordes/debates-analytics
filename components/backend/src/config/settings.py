@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import List
 from functools import lru_cache
 
 class Settings(BaseSettings):
@@ -33,6 +34,9 @@ class Settings(BaseSettings):
 
     type_translation: str
     type_original: str
+
+    # CORS
+    cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     class Config:
         env_file = ".env"
