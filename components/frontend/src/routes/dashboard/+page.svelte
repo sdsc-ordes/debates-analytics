@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { Trash2, FileIcon, Loader, RefreshCw, Upload, Copy, Check, ListRestart } from 'lucide-svelte';
-  import type { PageData } from './$types';
+  import type { PageData, ActionData } from './$types';
   import { invalidateAll } from '$app/navigation';
   import type { components } from '$lib/api/schema';
   type MediaListItem = components["schemas"]["MediaListItem"]
@@ -13,6 +13,7 @@
   let isDeleting = $state<string | null>(null);
   let isReindexing = $state<string | null>(null);
   let copiedId = $state<string | null>(null);
+  let reindexSuccessId = $state<string | null>(null);
 
   function formatDate(isoString: string) {
     if(!isoString) return "-";
@@ -158,9 +159,16 @@
                         }
                         isReindexing = item.media_id;
 
-                        return async ({ update }) => {
+                        return async ({ result, update }) => {
                             await update();
                             isReindexing = null;
+                            if (result.type === 'success') {
+                                reindexSuccessId = item.media_id;
+                                setTimeout(() => reindexSuccessId = null, 2000);
+                                console.log("Server Response:", result.data);
+                            } else if (result.type === 'failure') {
+                              alert('Reindex failed: ' + result.data?.message);
+                            }
                         };
                     }}
                   >
@@ -173,6 +181,8 @@
                     >
                       {#if isReindexing === item.media_id}
                         <Loader class="animate-spin" size={16} />
+                      {:else if reindexSuccessId === item.media_id}
+                        <Check size={16} color="#059669" />
                       {:else}
                         <ListRestart size={16} />
                       {/if}
