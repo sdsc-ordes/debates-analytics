@@ -4,934 +4,952 @@
  */
 
 export interface paths {
-  "/ingest/get-presigned-post": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Get Presigned Post
-     * @description [POST] Returns a presigned URL and creates the initial Mongodb record.
-     *     Status -> 'preparing'
-     */
-    post: operations["get_presigned_post_ingest_get_presigned_post_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/ingest/process": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Start Processing
-     * @description [POST] Starts processing: starts redis queue with first task: converting
-     *     the video to audio. Updates status on Mongo DB.
-     *     Status -> 'preparing'
-     */
-    post: operations["start_processing_ingest_process_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/db/get-signed-urls": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Get Media Urls
-     * @description Get signed media urls for a debate.
-     */
-    get: operations["get_media_urls_db_get_signed_urls_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/db/get-metadata": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Mongo Metadata */
-    get: operations["mongo_metadata_db_get_metadata_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/db/update-speakers": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Update Speakers
-     * @description Update speakers in Mongo and Solr
-     */
-    post: operations["update_speakers_db_update_speakers_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/db/update-subtitles": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Update Subtitles
-     * @description Update subtitles in Mongo (Segment-based) and Solr
-     */
-    post: operations["update_subtitles_db_update_subtitles_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/db/update-debate": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Update Debate */
-    post: operations["update_debate_db_update_debate_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/search/search-solr": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Search Solr */
-    get: operations["search_solr_search_search_solr_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/admin/list": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * List Media
-     * @description Returns a list of all uploaded media for the dashboard.
-     */
-    get: operations["list_media_admin_list_get"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/admin/delete": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Delete Media
-     * @description Nuclear Option: Deletes EVERYTHING.
-     *     Uses 'Best Effort' strategy: if one service fails, it logs the error
-     *     but continues trying to delete the others.
-     */
-    post: operations["delete_media_admin_delete_post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/admin/reindex/{media_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /**
-     * Trigger Reindex
-     * @description Triggers the Solr Indexing process manually.
-     *     Useful if you changed the Solr schema or parser logic.
-     */
-    post: operations["trigger_reindex_admin_reindex__media_id__post"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
+    "/ingest/get-presigned-post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Presigned Post
+         * @description [POST] Returns a presigned URL and creates the initial Mongodb record.
+         *     Status -> 'preparing'
+         */
+        post: operations["get_presigned_post_ingest_get_presigned_post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ingest/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Processing
+         * @description [POST] Starts processing: starts redis queue with first task: converting
+         *     the video to audio. Updates status on Mongo DB.
+         *     Status -> 'preparing'
+         */
+        post: operations["start_processing_ingest_process_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/db/get-signed-urls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Media Urls
+         * @description Get signed media urls for a debate.
+         */
+        get: operations["get_media_urls_db_get_signed_urls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/db/get-metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mongo Metadata */
+        get: operations["mongo_metadata_db_get_metadata_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/db/update-speakers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Speakers
+         * @description Update speakers in Mongo and Solr
+         */
+        post: operations["update_speakers_db_update_speakers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/db/update-subtitles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Subtitles
+         * @description Update subtitles in Mongo (Segment-based) and Solr
+         */
+        post: operations["update_subtitles_db_update_subtitles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/db/update-debate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Debate */
+        post: operations["update_debate_db_update_debate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/search/search-solr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Solr */
+        get: operations["search_solr_search_search_solr_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Media
+         * @description Returns a list of all uploaded media for the dashboard.
+         */
+        get: operations["list_media_admin_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Media
+         * @description Nuclear Option: Deletes EVERYTHING.
+         *     Uses 'Best Effort' strategy: if one service fails, it logs the error
+         *     but continues trying to delete the others.
+         */
+        post: operations["delete_media_admin_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/reindex": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reindex Media
+         * @description Triggers the Solr Indexing process manually.
+         *     Useful if you changed the Solr schema or parser logic.
+         */
+        post: operations["reindex_media_admin_reindex_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
-export type webhooks = Record<string, never>
+export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /** DebateDocument */
-    DebateDocument: {
-      /** Media Id */
-      media_id: string
-      /** S3 Key */
-      s3_key: string
-      /** Original Filename */
-      original_filename: string
-      media_type: components["schemas"]["MediaType"]
-      /** Status */
-      status: string
-      /**
-       * Created At
-       * Format: date-time
-       */
-      created_at: string
-      /** Job Id */
-      job_id?: string | null
-      /** S3 Audio Key */
-      s3_audio_key?: string | null
-      /**
-       * Transcript S3 Keys
-       * @default {}
-       */
-      transcript_s3_keys: {
-        [key: string]: string
-      }
-      /** Updated At */
-      updated_at?: string | null
-      /** Error Message */
-      error_message?: string | null
-      /** Session */
-      session?: string | null
-      /** Debate Type */
-      debate_type?: string | null
-      /** Schedule */
-      schedule?: string | null
-      /** Name */
-      name?: string | null
-    }
-    /** DeleteMediaRequest */
-    DeleteMediaRequest: {
-      /** Mediaid */
-      mediaId: string
-    }
-    /** DeleteMediaResponse */
-    DeleteMediaResponse: {
-      /** Status */
-      status: string
-      /** Mediaid */
-      mediaId: string
-      /** Warnings */
-      warnings?: string[] | null
-      /** Errors */
-      errors?: string[] | null
-    }
-    /** FacetField */
-    FacetField: {
-      /** Field Name */
-      field_name: string
-      /** Values */
-      values: components["schemas"]["FacetValue"][]
-    }
-    /** FacetValue */
-    FacetValue: {
-      /** Label */
-      label: string
-      /** Count */
-      count: number
-    }
-    /**
-     * FileType
-     * @enum {string}
-     */
-    FileType: "video/mp4" | "audio/wav"
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components["schemas"]["ValidationError"][]
-    }
-    /** HighlightedDoc */
-    HighlightedDoc: {
-      /** Statement */
-      statement?: string[] | null
-    }
-    /** MediaListItem */
-    MediaListItem: {
-      /** Media Id */
-      media_id: string
-      /** Filename */
-      filename: string
-      /** Status */
-      status: string
-      /** Created At */
-      created_at?: string | null
-      /** Title */
-      title?: string | null
-    }
-    /** MediaListResponse */
-    MediaListResponse: {
-      /** Items */
-      items: components["schemas"]["MediaListItem"][]
-      /** Total */
-      total: number
-    }
-    /**
-     * MediaType
-     * @enum {string}
-     */
-    MediaType: "video" | "audio"
-    /** MetadataResponse */
-    MetadataResponse: {
-      debate: components["schemas"]["DebateDocument"]
-      /**
-       * Speakers
-       * @default []
-       */
-      speakers: components["schemas"]["Speaker"][]
-      /**
-       * Segments
-       * @default []
-       */
-      segments: components["schemas"]["Segment"][]
-    }
-    /** ProcessRequest */
-    ProcessRequest: {
-      /**
-       * S3 Key
-       * @description The final S3 key where the file will be stored
-       */
-      s3_key: string
-      /**
-       * Media Id
-       * @description The unique job ID generated by the backend
-       */
-      media_id: string
-      /**
-       * Title
-       * @description filename of the media
-       */
-      title?: string
-      file_type: components["schemas"]["FileType"]
-    }
-    /** S3MediaUrlResponse */
-    S3MediaUrlResponse: {
-      /**
-       * Signedurls
-       * @description List of presigned URLs
-       */
-      signedUrls: components["schemas"]["S3MediaUrls"][]
-      /**
-       * Signedmediaurl
-       * @description Presigned URL for video or audio file
-       */
-      signedMediaUrl?: string
-    }
-    /** S3MediaUrls */
-    S3MediaUrls: {
-      /**
-       * Url
-       * @description Url
-       */
-      url: string
-      /**
-       * Label
-       * @description Label for Url
-       */
-      label: string
-    }
-    /** S3PostRequest */
-    S3PostRequest: {
-      /**
-       * Filename
-       * @description Original filename with extension (e.g., my_video.mp4)
-       */
-      filename: string
-    }
-    /** S3PostResponse */
-    S3PostResponse: {
-      /**
-       * Posturl
-       * @description The S3 endpoint URL to POST the file to
-       */
-      postUrl: string
-      /**
-       * Fields
-       * @description Key-value fields required in the multipart form data
-       */
-      fields: {
-        [key: string]: string
-      }
-      /**
-       * Mediaid
-       * @description The unique media ID generated by the backend
-       */
-      mediaId: string
-      /**
-       * S3Key
-       * @description The final S3 key where the file will be stored
-       */
-      s3Key: string
-    }
-    /** SearchDocument */
-    SearchDocument: {
-      /** Id */
-      id: string
-      /** Media Id */
-      media_id: string
-      /** Segment Nr */
-      segment_nr: number
-      /** Speaker Id */
-      speaker_id: string
-      /** Statement */
-      statement: string[]
-      statement_type: components["schemas"]["StatementType"]
-      /** Start */
-      start: number
-      /** End */
-      end: number
-      /** Debate Schedule */
-      debate_schedule?: string | null
-      /** Debate Type */
-      debate_type?: string | null
-      /** Debate Session */
-      debate_session?: string | null
-      /** Statement Language */
-      statement_language?: string | null
-    }
-    /** SearchResponse */
-    SearchResponse: {
-      /** Docs */
-      docs: components["schemas"]["SearchDocument"][]
-      /** Total */
-      total: number
-      /**
-       * Facets
-       * @default []
-       */
-      facets: components["schemas"]["FacetField"][]
-      /**
-       * Highlighting
-       * @default {}
-       */
-      highlighting: {
-        [key: string]: components["schemas"]["HighlightedDoc"]
-      }
-    }
-    /** Segment */
-    Segment: {
-      /** Segment Nr */
-      segment_nr: number
-      /** Start */
-      start: number
-      /** End */
-      end: number
-      /**
-       * Speaker Id
-       * @default UNKNOWN
-       */
-      speaker_id: string | null
-      /**
-       * Subtitles Original
-       * @default []
-       */
-      subtitles_original: components["schemas"]["Subtitle"][]
-      /**
-       * Subtitles Translation
-       * @default []
-       */
-      subtitles_translation: components["schemas"]["Subtitle"][]
-    }
-    /** Speaker */
-    Speaker: {
-      /** Speaker Id */
-      speaker_id: string
-      /**
-       * Name
-       * @default
-       */
-      name: string | null
-      /**
-       * Role Tag
-       * @default
-       */
-      role_tag: string | null
-    }
-    /**
-     * StatementType
-     * @enum {string}
-     */
-    StatementType: "original" | "translation"
-    /** Subtitle */
-    Subtitle: {
-      /** Start */
-      start: number
-      /** End */
-      end: number
-      /** Text */
-      text: string
-    }
-    /**
-     * SubtitleType
-     * @enum {string}
-     */
-    SubtitleType: "original" | "translation"
-    /** UpdateDebateRequest */
-    UpdateDebateRequest: {
-      /** Media Id */
-      media_id: string
-      /** Session */
-      session?: string | null
-      /** Debate Type */
-      debate_type?: string | null
-      /** Schedule */
-      schedule?: string | null
-    }
-    /** UpdateMetadataResponse */
-    UpdateMetadataResponse: {
-      /** Status */
-      status: string
-      /** Media Id */
-      media_id: string
-    }
-    /** UpdateSpeakersRequest */
-    UpdateSpeakersRequest: {
-      /** Media Id */
-      media_id: string
-      /** Speakers */
-      speakers: components["schemas"]["Speaker"][]
-    }
-    /** UpdateSubtitlesRequest */
-    UpdateSubtitlesRequest: {
-      /** Media Id */
-      media_id: string
-      /** Segment Nr */
-      segment_nr: number
-      /** Subtitles */
-      subtitles: components["schemas"]["Subtitle"][]
-      subtitle_type: components["schemas"]["SubtitleType"]
-    }
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[]
-      /** Message */
-      msg: string
-      /** Error Type */
-      type: string
-    }
-  }
-  responses: never
-  parameters: never
-  requestBodies: never
-  headers: never
-  pathItems: never
+    schemas: {
+        /** DebateDocument */
+        DebateDocument: {
+            /** Media Id */
+            media_id: string;
+            /** S3 Key */
+            s3_key: string;
+            /** Original Filename */
+            original_filename: string;
+            media_type: components["schemas"]["MediaType"];
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Job Id */
+            job_id?: string | null;
+            /** S3 Audio Key */
+            s3_audio_key?: string | null;
+            /**
+             * Transcript S3 Keys
+             * @default {}
+             */
+            transcript_s3_keys: {
+                [key: string]: string;
+            };
+            /** Updated At */
+            updated_at?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /** Session */
+            session?: string | null;
+            /** Debate Type */
+            debate_type?: string | null;
+            /** Schedule */
+            schedule?: string | null;
+            /** Name */
+            name?: string | null;
+        };
+        /** DeleteMediaRequest */
+        DeleteMediaRequest: {
+            /** Mediaid */
+            mediaId: string;
+        };
+        /** DeleteMediaResponse */
+        DeleteMediaResponse: {
+            /** Status */
+            status: string;
+            /** Mediaid */
+            mediaId: string;
+            /** Warnings */
+            warnings?: string[] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** FacetField */
+        FacetField: {
+            /** Field Name */
+            field_name: string;
+            /** Values */
+            values: components["schemas"]["FacetValue"][];
+        };
+        /** FacetValue */
+        FacetValue: {
+            /** Label */
+            label: string;
+            /** Count */
+            count: number;
+        };
+        /**
+         * FileType
+         * @enum {string}
+         */
+        FileType: "video/mp4" | "audio/wav";
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HighlightedDoc */
+        HighlightedDoc: {
+            /** Statement */
+            statement?: string[] | null;
+        };
+        /** MediaListItem */
+        MediaListItem: {
+            /** Media Id */
+            media_id: string;
+            /** Filename */
+            filename: string;
+            /** Status */
+            status: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** MediaListResponse */
+        MediaListResponse: {
+            /** Items */
+            items: components["schemas"]["MediaListItem"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * MediaType
+         * @enum {string}
+         */
+        MediaType: "video" | "audio";
+        /** MetadataResponse */
+        MetadataResponse: {
+            debate: components["schemas"]["DebateDocument"];
+            /**
+             * Speakers
+             * @default []
+             */
+            speakers: components["schemas"]["Speaker"][];
+            /**
+             * Segments
+             * @default []
+             */
+            segments: components["schemas"]["Segment"][];
+        };
+        /** ProcessRequest */
+        ProcessRequest: {
+            /**
+             * S3 Key
+             * @description The final S3 key where the file will be stored
+             */
+            s3_key: string;
+            /**
+             * Media Id
+             * @description The unique job ID generated by the backend
+             */
+            media_id: string;
+            /**
+             * Title
+             * @description filename of the media
+             */
+            title?: string;
+            file_type: components["schemas"]["FileType"];
+        };
+        /** ReindexMediaRequest */
+        ReindexMediaRequest: {
+            /** Mediaid */
+            mediaId: string;
+        };
+        /** ReindexMediaResponse */
+        ReindexMediaResponse: {
+            /** Status */
+            status: string;
+            /** Mediaid */
+            mediaId: string;
+            /** Warnings */
+            warnings?: string[] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** S3MediaUrlResponse */
+        S3MediaUrlResponse: {
+            /**
+             * Signedurls
+             * @description List of presigned URLs
+             */
+            signedUrls: components["schemas"]["S3MediaUrls"][];
+            /**
+             * Signedmediaurl
+             * @description Presigned URL for video or audio file
+             */
+            signedMediaUrl?: string;
+        };
+        /** S3MediaUrls */
+        S3MediaUrls: {
+            /**
+             * Url
+             * @description Url
+             */
+            url: string;
+            /**
+             * Label
+             * @description Label for Url
+             */
+            label: string;
+        };
+        /** S3PostRequest */
+        S3PostRequest: {
+            /**
+             * Filename
+             * @description Original filename with extension (e.g., my_video.mp4)
+             */
+            filename: string;
+        };
+        /** S3PostResponse */
+        S3PostResponse: {
+            /**
+             * Posturl
+             * @description The S3 endpoint URL to POST the file to
+             */
+            postUrl: string;
+            /**
+             * Fields
+             * @description Key-value fields required in the multipart form data
+             */
+            fields: {
+                [key: string]: string;
+            };
+            /**
+             * Mediaid
+             * @description The unique media ID generated by the backend
+             */
+            mediaId: string;
+            /**
+             * S3Key
+             * @description The final S3 key where the file will be stored
+             */
+            s3Key: string;
+        };
+        /** SearchDocument */
+        SearchDocument: {
+            /** Id */
+            id: string;
+            /** Media Id */
+            media_id: string;
+            /** Segment Nr */
+            segment_nr: number;
+            /** Speaker Id */
+            speaker_id: string;
+            /** Statement */
+            statement: string[];
+            statement_type: components["schemas"]["StatementType"];
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Debate Schedule */
+            debate_schedule?: string | null;
+            /** Debate Type */
+            debate_type?: string | null;
+            /** Debate Session */
+            debate_session?: string | null;
+            /** Statement Language */
+            statement_language?: string | null;
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Docs */
+            docs: components["schemas"]["SearchDocument"][];
+            /** Total */
+            total: number;
+            /**
+             * Facets
+             * @default []
+             */
+            facets: components["schemas"]["FacetField"][];
+            /**
+             * Highlighting
+             * @default {}
+             */
+            highlighting: {
+                [key: string]: components["schemas"]["HighlightedDoc"];
+            };
+        };
+        /** Segment */
+        Segment: {
+            /** Segment Nr */
+            segment_nr: number;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /**
+             * Speaker Id
+             * @default UNKNOWN
+             */
+            speaker_id: string | null;
+            /**
+             * Subtitles Original
+             * @default []
+             */
+            subtitles_original: components["schemas"]["Subtitle"][];
+            /**
+             * Subtitles Translation
+             * @default []
+             */
+            subtitles_translation: components["schemas"]["Subtitle"][];
+        };
+        /** Speaker */
+        Speaker: {
+            /** Speaker Id */
+            speaker_id: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string | null;
+            /**
+             * Role Tag
+             * @default
+             */
+            role_tag: string | null;
+        };
+        /**
+         * StatementType
+         * @enum {string}
+         */
+        StatementType: "original" | "translation";
+        /** Subtitle */
+        Subtitle: {
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Text */
+            text: string;
+        };
+        /**
+         * SubtitleType
+         * @enum {string}
+         */
+        SubtitleType: "original" | "translation";
+        /** UpdateDebateRequest */
+        UpdateDebateRequest: {
+            /** Media Id */
+            media_id: string;
+            /** Session */
+            session?: string | null;
+            /** Debate Type */
+            debate_type?: string | null;
+            /** Schedule */
+            schedule?: string | null;
+        };
+        /** UpdateMetadataResponse */
+        UpdateMetadataResponse: {
+            /** Status */
+            status: string;
+            /** Media Id */
+            media_id: string;
+        };
+        /** UpdateSpeakersRequest */
+        UpdateSpeakersRequest: {
+            /** Media Id */
+            media_id: string;
+            /** Speakers */
+            speakers: components["schemas"]["Speaker"][];
+        };
+        /** UpdateSubtitlesRequest */
+        UpdateSubtitlesRequest: {
+            /** Media Id */
+            media_id: string;
+            /** Segment Nr */
+            segment_nr: number;
+            /** Subtitles */
+            subtitles: components["schemas"]["Subtitle"][];
+            subtitle_type: components["schemas"]["SubtitleType"];
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
+    };
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
-export type $defs = Record<string, never>
+export type $defs = Record<string, never>;
 export interface operations {
-  get_presigned_post_ingest_get_presigned_post_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["S3PostRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["S3PostResponse"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  start_processing_ingest_process_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["ProcessRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": unknown
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  get_media_urls_db_get_signed_urls_get: {
-    parameters: {
-      query: {
-        /** @description The UUID of the media */
-        media_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["S3MediaUrlResponse"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  mongo_metadata_db_get_metadata_get: {
-    parameters: {
-      query: {
-        /** @description The UUID of the media */
-        media_id: string
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["MetadataResponse"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  update_speakers_db_update_speakers_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateSpeakersRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["UpdateMetadataResponse"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  update_subtitles_db_update_subtitles_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateSubtitlesRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["UpdateMetadataResponse"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  update_debate_db_update_debate_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateDebateRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["UpdateMetadataResponse"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  search_solr_search_search_solr_get: {
-    parameters: {
-      query?: {
-        /** @description The main search string */
-        queryTerm?: string | null
-        /** @description List of filters in 'field:value' format */
-        facetFilters?: string[]
-        facetFields?: string[]
-        sortBy?: string | null
-        rows?: number
-        start?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["SearchResponse"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  list_media_admin_list_get: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["MediaListResponse"]
-        }
-      }
-    }
-  }
-  delete_media_admin_delete_post: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["DeleteMediaRequest"]
-      }
-    }
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["DeleteMediaResponse"]
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
-  trigger_reindex_admin_reindex__media_id__post: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        media_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": unknown
-        }
-      }
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"]
-        }
-      }
-    }
-  }
+    get_presigned_post_ingest_get_presigned_post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["S3PostRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["S3PostResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_processing_ingest_process_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_media_urls_db_get_signed_urls_get: {
+        parameters: {
+            query: {
+                /** @description The UUID of the media */
+                media_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["S3MediaUrlResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mongo_metadata_db_get_metadata_get: {
+        parameters: {
+            query: {
+                /** @description The UUID of the media */
+                media_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetadataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_speakers_db_update_speakers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSpeakersRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateMetadataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_subtitles_db_update_subtitles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSubtitlesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateMetadataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_debate_db_update_debate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDebateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpdateMetadataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_solr_search_search_solr_get: {
+        parameters: {
+            query?: {
+                /** @description The main search string */
+                queryTerm?: string | null;
+                /** @description List of filters in 'field:value' format */
+                facetFilters?: string[];
+                facetFields?: string[];
+                sortBy?: string | null;
+                rows?: number;
+                start?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_media_admin_list_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaListResponse"];
+                };
+            };
+        };
+    };
+    delete_media_admin_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteMediaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteMediaResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reindex_media_admin_reindex_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReindexMediaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReindexMediaResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
 }

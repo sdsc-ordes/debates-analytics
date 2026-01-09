@@ -144,6 +144,27 @@
                         <Trash2 size={16} />
                       {/if}
                     </button>
+                  </form>
+                  </td>
+                  <td class="text-right">
+                  <form
+                    method="POST"
+                    action="?/reindex"
+                    style="display: inline;"
+                    use:enhance={({ cancel }) => {
+                        if (!confirm('Are you sure? This will reindex the media on Solr and MongoDB.')) {
+                            cancel();
+                            return;
+                        }
+                        isReindexing = item.media_id;
+
+                        return async ({ update }) => {
+                            await update();
+                            isReindexing = null;
+                        };
+                    }}
+                  >
+                    <input type="hidden" name="mediaId" value={item.media_id} />
                     <button
                       class="icon-button reindex-icon"
                       type="submit"

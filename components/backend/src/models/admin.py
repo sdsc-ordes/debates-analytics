@@ -20,7 +20,17 @@ class DeleteMediaRequest(BaseModel):
     mediaId: str
 
 
+class ReindexMediaRequest(BaseModel):
+    mediaId: str
+
+
 class DeleteMediaResponse(BaseModel):
+    status: str
+    mediaId: str
+    warnings: Optional[List[str]] = None
+    errors: Optional[List[str]] = None
+
+class ReindexMediaResponse(BaseModel):
     status: str
     mediaId: str
     warnings: Optional[List[str]] = None
