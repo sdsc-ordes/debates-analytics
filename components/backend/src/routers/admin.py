@@ -51,43 +51,43 @@ async def delete_media(
     but continues trying to delete the others.
     """
     media_id = request.mediaId
-    logger.info(f"Ref={media_id} - DELETE request received.")
+    logger.info(f"media_id={media_id} - DELETE request received.")
     cleanup_errors = []
 
     # 1. Try S3 (Soft Fail)
     try:
         s3.delete_media_folder(media_id)
-        logger.info(f"Ref={media_id} - S3 files deleted.")
+        logger.info(f"media_id={media_id} - S3 files deleted.")
     except Exception as e:
-        logger.error(f"Ref={media_id} - S3 deletion failed: {e}", exc_info=True)
+        logger.error(f"media_id={media_id} - S3 deletion failed: {e}", exc_info=True)
         cleanup_errors.append(f"S3 cleanup failed: {str(e)}")
 
     # 2. Try Solr (Soft Fail)
     try:
         solr.delete_by_media_id(media_id)
-        logger.info(f"Ref={media_id} - Solr index deleted.")
+        logger.info(f"media_id={media_id} - Solr index deleted.")
     except Exception as e:
-        logger.error(f"Ref={media_id} - Solr deletion failed: {e}", exc_info=True)
+        logger.error(f"media_id={media_id} - Solr deletion failed: {e}", exc_info=True)
         cleanup_errors.append(f"Solr cleanup failed: {str(e)}")
 
     # 3. Try MongoDB (The Source of Truth)
     try:
         deleted = mongo.delete_everything(media_id)
         if not deleted:
-            logger.warning(f"Ref={media_id} - Not found in MongoDB during delete.")
+            logger.warning(f"media_id={media_id} - Not found in MongoDB during delete.")
             raise HTTPException(status_code=404, detail="Media not found in DB")
 
-        logger.info(f"Ref={media_id} - MongoDB document deleted.")
+        logger.info(f"media_id={media_id} - MongoDB document deleted.")
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Ref={media_id} - CRITICAL: MongoDB deletion failed: {e}", exc_info=True)
+        logger.error(f"media_id={media_id} - CRITICAL: MongoDB deletion failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Database deletion failed")
 
     # 4. Return Status
     if cleanup_errors:
-        logger.warning(f"Ref={media_id} - Completed with warnings: {cleanup_errors}")
+        logger.warning(f"media_id={media_id} - Completed with warnings: {cleanup_errors}")
 
         return {
             "status": "partial_deleted",
@@ -95,7 +95,7 @@ async def delete_media(
             "warnings": cleanup_errors
         }
 
-    logger.info(f"Ref={media_id} - Successfully deleted from all systems.")
+    logger.info(f"media_id={media_id} - Successfully deleted from all systems.")
     return {"status": "deleted", "mediaId": media_id}
 
 
@@ -110,15 +110,14 @@ async def reindex_media(
     Useful if you changed the Solr schema or parser logic.
     """
     media_id = request.mediaId
-    logger.info(f"Ref={media_id} - REINDEX request received.")
+    logger.info(f"media_id={media_id} - REINDEX request received.")
 
     # 1. Validate ID exists
     debate = mongo_client.get_debate_metadata(media_id)
     if not debate:
-        logger.warning(f"Ref={media_id} - Reindex rejected. Media ID not found.")
+        logger.warning(f"media_id={media_id} - Reindex rejected. Media ID not found.")
         raise HTTPException(status_code=404, detail="Media not found")
 
     background_tasks.add_task(reindex_solr, media_id)
-    logger.info(f"Ref={media_id} - Reindex task queued in background.")
-
+    logger.info(f"media_id={media_id} - Reindex task queued in background.")
     return {"status": "indexing_started", "mediaId": media_id}
