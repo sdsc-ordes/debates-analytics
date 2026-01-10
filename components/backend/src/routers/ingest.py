@@ -58,7 +58,7 @@ async def get_presigned_post(
             media_type=media_type,
         )
         logger.info(f"Media_id={media_id} - MongoDB document initialized.")
-    except Exception as e:
+    except Exception:
         logger.exception(f"Media_id={media_id} - CRITICAL: MongoDB initialization failed.")
         raise HTTPException(status_code=500, detail="Database error")
 
@@ -144,7 +144,7 @@ async def start_processing(
                 logger.info(f"media_id={media_id} - Rollback successful: Job deleted.")
             except Exception as cleanup_error:
                 # Log this separately so you know why you have 'ghost' jobs
-                logger.error(f"media_id={media_id} - Rollback FAILED: {cleanup_error}", exc_info=True)
+                logger.exception(f"media_id={media_id} - Rollback FAILED: {cleanup_error}")
 
         # 6. Exception Handling / Categorization
         if isinstance(e, ValueError):

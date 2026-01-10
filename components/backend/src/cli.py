@@ -1,6 +1,5 @@
 import typer
 import logging
-from config.settings import get_settings
 from tasks.reindex import reindex_solr
 from config.logging import configure_logging
 

@@ -23,46 +23,63 @@ async def get_media_urls(
     """
     Get signed media urls for a debate.
     """
-    logger.info(f"Fetching signed URLs for media_id: {media_id}")
+    # Entry Log
+    logger.info(f"media_id={media_id} - GET signed URLs request received.")
 
+    # Fetch Metadata
+    try:
+        debate = mongo_client.get_debate_metadata(media_id)
+        if not debate:
+            logger.warning(f"media_id={media_id} - Metadata not found in MongoDB.")
+            raise HTTPException(status_code=404, detail="Media not found")
+    except Exception as e:
+        if isinstance(e, HTTPException): raise e
+        logger.exception(f"media_id={media_id} - Failed to fetch metadata from MongoDB.")
+        raise HTTPException(status_code=500, detail="Database error")
+
+    # List Files from S3
     try:
         file_keys = s3_client.list_objects_by_prefix(f"{media_id}")
-        debate = mongo_client.get_debate_metadata(media_id)
-        logger.info(f"file_keys: {file_keys}")
-        logger.info(f"Found {len(file_keys)} files.")
-
+        logger.info(f"media_id={media_id} - Found {len(file_keys)} files in S3.")
     except Exception:
-        logger.exception(f"Failed to list objects from S3 for {media_id}")
+        logger.exception(f"media_id={media_id} - Failed to list objects from S3.")
         raise HTTPException(status_code=500, detail="Storage service unavailable.")
 
+    # Generate URLs
     download_urls = []
+
+    # Default to video if missing
     media_type = debate.get("media_type", MediaType.video.value)
     media_url = ""
+
     for object_key in file_keys:
         try:
             filename = _get_file_name_from_s3_key(object_key)
             url = s3_client.get_presigned_url(object_key)
+
             download_urls.append({
                 "url": url,
                 "label": filename
             })
+
             if _is_audio_file(filename) and media_type == MediaType.audio.value:
                 media_url = url
             elif _is_video_file(filename) and media_type == MediaType.video.value:
                 media_url = url
+
         except Exception as e:
-            logger.error(f"Failed to sign transcript url for {object_key}: {e}")
+            # Log specific signing failure, but don't crash the whole request
+            logger.error(f"media_id={media_id} - Failed to sign URL for key '{object_key}': {e}")
 
     if not media_url:
-        logger.warning(f"No audio or video files found for media_id: {media_id}")
+        logger.warning(f"media_id={media_id} - No playable media found matching type '{media_type}'")
 
-    response = {
+    logger.info(f"media_id={media_id} - Returning {len(download_urls)} signed URLs.")
+
+    return {
         "signedUrls": download_urls,
         "signedMediaUrl": media_url,
     }
-
-    logger.info(f"Returning response for {media_id}: {response}")
-    return response
 
 
 def _get_file_name_from_s3_key(s3_key: str) -> str:
@@ -82,19 +99,25 @@ async def mongo_metadata(
     media_id: str = Query(..., description="The UUID of the media"),
     mongo_client: MongoManager = Depends(get_mongo_manager),
 ):
-    logger.info(f"Fetching metadata for media_id: {media_id}")
+    logger.info(f"media_id={media_id} - GET metadata request received.")
 
     try:
-        # This now returns { debate: ..., speakers: ..., segments: ... }
+        # Fetch full metadata from MongoDB
         metadata = mongo_client.get_full_metadata(media_id)
-        logger.info(metadata)
+
+        seg_count = len(metadata.get("segments", []) or [])
+        spk_count = len(metadata.get("speakers", []) or [])
+        logger.info(f"media_id={media_id} - Metadata retrieved successfully. "
+                    f"Contains {seg_count} segments and {spk_count} speakers.")
+
         return metadata
 
     except DocumentNotFoundError:
-        logger.warning(f"Metadata for {media_id} not found")
+        logger.warning(f"media_id={media_id} - Metadata not found in MongoDB.")
         raise HTTPException(status_code=404, detail="Media not found")
-    except Exception:
-        logger.exception(f"Error fetching metadata for {media_id}")
+
+    except Exception as e:
+        logger.exception(f"media_id={media_id} - CRITICAL: Failed to fetch metadata.")
         raise HTTPException(status_code=500, detail="Database error")
 
 
@@ -107,24 +130,31 @@ async def update_speakers(
     """
     Update speakers in Mongo and Solr
     """
-    logger.info(f"Updating speakers for media_id: {request.media_id}")
+    media_id = request.media_id
+    count = len(request.speakers)
+
+    logger.info(f"media_id={media_id} - UPDATE speakers request received. Updating {count} speakers.")
 
     speakers_data = [s.dict() for s in request.speakers]
 
     try:
-        mongo_client.update_speakers(request.media_id, speakers_data)
+        mongo_result = mongo_client.update_speakers(media_id, speakers_data)
+
+        logger.info(f"media_id={media_id} - MongoDB speakers updated successfully.")
 
         solr_client.update_speakers(
-            media_id=request.media_id,
+            media_id=media_id,
             speakers=speakers_data
         )
+        logger.info(f"media_id={media_id} - Solr index synced successfully.")
 
-        return {"status": "success", "media_id": request.media_id}
+        return {"status": "success", "media_id": media_id}
 
     except HTTPException:
         raise
-    except Exception:
-        logger.exception(f"Error updating speakers for {request.media_id}")
+
+    except Exception as e:
+        logger.exception(f"media_id={media_id} - CRITICAL: Failed to update speakers.")
         raise HTTPException(status_code=500, detail="Error updating speakers")
 
 
@@ -137,41 +167,47 @@ async def update_subtitles(
     """
     Update subtitles in Mongo (Segment-based) and Solr
     """
-    # Extract values safely from the Pydantic model
-    # (If using Enum, .value gives the string, e.g. "Transcript")
-    subtitle_type_str = request.subtitle_type.value if hasattr(request.subtitle_type, 'value') else request.subtitle_type
-
-    segment_nr = request.segment_nr
+    # Setup Context Variables
     media_id = request.media_id
+    segment_nr = request.segment_nr
+    subtitle_count = len(request.subtitles)
+
+    # Extract Enum value safely
+    subtitle_type_str = request.subtitle_type.value if hasattr(request.subtitle_type, 'value') else request.subtitle_type
+    logger.info(f"media_id={media_id} - UPDATE subtitles request. "
+                f"Segment={segment_nr}, Type={subtitle_type_str}, Items={subtitle_count}")
+
     subtitles_data = [s.dict() for s in request.subtitles]
 
-    logger.info(f"Updating segment {segment_nr} ({subtitle_type_str}) for {media_id}")
-
     try:
-        # 1. Update MongoDB (The Source of Truth)
+        # 3. Update MongoDB (Source of Truth)
         mongo_client.update_subtitles(
             media_id=media_id,
-            segment_nr=segment_nr,  # <--- Now passing this!
+            segment_nr=segment_nr,
             subtitle_type=subtitle_type_str,
             subtitles=subtitles_data
         )
+        logger.info(f"media_id={media_id} - MongoDB segment {segment_nr} updated successfully.")
 
-        # 2. Update Solr (Search Index)
+        # 4. Update Solr (Search Index)
         solr_client.update_segment(
             media_id=media_id,
             segment_nr=segment_nr,
             subtitles=subtitles_data,
             subtitle_type=subtitle_type_str,
         )
+        logger.info(f"media_id={media_id} - Solr index for segment {segment_nr} synced successfully.")
 
-        return {"status": "success", "media_id": request.media_id}
+        return {"status": "success", "media_id": media_id}
 
     except ValueError as ve:
-        # Handle the case where segment wasn't found in Mongo
-        logger.warning(f"Validation error: {ve}")
+        # Handle Validation Errors (Client-side issue)
+        logger.warning(f"media_id={media_id} - Validation failed for Segment {segment_nr}: {ve}")
         raise HTTPException(status_code=404, detail=str(ve))
-    except Exception:
-        logger.exception(f"Error updating subtitles for {request.media_id}")
+
+    except Exception as e:
+        # Handle System Crashes (Server-side issue)
+        logger.exception(f"media_id={media_id} - CRITICAL: Failed to update subtitles for Segment {segment_nr}.")
         raise HTTPException(status_code=500, detail="Error updating subtitles")
 
 
@@ -182,14 +218,33 @@ def update_debate(
     solr_client: SolrManager = Depends(get_solr_manager),
 ):
     media_id = request.media_id
-    logger.info(f"Updating debate details for {request.media_id}")
 
-    update_data = request.dict(exclude={"media_id"}, exclude_unset=True)
-    mongo_client.update_debate_details(media_id, update_data)
+    # Prepare Data
+    update_data = request.dict(exclude={"media_id"})
+    keys_changed = list(update_data.keys())
+    logger.info(f"media_id={media_id} - UPDATE debate details request. Fields={keys_changed}")
+
+    if not update_data:
+        logger.warning(f"media_id={media_id} - Update received with no fields changed. Skipping.")
+        return {"status": "no_change", "media_id": media_id}
 
     try:
-        solr_client.update_debate_details(media_id, update_data)
-    except Exception as e:
-        logger.error(f"Failed to update Solr metadata: {e}")
+        # Update MongoDB
+        mongo_client.update_debate_details(media_id, update_data)
+        logger.info(f"media_id={media_id} - MongoDB debate details updated.")
 
-    return {"status": "success", "media_id": request.media_id}
+        # Sync Solr (Search Index)
+        try:
+            solr_client.update_debate_details(media_id, update_data)
+            logger.info(f"media_id={media_id} - Solr index synced successfully.")
+        except Exception as e:
+            logger.error(f"media_id={media_id} - PARTIAL FAIL: MongoDB updated, but Solr sync failed: {e}", exc_info=True)
+
+        return {"status": "success", "media_id": media_id}
+
+    except HTTPException:
+        raise
+    except Exception:
+        # Catch-all for MongoDB or logic crashes
+        logger.exception(f"media_id={media_id} - CRITICAL: Failed to update debate details.")
+        raise HTTPException(status_code=500, detail="Error updating debate details")

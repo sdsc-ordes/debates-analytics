@@ -21,21 +21,31 @@ async def list_media(
     """
     Returns a list of all uploaded media for the dashboard.
     """
-    logger.debug("Listing all media items from MongoDB")
-    docs = mongo.get_all_media()
+    logger.info("Listing all media items from MongoDB")
 
-    items = []
-    for d in docs:
-        items.append(MediaListItem(
-            media_id=d.get("media_id", str(d.get("_id"))), # Fallback if media_id missing
-            filename=d.get("original_filename", "Unknown"),
-            status=d.get("status", "unknown"),
-            created_at=d.get("created_at"),
-            title=d.get("title")
-        ))
-    logger.info(f"Dashboard list requested. Returning {len(items)} items.")
+    try:
+        docs = mongo.get_all_media()
 
-    return MediaListResponse(items=items, total=len(items))
+        items = []
+        for d in docs:
+            items.append(MediaListItem(
+                media_id=d.get("media_id", str(d.get("_id"))),
+                filename=d.get("original_filename", "Unknown"),
+                status=d.get("status", "unknown"),
+                created_at=d.get("created_at"),
+                title=d.get("title")
+            ))
+
+        logger.info(f"Dashboard list requested. Returning {len(items)} items.")
+        return MediaListResponse(items=items, total=len(items))
+
+    except Exception as e:
+        logger.exception(f"Failed to fetch media list: {e}")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to retrieve media list. Please try again later."
+        )
 
 
 @router.post("/delete", response_model=DeleteMediaResponse)
@@ -82,7 +92,7 @@ async def delete_media(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"media_id={media_id} - CRITICAL: MongoDB deletion failed: {e}", exc_info=True)
+        logger.exception(f"media_id={media_id} - CRITICAL: MongoDB deletion failed: {e}")
         raise HTTPException(status_code=500, detail="Database deletion failed")
 
     # 4. Return Status
