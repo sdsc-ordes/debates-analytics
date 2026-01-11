@@ -159,4 +159,3 @@ async def start_processing(
             status_code=500,
             detail=f"Failed to process video: {str(e)}"
         )
-
