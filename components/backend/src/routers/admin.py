@@ -8,6 +8,8 @@ from services.mongo import get_mongo_manager, MongoManager
 from services.s3 import get_s3_manager, S3Manager
 from services.solr import get_solr_manager, SolrManager
 from tasks.reindex import reindex_solr
+from rq.job import Job
+from services.queue import get_queue_manager, QueueManager
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +34,7 @@ async def list_media(
                 media_id=d.get("media_id", str(d.get("_id"))),
                 filename=d.get("original_filename", "Unknown"),
                 status=d.get("status", "unknown"),
+                processing_history=d.get("processing_history", []),
                 created_at=d.get("created_at"),
                 title=d.get("title")
             ))
@@ -64,7 +67,7 @@ async def delete_media(
     logger.info(f"media_id={media_id} - DELETE request received.")
     cleanup_errors = []
 
-    # 1. Try S3 (Soft Fail)
+    # Try S3 (Soft Fail)
     try:
         s3.delete_media_folder(media_id)
         logger.info(f"media_id={media_id} - S3 files deleted.")
@@ -72,7 +75,7 @@ async def delete_media(
         logger.error(f"media_id={media_id} - S3 deletion failed: {e}", exc_info=True)
         cleanup_errors.append(f"S3 cleanup failed: {str(e)}")
 
-    # 2. Try Solr (Soft Fail)
+    # Try Solr (Soft Fail)
     try:
         solr.delete_by_media_id(media_id)
         logger.info(f"media_id={media_id} - Solr index deleted.")
@@ -80,7 +83,7 @@ async def delete_media(
         logger.error(f"media_id={media_id} - Solr deletion failed: {e}", exc_info=True)
         cleanup_errors.append(f"Solr cleanup failed: {str(e)}")
 
-    # 3. Try MongoDB (The Source of Truth)
+    # Try MongoDB (Hard Fail)
     try:
         deleted = mongo.delete_everything(media_id)
         if not deleted:
@@ -95,7 +98,7 @@ async def delete_media(
         logger.exception(f"media_id={media_id} - CRITICAL: MongoDB deletion failed: {e}")
         raise HTTPException(status_code=500, detail="Database deletion failed")
 
-    # 4. Return Status
+    # Return Status
     if cleanup_errors:
         logger.warning(f"media_id={media_id} - Completed with warnings: {cleanup_errors}")
 
