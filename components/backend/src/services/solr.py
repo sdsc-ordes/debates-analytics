@@ -137,12 +137,11 @@ class SolrManager:
         Generic method to update debate metadata on ALL segments for a given media_id.
         Driven by DEBATE_DETAILS_MAPPING configuration.
         """
-        # 1. Build the Atomic Update Payload dynamically
-        #    We only include fields that are actually present in the 'details' dict
+        # Build the Atomic Update Payload dynamically
+        # We only include fields that are actually present in the 'details' dict
         solr_updates = {}
         for api_field, solr_field in DEBATE_DETAILS_MAPPING.items():
             if api_field in details and details[api_field] is not None:
-                # Solr atomic update syntax: {"set": "New Value"}
                 solr_updates[solr_field] = {"set": details[api_field]}
 
         if not solr_updates:
@@ -151,8 +150,7 @@ class SolrManager:
 
         logger.info(f"Updating Solr metadata for {media_id}: {solr_updates}")
 
-        # 2. Fetch all Segment IDs for this Media
-        #    (Solr requires the unique 'id' to perform atomic updates)
+        # Fetch all Segment IDs for this Media
         query = f"media_id:{media_id}"
         results = self.client.search(query, fl="id", rows=10000)
 
@@ -160,14 +158,14 @@ class SolrManager:
             logger.warning(f"No Solr documents found for media_id: {media_id}")
             return
 
-        # 3. Apply the updates to every segment
+        # Apply the updates to every segment
         batch_update = []
         for doc in results:
             update_doc = {"id": doc["id"]}
-            update_doc.update(solr_updates) # Merge our dynamic updates
+            update_doc.update(solr_updates)
             batch_update.append(update_doc)
 
-        # 4. Commit
+        # Commit
         if batch_update:
             self.client.add(batch_update, commit=True)
             logger.info(f"Updated {len(batch_update)} documents in Solr.")
