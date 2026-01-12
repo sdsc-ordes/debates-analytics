@@ -14,16 +14,14 @@ def process_video(s3_key: str, media_id: str):
     """
     Orchestrates video conversion pipeline (S3 -> FFmpeg -> S3).
     """
-    # 1. Setup Services inside the task (Thread-safe)
+    # Setup Services inside the task (Thread-safe)
     s3 = get_s3_manager()
     rq = get_queue_manager()
     mongo = get_mongo_manager()
     job = get_current_job()
+    reporter = JobReporter(media_id, mongo, logger, job)
 
-    reporter = JobReporter(media_id, mongo, job, logger)
     logger.info(f"media_id={media_id} - Task 'process_video' started.")
-
-    reporter.report_status_change("processing", step_name="conversion_started")
 
     try:
         # Context manager handles folder cleanup automatically
@@ -39,16 +37,14 @@ def process_video(s3_key: str, media_id: str):
 
             logger.info(f"media_id={media_id} - Uploading WAV to S3: {s3_wav_key}")
             s3.upload_file(local_wav, s3_wav_key)
+            reporter.report_status_change("conversion completed", {"s3_wav_key": s3_wav_key})
 
-            logger.info(f"media_id={media_id} - Enqueuing next task (transcription).")
             rq.enqueue_audio_processing(
                 media_id=media_id,
                 s3_key=s3_wav_key,
             )
-            reporter.report_status_change(
-                "transcribing_queued",
-                step_name="conversion_completed"
-            )
+            logger.info(f"media_id={media_id} - queued for transcribing: {s3_wav_key}")
+            reporter.report_status_change("queued_for_transcribing")
 
             return {"status": "success", "wav_key": s3_wav_key}
 
@@ -83,7 +79,7 @@ def convert_to_wav(input_path: str, output_path: str, media_id: str):
     logger.info(f"media_id={media_id} - Running FFmpeg conversion...")
 
     try:
-        result = subprocess.run(
+        subprocess.run(
             cmd,
             capture_output=True,
             text=True,
@@ -93,9 +89,3 @@ def convert_to_wav(input_path: str, output_path: str, media_id: str):
         error_msg = f"FFmpeg failed with exit code {e.returncode}. Stderr: {e.stderr}"
         logger.error(f"media_id={media_id} - {error_msg}")
         raise RuntimeError(error_msg)
-
-    if not os.path.exists(output_path):
-        raise RuntimeError(f"FFmpeg finished but output file is missing: {output_path}")
-
-    file_size_mb = os.path.getsize(output_path) / (1024 * 1024)
-    logger.info(f"media_id={media_id} - FFmpeg success. Output: {file_size_mb:.2f} MB")

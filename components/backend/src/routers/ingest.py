@@ -5,6 +5,7 @@ from services.s3 import get_s3_manager, S3Manager
 from services.queue import get_queue_manager, QueueManager
 from services.mongo import get_mongo_manager, MongoManager
 from models.ingest import S3PostRequest, S3PostResponse, ProcessRequest, FileType
+from services.reporter import JobReporter
 
 logger = logging.getLogger(__name__)
 
@@ -99,40 +100,30 @@ async def start_processing(
 
     try:
         # Enqueue Job (Specific logs replace generic ones)
+
         if file_type == FileType.video:
             job = rq.enqueue_video_processing(media_id=media_id, s3_key=s3_key)
             logger.info(f"media_id={media_id} - Video job enqueued. JobID={job.get_id()}")
+            status = "queued_for_conversion"
 
         elif file_type == FileType.audio:
             job = rq.enqueue_audio_processing(media_id=media_id, s3_key=s3_key)
             logger.info(f"media_id={media_id} - Audio job enqueued. JobID={job.get_id()}")
+            status = "queued_for_transcribing"
 
         else:
             # Log as Warning (User Error)
             logger.warning(f"media_id={media_id} - Processing rejected: Unsupported file type '{file_type}'")
             raise HTTPException(status_code=400, detail=f"Unsupported file type: {file_type}")
 
-        job_id = job.get_id()
-
-        # Update DB Status to 'queued'
-        result = mongo.update_processing_status(
-            media_id=media_id,
-            status="queued",
-            job_id=job_id,
-        )
-
-        # 4. Validation: Check for Data Inconsistency
-        if not result:
-            # Log as Error because this SHOULD have existed from the upload step
-            logger.error(f"media_id={media_id} - Data Inconsistency: Media ID not found in MongoDB during process start.")
-            raise ValueError(f"media ID {media_id} not found in MongoDB")
-
-        logger.info(f"media_id={media_id} - MongoDB status updated to 'queued'.")
+        reporter = JobReporter(media_id, mongo, logger, job)
+        reporter.report_job_start(status=status)
+        logger.info(f"media_id={media_id} - status updated {status}.")
 
         return {
-            "status": "queued",
+            "status": status,
             "media_id": media_id,
-            "job_id": job_id,
+            "job_id": job.get_id(),
         }
 
     except Exception as e:

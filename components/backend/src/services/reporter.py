@@ -5,39 +5,62 @@ if TYPE_CHECKING:
     from services.mongo import MongoManager
 
 class JobReporter:
-    def __init__(self, media_id: str, mongo: "MongoManager", job: "Job", logger: logging.Logger):
+    def __init__(self, media_id: str, mongo: "MongoManager", logger: logging.Logger, job: "Job" = None):
         self.media_id = media_id
         self.mongo = mongo
-        self.job = job
         self.logger = logger
+        self.job = job
 
-    def report_status_change(self, status: str, step_name: str = None):
+    def report_job_start(self, status: str, metadata: dict = None, job_id: str = None):
         """
-        [Heavyweight] Updates MongoDB and Redis. Use for State Transitions.
+        Updates MongoDB and Redis. Use for State Transitions.
         """
         self.logger.info(f"media_id={self.media_id} - Status changed to: '{status}'")
 
-        # 1. Update Redis (for immediate UI polling)
+        # Update Redis/Job Meta
         self.job.meta['status'] = status
         self.job.save_meta()
 
-        # 2. Update Mongo (for persistence)
-        update_payload = {"status": status}
-
-        # Suggestion: Track the timeline of steps in Mongo
-        if step_name:
-            # Pushes a record into a 'history' array in Mongo
-            # This answers "How long did transcription take?" later.
-            self.mongo.add_processing_step(self.media_id, step_name)
-
-        self.mongo.update_processing_status(
+        # Update MongoDB
+        self.mongo.update_status_with_history(
             media_id=self.media_id,
-            status=status
+            status=status,
+            job_id=self.job.get_id(),
+        )
+
+    def report_status_change(self, status: str, metadata: dict = None):
+        """
+        Updates MongoDB and Redis. Use for State Transitions.
+        """
+        self.logger.info(f"media_id={self.media_id} - Status changed to: '{status}'")
+
+        # Update Redis/Job Meta
+        if self.job:
+            self.job.meta['status'] = status
+            self.job.save_meta()
+
+        # Update MongoDB
+        self.mongo.update_status_with_history(
+            media_id=self.media_id,
+            status=status,
+            metadata=metadata,
         )
 
     def mark_failed(self, error: Exception):
         """
         Final failure state.
         """
+        error_msg = str(error)
+
+        self.logger.error(f"Job {self.media_id} FAILED: {error_msg}")
+
+        self.job.meta['progress'] = 'failed'
+        self.job.meta['error'] = error_msg
+        self.job.save_meta()
+
+        self.mongo.update_status_with_history(
+            media_id=self.media_id,
+            status="failed",
+            metadata={"error_message": error_msg}
+        )
         self.logger.exception(f"media_id={self.media_id} - CRITICAL: Job failed.")
-        # ... existing failure logic ...

@@ -12,45 +12,46 @@ logger = logging.getLogger(__name__)
 
 def process_transcription(s3_key, media_id):
     """
-    1. Downloads audio
-    2. Runs Whisper (Transcribe + Translate)
-    3. Uploads artifacts
-    4. Updates DB
+    1.Downloads audio
+    2.Runs Whisper (Transcribe + Translate)
+    3.Uploads artifacts
+    4.Queues for indexing
     """
     s3 = get_s3_manager()
     mongo = get_mongo_manager()
     whisper_service = WhisperService()
     job = get_current_job()
     rq = get_queue_manager()
-
-    reporter = JobReporter(media_id, mongo, job, logger)
+    reporter = JobReporter(media_id, mongo, logger, job)
 
     logger.info(f"media_id={media_id} - Task 'process_transcription' started.")
-    reporter.report_status_change("transcribing", step_name="transcription_started")
+    reporter.report_status_change("transcribing_started")
 
     try:
         with temp_workspace() as work_dir:
-            local_input_path = os.path.join(work_dir, "input.wav")
 
+            # 1.Downloads audio
+            local_input_path = os.path.join(work_dir, "input.wav")
             logger.info(f"media_id={media_id} - Downloading from S3: {s3_key}")
             s3.download_file(s3_key, local_input_path)
+            logger.info(f"media_id={media_id} - Download completed.")
 
+            # 2. Runs Whisper (Transcribe + Translate)
             transcription_files = whisper_service.run_inference(
                 local_input_path, task="transcribe"
             )
             logger.info(f"media_id={media_id} - Transcribing completed: {s3_key}")
-            reporter.report_status_change("transcribing", step_name="transcription_completed")
-            reporter.report_status_change("translating", step_name="translation_started")
+            reporter.report_status_change("transcribing_original_completed")
 
             translation_files = whisper_service.run_inference(
                 local_input_path, task="translate"
             )
             logger.info(f"media_id={media_id} - Translating completed: {s3_key}")
-            reporter.report_status_change("transcribing", step_name="translation_completed")
+            reporter.report_status_change("transcribing_translation_completed")
 
+            # 3. Uploads artifacts
             s3_base_path = f"{media_id}/transcripts"
             uploaded_keys = {}
-
             def process_uploads(file_set, type_suffix):
                 """
                 Iterates over the Whisper output dict and uploads files.
@@ -74,19 +75,14 @@ def process_transcription(s3_key, media_id):
 
             process_uploads(transcription_files, "original")
             process_uploads(translation_files, "translation")
-
             logger.info(f"media_id={media_id} - Uploaded {len(uploaded_keys)} transcript files.")
 
-            rq.enqueue_reindex(
-                media_id=media_id,
-            )
+            # 4. Queues for indexing
+            rq.enqueue_reindex(media_id=media_id,)
+            logger.info(f"media_id={media_id} - queued for reindexing.")
+            reporter.report_status_change("queued_for_reindexing")
 
-            reporter.report_status_change(
-                "reindexing_queued",
-                step_name="transcription_uploaded"
-            )
-
-            return {"status": "completed"}
+            return {"status": "success", "uploaded_keys": uploaded_keys}
 
     except Exception as e:
         reporter.mark_failed(e)

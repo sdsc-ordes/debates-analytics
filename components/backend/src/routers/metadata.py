@@ -33,7 +33,8 @@ async def get_media_urls(
             logger.warning(f"media_id={media_id} - Metadata not found in MongoDB.")
             raise HTTPException(status_code=404, detail="Media not found")
     except Exception as e:
-        if isinstance(e, HTTPException): raise e
+        if isinstance(e, HTTPException):
+            raise e
         logger.exception(f"media_id={media_id} - Failed to fetch metadata from MongoDB.")
         raise HTTPException(status_code=500, detail="Database error")
 
@@ -116,7 +117,7 @@ async def mongo_metadata(
         logger.warning(f"media_id={media_id} - Metadata not found in MongoDB.")
         raise HTTPException(status_code=404, detail="Media not found")
 
-    except Exception as e:
+    except Exception:
         logger.exception(f"media_id={media_id} - CRITICAL: Failed to fetch metadata.")
         raise HTTPException(status_code=500, detail="Database error")
 
@@ -138,7 +139,7 @@ async def update_speakers(
     speakers_data = [s.dict() for s in request.speakers]
 
     try:
-        mongo_result = mongo_client.update_speakers(media_id, speakers_data)
+        mongo_client.update_speakers(media_id, speakers_data)
 
         logger.info(f"media_id={media_id} - MongoDB speakers updated successfully.")
 
@@ -153,7 +154,7 @@ async def update_speakers(
     except HTTPException:
         raise
 
-    except Exception as e:
+    except Exception:
         logger.exception(f"media_id={media_id} - CRITICAL: Failed to update speakers.")
         raise HTTPException(status_code=500, detail="Error updating speakers")
 
@@ -205,7 +206,7 @@ async def update_subtitles(
         logger.warning(f"media_id={media_id} - Validation failed for Segment {segment_nr}: {ve}")
         raise HTTPException(status_code=404, detail=str(ve))
 
-    except Exception as e:
+    except Exception:
         # Handle System Crashes (Server-side issue)
         logger.exception(f"media_id={media_id} - CRITICAL: Failed to update subtitles for Segment {segment_nr}.")
         raise HTTPException(status_code=500, detail="Error updating subtitles")
