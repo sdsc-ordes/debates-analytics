@@ -16,7 +16,6 @@ export interface paths {
     /**
      * Get Presigned Post
      * @description [POST] Returns a presigned URL and creates the initial Mongodb record.
-     *     Status -> 'preparing'
      */
     post: operations["get_presigned_post_ingest_get_presigned_post_post"]
     delete?: never
@@ -36,9 +35,7 @@ export interface paths {
     put?: never
     /**
      * Start Processing
-     * @description [POST] Starts processing: starts redis queue with first task: converting
-     *     the video to audio. Updates status on Mongo DB.
-     *     Status -> 'preparing'
+     * @description [POST] Starts processing: starts redis queue with first task.
      */
     post: operations["start_processing_ingest_process_post"]
     delete?: never
@@ -225,6 +222,19 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
+    /** DebateAttributes */
+    DebateAttributes: {
+      /** Debate Type */
+      debate_type?: string | null
+      /** Debate Date */
+      debate_date?: string | null
+      /** Debate Link Agenda */
+      debate_link_agenda?: string | null
+      /** Debate Link Mediasource */
+      debate_link_mediasource?: string | null
+      /** Debate Session Timeslot */
+      debate_session_timeslot?: string | null
+    }
     /** DebateDocument */
     DebateDocument: {
       /** Media Id */
@@ -256,14 +266,9 @@ export interface components {
       updated_at?: string | null
       /** Error Message */
       error_message?: string | null
-      /** Session */
-      session?: string | null
-      /** Debate Type */
-      debate_type?: string | null
-      /** Schedule */
-      schedule?: string | null
-      /** Name */
-      name?: string | null
+      /** File Name */
+      file_name?: string | null
+      debate_attributes?: components["schemas"]["DebateAttributes"]
     }
     /** DeleteMediaRequest */
     DeleteMediaRequest: {
@@ -318,6 +323,8 @@ export interface components {
       filename: string
       /** Status */
       status: string
+      /** Processing History */
+      processing_history?: components["schemas"]["ProcessingStep"][] | null
       /** Created At */
       created_at?: string | null
       /** Title */
@@ -367,6 +374,16 @@ export interface components {
        */
       title?: string
       file_type: components["schemas"]["FileType"]
+    }
+    /** ProcessingStep */
+    ProcessingStep: {
+      /** Step */
+      step: string
+      /**
+       * Timestamp
+       * Format: date-time
+       */
+      timestamp: string
     }
     /** ReindexMediaRequest */
     ReindexMediaRequest: {
@@ -449,25 +466,14 @@ export interface components {
       id: string
       /** Media Id */
       media_id: string
-      /** Segment Nr */
-      segment_nr: number
-      /** Speaker Id */
-      speaker_id: string
       /** Statement */
       statement: string[]
-      statement_type: components["schemas"]["StatementType"]
       /** Start */
       start: number
       /** End */
       end: number
-      /** Debate Schedule */
-      debate_schedule?: string | null
-      /** Debate Type */
-      debate_type?: string | null
-      /** Debate Session */
-      debate_session?: string | null
-      /** Statement Language */
-      statement_language?: string | null
+      speaker?: components["schemas"]["SpeakerAttributes"] | null
+      debate?: components["schemas"]["DebateAttributes"] | null
     }
     /** SearchResponse */
     SearchResponse: {
@@ -516,22 +522,17 @@ export interface components {
     Speaker: {
       /** Speaker Id */
       speaker_id: string
-      /**
-       * Name
-       * @default
-       */
-      name: string | null
-      /**
-       * Role Tag
-       * @default
-       */
-      role_tag: string | null
+      speaker_attributes?: components["schemas"]["SpeakerAttributes"]
     }
-    /**
-     * StatementType
-     * @enum {string}
-     */
-    StatementType: "original" | "translation"
+    /** SpeakerAttributes */
+    SpeakerAttributes: {
+      /** Speaker Name */
+      speaker_name?: string | null
+      /** Speaker Role Tag */
+      speaker_role_tag?: string | null
+      /** Speaker Country */
+      speaker_country?: string | null
+    }
     /** Subtitle */
     Subtitle: {
       /** Start */

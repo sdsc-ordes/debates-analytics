@@ -7,6 +7,7 @@
   type MediaListItem = components["schemas"]["MediaListItem"]
 
   let { data }: { data: PageData } = $props();
+  $inspect("data", data);
 
   let items: MediaListItem[] = $derived(data.items);
 

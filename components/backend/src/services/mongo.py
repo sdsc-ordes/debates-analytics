@@ -33,16 +33,34 @@ class MongoManager:
             logger.error(f"Failed to connect to MongoDB: {e}")
             raise e
 
-    def update_processing_status(self, media_id: str, status: str, job_id: str = None, metadata: Dict = None):
-        update_fields = {"status": status, "updated_at": datetime.utcnow()}
+    def update_status_with_history(self, media_id: str, status: str, job_id: str = None, metadata: Dict = None):
+        """
+        Updates the current status and appends it to the processing history in a single atomic operation.
+        """
+        logger.info(f"media_id={media_id} - Transitioning status to '{status}'")
+
+        current_time = datetime.utcnow()
+
+        set_fields = {
+            "status": status,
+            "updated_at": current_time
+        }
         if job_id:
-            update_fields["job_id"] = job_id
+            set_fields["job_id"] = job_id
         if metadata:
-            update_fields.update(metadata)
+            set_fields.update(metadata)
 
         return self.media_collection.find_one_and_update(
             {"_id": media_id},
-            {"$set": update_fields},
+            {
+                "$set": set_fields,
+                "$push": {
+                    "processing_history": {
+                        "step": status,
+                        "timestamp": current_time
+                    }
+                }
+            },
             return_document=ReturnDocument.AFTER
         )
 

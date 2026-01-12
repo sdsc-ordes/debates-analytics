@@ -8,6 +8,7 @@ from services.mongo import get_mongo_manager, MongoManager
 from services.s3 import get_s3_manager, S3Manager
 from services.solr import get_solr_manager, SolrManager
 from tasks.reindex import reindex_solr
+from pymongo.errors import PyMongoError, ServerSelectionTimeoutError, ConnectionFailure
 
 logger = logging.getLogger(__name__)
 
@@ -21,21 +22,48 @@ async def list_media(
     """
     Returns a list of all uploaded media for the dashboard.
     """
-    docs = mongo.get_all_media()
+    logger.info("Listing all media items from MongoDB")
 
-    items = []
-    for d in docs:
-        items.append(MediaListItem(
-            media_id=d.get("media_id", str(d.get("_id"))), # Fallback if media_id missing
-            filename=d.get("original_filename", "Unknown"),
-            status=d.get("status", "unknown"),
-            created_at=d.get("created_at"),
-            title=d.get("title")
-        ))
-    logger.info(f"media list {items}")
+    try:
+        docs = mongo.get_all_media()
 
-    return MediaListResponse(items=items, total=len(items))
+        items = []
+        for d in docs:
+            items.append(MediaListItem(
+                media_id=d.get("media_id", str(d.get("_id"))),
+                filename=d.get("original_filename", "Unknown"),
+                status=d.get("status", "unknown"),
+                processing_history=d.get("processing_history", []),
+                created_at=d.get("created_at"),
+                title=d.get("title")
+            ))
 
+        logger.info(f"Dashboard list requested. Returning {len(items)} items.")
+        return MediaListResponse(items=items, total=len(items))
+
+    # Catch Connection Issues (DB Down / Timeout)
+    except (ServerSelectionTimeoutError, ConnectionFailure) as e:
+        logger.error(f"MongoDB Connection Failed: {e}")
+        raise HTTPException(
+            status_code=503,  # Service Unavailable
+            detail="Database connection timeout. The service is temporarily unavailable."
+        )
+
+    # Catch Query/Data Issues (Permissions, Index missing, etc)
+    except PyMongoError as e:
+        logger.error(f"MongoDB Query Error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Database query error."
+        )
+
+    # Catch Logic Issues
+    except Exception as e:
+        logger.exception(f"Unexpected logic error in list_media: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal Server Error"
+        )
 
 @router.post("/delete", response_model=DeleteMediaResponse)
 async def delete_media(
@@ -49,47 +77,52 @@ async def delete_media(
     Uses 'Best Effort' strategy: if one service fails, it logs the error
     but continues trying to delete the others.
     """
-    logger.info(f"request delete: {request}")
     media_id = request.mediaId
+    logger.info(f"media_id={media_id} - DELETE request received.")
     cleanup_errors = []
 
-    # 1. Try S3 (Soft Fail)
+    # Try S3 (Soft Fail)
     try:
         s3.delete_media_folder(media_id)
+        logger.info(f"media_id={media_id} - S3 files deleted.")
     except Exception as e:
-        logger.error(f"Failed to delete S3 files for {media_id}: {e}")
-        cleanup_errors.append("S3 cleanup failed")
+        logger.error(f"media_id={media_id} - S3 deletion failed: {e}", exc_info=True)
+        cleanup_errors.append(f"S3 cleanup failed: {str(e)}")
 
-    # 2. Try Solr (Soft Fail)
+    # Try Solr (Soft Fail)
     try:
         solr.delete_by_media_id(media_id)
+        logger.info(f"media_id={media_id} - Solr index deleted.")
     except Exception as e:
-        logger.error(f"Failed to delete Solr index for {media_id}: {e}")
-        cleanup_errors.append("Solr cleanup failed")
+        logger.error(f"media_id={media_id} - Solr deletion failed: {e}", exc_info=True)
+        cleanup_errors.append(f"Solr cleanup failed: {str(e)}")
 
-    # 3. Try MongoDB (The Source of Truth)
-    # We attempt this even if S3/Solr failed, because we want to remove it from the UI.
+    # Try MongoDB (Hard Fail)
     try:
         deleted = mongo.delete_everything(media_id)
         if not deleted:
-            # If it wasn't in Mongo, we consider it a 404 (Not Found)
+            logger.warning(f"media_id={media_id} - Not found in MongoDB during delete.")
             raise HTTPException(status_code=404, detail="Media not found in DB")
 
+        logger.info(f"media_id={media_id} - MongoDB document deleted.")
+
     except HTTPException:
-        raise # Re-raise 404
+        raise
     except Exception as e:
-        logger.error(f"Failed to delete MongoDB docs for {media_id}: {e}")
+        logger.exception(f"media_id={media_id} - CRITICAL: MongoDB deletion failed: {e}")
         raise HTTPException(status_code=500, detail="Database deletion failed")
 
-    # 4. Return Status
+    # Return Status
     if cleanup_errors:
-        # Return 200 but warn the frontend that some cleanup failed (Ghost files might remain)
+        logger.warning(f"media_id={media_id} - Completed with warnings: {cleanup_errors}")
+
         return {
             "status": "partial_deleted",
             "media_id": media_id,
             "warnings": cleanup_errors
         }
 
+    logger.info(f"media_id={media_id} - Successfully deleted from all systems.")
     return {"status": "deleted", "mediaId": media_id}
 
 
@@ -103,14 +136,15 @@ async def reindex_media(
     Triggers the Solr Indexing process manually.
     Useful if you changed the Solr schema or parser logic.
     """
-    logger.info(f"request reindex: {request}")
     media_id = request.mediaId
+    logger.info(f"media_id={media_id} - REINDEX request received.")
+
     # 1. Validate ID exists
     debate = mongo_client.get_debate_metadata(media_id)
     if not debate:
+        logger.warning(f"media_id={media_id} - Reindex rejected. Media ID not found.")
         raise HTTPException(status_code=404, detail="Media not found")
 
-    # 2. Run in background (don't block the HTTP request)
     background_tasks.add_task(reindex_solr, media_id)
-
+    logger.info(f"media_id={media_id} - Reindex task queued in background.")
     return {"status": "indexing_started", "mediaId": media_id}

@@ -5,29 +5,42 @@ if TYPE_CHECKING:
     from services.mongo import MongoManager
 
 class JobReporter:
-    def __init__(
-        self,
-        media_id: str,
-        mongo: "MongoManager",
-        job: "Job",
-        logger: logging.Logger
-    ):
+    def __init__(self, media_id: str, mongo: "MongoManager", logger: logging.Logger, job: "Job" = None):
         self.media_id = media_id
         self.mongo = mongo
-        self.job = job
         self.logger = logger
+        self.job = job
 
-    def update(self, status: str, progress: str = None, metadata: dict = None):
+    def report_job_start(self, status: str, metadata: dict = None, job_id: str = None):
         """
-        Updates ALL 3 systems at once.
+        Updates MongoDB and Redis. Use for State Transitions.
         """
-        self.logger.info(f"Job {self.media_id}: {status}...")
+        self.logger.info(f"media_id={self.media_id} - Status changed to: '{status}'")
 
-        if progress:
-            self.job.meta['progress'] = progress
+        # Update Redis/Job Meta
+        self.job.meta['status'] = status
+        self.job.save_meta()
+
+        # Update MongoDB
+        self.mongo.update_status_with_history(
+            media_id=self.media_id,
+            status=status,
+            job_id=self.job.get_id(),
+        )
+
+    def report_status_change(self, status: str, metadata: dict = None):
+        """
+        Updates MongoDB and Redis. Use for State Transitions.
+        """
+        self.logger.info(f"media_id={self.media_id} - Status changed to: '{status}'")
+
+        # Update Redis/Job Meta
+        if self.job:
+            self.job.meta['status'] = status
             self.job.save_meta()
 
-        self.mongo.update_processing_status(
+        # Update MongoDB
+        self.mongo.update_status_with_history(
             media_id=self.media_id,
             status=status,
             metadata=metadata,
@@ -35,7 +48,7 @@ class JobReporter:
 
     def mark_failed(self, error: Exception):
         """
-        Standard failure handler.
+        Final failure state.
         """
         error_msg = str(error)
 
@@ -45,8 +58,9 @@ class JobReporter:
         self.job.meta['error'] = error_msg
         self.job.save_meta()
 
-        self.mongo.update_processing_status(
+        self.mongo.update_status_with_history(
             media_id=self.media_id,
             status="failed",
             metadata={"error_message": error_msg}
         )
+        self.logger.exception(f"media_id={self.media_id} - CRITICAL: Job failed.")

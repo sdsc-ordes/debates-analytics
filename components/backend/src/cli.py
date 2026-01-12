@@ -1,19 +1,10 @@
 import typer
 import logging
-import sys
-import os
-
-# Ensure we can import from src
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from tasks.reindex import reindex_solr
+from config.logging import configure_logging
 
-# Configure logging to see output in terminal
-logging.basicConfig(
-    level="INFO",
-    format='%(asctime)s - [%(levelname)s] - (%(filename)s:%(lineno)d) - %(funcName)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
+configure_logging()
+logger = logging.getLogger(__name__)
 
 app = typer.Typer()
 

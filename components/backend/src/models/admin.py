@@ -3,10 +3,16 @@ from typing import List, Optional
 from datetime import datetime
 
 
+class ProcessingStep(BaseModel):
+    step: str
+    timestamp: datetime
+
+
 class MediaListItem(BaseModel):
     media_id: str
     filename: str
     status: str
+    processing_history: Optional[List[ProcessingStep]] = None
     created_at: Optional[datetime] = None
     title: Optional[str] = None
 
@@ -29,6 +35,7 @@ class DeleteMediaResponse(BaseModel):
     mediaId: str
     warnings: Optional[List[str]] = None
     errors: Optional[List[str]] = None
+
 
 class ReindexMediaResponse(BaseModel):
     status: str

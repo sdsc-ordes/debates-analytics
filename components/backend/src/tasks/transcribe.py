@@ -12,44 +12,46 @@ logger = logging.getLogger(__name__)
 
 def process_transcription(s3_key, media_id):
     """
-    1. Downloads audio
-    2. Runs Whisper (Transcribe + Translate)
-    3. Uploads artifacts
-    4. Updates DB
+    1.Downloads audio
+    2.Runs Whisper (Transcribe + Translate)
+    3.Uploads artifacts
+    4.Queues for indexing
     """
     s3 = get_s3_manager()
     mongo = get_mongo_manager()
     whisper_service = WhisperService()
     job = get_current_job()
     rq = get_queue_manager()
+    reporter = JobReporter(media_id, mongo, logger, job)
 
-    reporter = JobReporter(media_id, mongo, job, logger)
-
-    reporter.update("transcribing_started", progress="starting")
+    logger.info(f"media_id={media_id} - Task 'process_transcription' started.")
+    reporter.report_status_change("transcribing_started")
 
     try:
         with temp_workspace() as work_dir:
+
+            # 1.Downloads audio
             local_input_path = os.path.join(work_dir, "input.wav")
-
-            reporter.update("transcribing_downloading", progress="downloading")
+            logger.info(f"media_id={media_id} - Downloading from S3: {s3_key}")
             s3.download_file(s3_key, local_input_path)
+            logger.info(f"media_id={media_id} - Download completed.")
 
-            reporter.update("transcribing_processing", progress="transcribing")
-
+            # 2. Runs Whisper (Transcribe + Translate)
             transcription_files = whisper_service.run_inference(
                 local_input_path, task="transcribe"
             )
-            reporter.update("transcribing_translating", progress="translating")
+            logger.info(f"media_id={media_id} - Transcribing completed: {s3_key}")
+            reporter.report_status_change("transcribing_original_completed")
 
             translation_files = whisper_service.run_inference(
                 local_input_path, task="translate"
             )
+            logger.info(f"media_id={media_id} - Translating completed: {s3_key}")
+            reporter.report_status_change("transcribing_translation_completed")
 
-            reporter.update("transcribing_uploading", progress="uploading")
-
+            # 3. Uploads artifacts
             s3_base_path = f"{media_id}/transcripts"
             uploaded_keys = {}
-
             def process_uploads(file_set, type_suffix):
                 """
                 Iterates over the Whisper output dict and uploads files.
@@ -73,23 +75,19 @@ def process_transcription(s3_key, media_id):
 
             process_uploads(transcription_files, "original")
             process_uploads(translation_files, "translation")
+            logger.info(f"media_id={media_id} - Uploaded {len(uploaded_keys)} transcript files.")
 
-            reporter.update(
-                "transcribing_completed",
-                progress="completed",
-                metadata={"transcript_s3_keys": uploaded_keys}
-            )
+            # 4. Queues for indexing
+            rq.enqueue_reindex(media_id=media_id,)
+            logger.info(f"media_id={media_id} - queued for reindexing.")
+            reporter.report_status_change("queued_for_reindexing")
 
-            rq.enqueue_reindex(
-                media_id=media_id,
-            )
-
-            return {"status": "completed"}
+            return {"status": "success", "uploaded_keys": uploaded_keys}
 
     except Exception as e:
         reporter.mark_failed(e)
-        # Re-raise for RQ
         raise e
+
 
 class WhisperService:
     def __init__(self):
@@ -98,26 +96,36 @@ class WhisperService:
         self.hf_model = os.getenv("HF_MODEL")
         self.client = Client(self.space_url)
 
-    def run_inference(self, file_path, task="transcribe"):
+    def run_inference(self, file_path, task="transcribe", media_id="SYSTEM"):
+        """
+        Runs inference on HF Space.
+        Added 'media_id' for traceable logging.
+        """
         lang = "en" if task == "translate" else "auto"
-        logger.info(f"Running Whisper: Task={task}, Language={lang}")
 
-        # Usage is exactly the same
-        result_tuple = self.client.predict(
-            audio_file=handle_file(file_path),
-            youtube_link="",
-            model=self.hf_model,
-            task=task,
-            language=lang,
-            quantize=False,
-            api_name="/process_audio",
-            hf_token=self.hf_token,
-        )
+        logger.info(f"media_id={media_id} - Running Whisper Inference. Task={task}, Language={lang}")
 
-        return {
-            "srt": result_tuple[3],
-            "json": result_tuple[4],
-            "segments_json": result_tuple[5],
-            "segments_md": result_tuple[6],
-            "segments_pdf": result_tuple[7]
-        }
+        try:
+            result_tuple = self.client.predict(
+                audio_file=handle_file(file_path),
+                youtube_link="",
+                model=self.hf_model,
+                task=task,
+                language=lang,
+                quantize=False,
+                api_name="/process_audio",
+                hf_token=self.hf_token,
+            )
+
+            logger.info(f"media_id={media_id} - Whisper {task} completed successfully.")
+
+            return {
+                "srt": result_tuple[3],
+                "json": result_tuple[4],
+                "segments_json": result_tuple[5],
+                "segments_md": result_tuple[6],
+                "segments_pdf": result_tuple[7]
+            }
+        except Exception as e:
+            logger.error(f"media_id={media_id} - Whisper Inference Failed for task '{task}': {e}")
+            raise RuntimeError(f"Whisper Service Failed: {e}")
