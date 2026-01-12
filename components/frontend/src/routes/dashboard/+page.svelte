@@ -1,20 +1,23 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { Trash2, FileIcon, Loader, RefreshCw, Upload, Copy, Check, ListRestart } from 'lucide-svelte';
+  import { Trash2, FileIcon, Loader, TriangleAlert, RefreshCw, Upload, Copy, Check, ListRestart, AlertTriangle } from 'lucide-svelte';
   import type { PageData, ActionData } from './$types';
   import { invalidateAll } from '$app/navigation';
   import type { components } from '$lib/api/schema';
+  import HistoryTooltip from '$lib/components/HistoryTooltip.svelte';
   type MediaListItem = components["schemas"]["MediaListItem"]
 
   let { data }: { data: PageData } = $props();
   $inspect("data", data);
 
   let items: MediaListItem[] = $derived(data.items);
+  let errorMessage = $derived(data.error);
 
   let isDeleting = $state<string | null>(null);
   let isReindexing = $state<string | null>(null);
   let copiedId = $state<string | null>(null);
   let reindexSuccessId = $state<string | null>(null);
+  let hoveredStatusId = $state<string | null>(null);
 
   function formatDate(isoString: string) {
     if(!isoString) return "-";
@@ -60,7 +63,13 @@
       </div>
     </div>
 
-    {#if items.length === 0}
+    {#if errorMessage}
+      <div class="error-banner">
+        <TriangleAlert size={20} />
+        <span>{errorMessage}</span>
+      </div>
+    {/if}
+    {#if items.length === 0 && !errorMessage}
       <div class="state-container">
         <p class="card-title-large">No media found</p>
         <p class="card-subtle">Upload a video to get started.</p>
@@ -105,9 +114,20 @@
                 </td>
 
                 <td>
-                  <span class="badge {getStatusClass(item.status)}">
-                    {item.status.replace(/_/g, ' ')}
-                  </span>
+                  <div
+                    class="status-wrapper"
+                    role="tooltip"
+                    onmouseenter={() => hoveredStatusId = item.media_id}
+                    onmouseleave={() => hoveredStatusId = null}
+                  >
+                    <span class="badge {getStatusClass(item.status)}">
+                      {item.status.replace(/_/g, ' ')}
+                    </span>
+
+                    {#if hoveredStatusId === item.media_id}
+                      <HistoryTooltip history={item.processing_history || []} />
+                    {/if}
+                  </div>
                 </td>
 
                 <td class="desktop-only card-body-large">
@@ -394,5 +414,15 @@
     .desktop-only { display: none; }
     .mobile-meta { display: block; }
     .dashboard-card { padding: 1rem; }
+  }
+
+  .status-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+  }
+
+  td {
+    overflow: visible;
   }
 </style>
