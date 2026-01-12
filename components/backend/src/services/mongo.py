@@ -4,6 +4,7 @@ from pymongo import MongoClient, ReturnDocument
 from datetime import datetime
 from config.settings import get_settings
 from functools import lru_cache
+from models.domain import SpeakerAttributes
 
 logger = logging.getLogger(__name__)
 
@@ -33,35 +34,35 @@ class MongoManager:
             logger.error(f"Failed to connect to MongoDB: {e}")
             raise e
 
-    def update_processing_status(self, media_id: str, status: str, job_id: str = None, metadata: Dict = None):
-        logger.info(f"media_id={media_id} - Updating processing status to '{status}'")
-        update_fields = {"status": status, "updated_at": datetime.utcnow()}
+    def update_status_with_history(self, media_id: str, status: str, job_id: str = None, metadata: Dict = None):
+        """
+        Updates the current status and appends it to the processing history in a single atomic operation.
+        """
+        logger.info(f"media_id={media_id} - Transitioning status to '{status}'")
+
+        current_time = datetime.utcnow()
+
+        set_fields = {
+            "status": status,
+            "updated_at": current_time
+        }
         if job_id:
-            update_fields["job_id"] = job_id
+            set_fields["job_id"] = job_id
         if metadata:
-            update_fields.update(metadata)
+            set_fields.update(metadata)
 
         return self.media_collection.find_one_and_update(
             {"_id": media_id},
-            {"$set": update_fields},
-            return_document=ReturnDocument.AFTER
-        )
-
-    def add_processing_step(self, media_id: str, step_name: str):
-        """
-        Appends a timestamped step to the media history.
-        """
-        logger.info(f"media_id={media_id} - Adding processing step: {step_name}")
-        self.media_collection.update_one(
-            {"_id": media_id},
             {
+                "$set": set_fields,
                 "$push": {
                     "processing_history": {
-                        "step": step_name,
-                        "timestamp": datetime.utcnow()
+                        "step": status,
+                        "timestamp": current_time
                     }
                 }
-            }
+            },
+            return_document=ReturnDocument.AFTER
         )
 
     def save_speakers(self, media_id: str, speaker_ids: Set[str]):
@@ -150,21 +151,40 @@ class MongoManager:
         return debate
 
 
-    def update_speakers(self, media_id: str, speakers: List[Dict[str, Any]]):
+    def update_speakers(self, media_id: str, speakers_data: List[Dict[str, Any]]):
         """
-        Updates the speaker list with new names and roles.
-        Expects 'speakers' to be a list of dicts:
-        [{'speaker_id': '...', 'name': '...', 'role_tag': '...'}, ...]
+        Updates the speaker list using the Domain Model for validation.
+        Input: [{'speaker_id': '1', 'name': 'John', 'role_tag': 'Chair'}, ...]
+        Storage: Nested format { "speaker_id": "1", "speaker_attributes": { ... } }
         """
-        doc = {
-            "speakers": speakers,
-            "updated_at": datetime.utcnow()
-        }
+        clean_speakers_list = []
 
-        self.speakers_collection.update_one(
+        for item in speakers_data:
+            # 1. Parse attributes using the Domain Model
+            # This strips out 'speaker_id' (handled separately) and validates types.
+            # It accepts 'name', 'role_tag', etc.
+            attributes = SpeakerAttributes.model_validate(item)
+
+            # 2. Build the Document Structure
+            # We use by_alias=False to store clean names ("role_tag") in Mongo
+            # rather than Solr names ("speaker_role_tag")
+            clean_speakers_list.append({
+                "speaker_id": item.get("speaker_id"),
+                "speaker_attributes": attributes.model_dump(by_alias=False)
+            })
+
+        # 3. Update Mongo
+        result = self.speakers_collection.update_one(
             {"media_id": media_id},
-            {"$set": doc}
+            {
+                "$set": {
+                    "speakers": clean_speakers_list,
+                    "updated_at": datetime.utcnow()
+                }
+            }
         )
+        logger.info(f"Updated speakers for media_id={media_id}: {clean_speakers_list}, result={result.raw_result}")
+        return result
 
     def update_debate_details(self, media_id: str, update_data: Dict[str, Any]):
         """

@@ -10,6 +10,7 @@ from services.solr import get_solr_manager, SolrManager
 from tasks.reindex import reindex_solr
 from rq.job import Job
 from services.queue import get_queue_manager, QueueManager
+from pymongo.errors import PyMongoError, ServerSelectionTimeoutError, ConnectionFailure
 
 logger = logging.getLogger(__name__)
 
@@ -42,14 +43,29 @@ async def list_media(
         logger.info(f"Dashboard list requested. Returning {len(items)} items.")
         return MediaListResponse(items=items, total=len(items))
 
-    except Exception as e:
-        logger.exception(f"Failed to fetch media list: {e}")
-
+    # Catch Connection Issues (DB Down / Timeout)
+    except (ServerSelectionTimeoutError, ConnectionFailure) as e:
+        logger.error(f"MongoDB Connection Failed: {e}")
         raise HTTPException(
-            status_code=500,
-            detail="Unable to retrieve media list. Please try again later."
+            status_code=503,  # Service Unavailable
+            detail="Database connection timeout. The service is temporarily unavailable."
         )
 
+    # Catch Query/Data Issues (Permissions, Index missing, etc)
+    except PyMongoError as e:
+        logger.error(f"MongoDB Query Error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Database query error."
+        )
+
+    # Catch Logic Issues
+    except Exception as e:
+        logger.exception(f"Unexpected logic error in list_media: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal Server Error"
+        )
 
 @router.post("/delete", response_model=DeleteMediaResponse)
 async def delete_media(

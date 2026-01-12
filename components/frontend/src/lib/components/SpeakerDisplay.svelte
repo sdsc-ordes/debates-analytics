@@ -3,11 +3,13 @@
   import { client } from '$lib/api/client';
   import type { components } from '$lib/api/schema';
 
+  // 1. Import the Schema to enforce strong typing on keys
+  type SpeakerAttributes = components['schemas']['SpeakerAttributes'];
   type Speaker = components['schemas']['Speaker'];
 
   interface Props {
     speakers: Speaker[];
-    activeSpeaker?: Speaker; // activeSpeaker can be undefined!
+    activeSpeaker?: Speaker;
     mediaId: string;
   }
 
@@ -17,19 +19,23 @@
     mediaId
   }: Props = $props();
 
+  // 2. Configuration: Define your fields here.
+  // The 'key' is strictly typed to properties of SpeakerAttributes.
+  const FORM_FIELDS: { key: keyof SpeakerAttributes; label: string; placeholder: string }[] = [
+    { key: 'name', label: 'Name', placeholder: 'Enter name' },
+    { key: 'role_tag', label: 'Role', placeholder: 'Enter role' },
+    { key: 'country', label: 'Country', placeholder: 'Enter country (e.g. DE)' },
+  ];
+
   let editSpeakers = $state(false);
   let errorMessage = $state<string | null>(null);
-
-  // --- DRAFT STATE ---
-  // Hold changes here so we don't mutate the live object until we save.
-  let draftName = $state('');
-  let draftRole = $state('');
   let editingSpeakerId = $state<string | null>(null);
 
-  // Watch for external changes (e.g. video playing forward)
+  // 3. Generic Draft State
+  // Instead of individual vars, we use a single object typed to the attributes
+  let draft = $state<Partial<SpeakerAttributes>>({});
+
   $effect(() => {
-    // If the active speaker changes while we are editing, we must abort
-    // to prevent overwriting the wrong person.
     if (editSpeakers && activeSpeaker?.speaker_id !== editingSpeakerId) {
         cancelEdit();
     }
@@ -38,11 +44,14 @@
   function startEdit() {
     if (!activeSpeaker) return;
 
-    // Copy current values to draft
-    draftName = activeSpeaker.name || '';
-    draftRole = activeSpeaker.role_tag || '';
-    editingSpeakerId = activeSpeaker.speaker_id || null;
+    // Dynamically populate draft based on defined fields
+    draft = {};
+    for (const field of FORM_FIELDS) {
+      // @ts-ignore: TS doesn't know activeSpeaker has these exact keys at runtime, but our Schema guarantees it
+      draft[field.key] = activeSpeaker[field.key] || '';
+    }
 
+    editingSpeakerId = activeSpeaker.speaker_id || null;
     errorMessage = null;
     editSpeakers = true;
   }
@@ -51,17 +60,21 @@
     editSpeakers = false;
     errorMessage = null;
     editingSpeakerId = null;
+    draft = {};
   }
 
   async function saveSpeakers() {
-    // 1. Safety Check: Ensure we still have a speaker to update
     if (!activeSpeaker) return;
 
-    // 2. Commit Draft to Real State (Optimistic Update)
-    // Because activeSpeaker is a reference to an object inside 'speakers',
-    // updating it here updates the main array automatically.
-    activeSpeaker.name = draftName;
-    activeSpeaker.role_tag = draftRole;
+    // 4. Generic Apply
+    // Apply draft values back to the activeSpeaker object
+    for (const field of FORM_FIELDS) {
+       const key = field.key;
+       if (draft[key] !== undefined) {
+         // @ts-ignore
+         activeSpeaker[key] = draft[key];
+       }
+    }
 
     const SpeakerUpdateRequest = {
       media_id: mediaId,
@@ -72,15 +85,13 @@
     errorMessage = null;
 
     try {
-      const { error: speakerUpdateError } = await client.POST("/db/update-speakers", {
+      const { error } = await client.POST("/db/update-speakers", {
           body: SpeakerUpdateRequest,
       });
 
-      if (speakerUpdateError) {
-        throw new Error("Update of speakers failed.");
-      }
+      if (error) throw new Error("Update failed.");
     } catch (err: any) {
-      editSpeakers = true; // Re-open on failure so user doesn't lose text
+      editSpeakers = true;
       errorMessage = err.message || 'Unknown error occurred';
       console.error(err);
     }
@@ -101,59 +112,48 @@
           <p class="card-subtle">Edit speaker details below:</p>
           <form class="speaker-form" onsubmit={(e) => { e.preventDefault(); saveSpeakers(); }}>
 
-            <label for="speaker-name" class="input-label">Name</label>
-            <input
-              id="speaker-name"
-              placeholder="Enter name"
-              type="text"
-              bind:value={draftName}
-              class="editable-input"
-            />
-
-            <label for="speaker-role" class="input-label">Role</label>
-            <input
-              id="speaker-role"
-              placeholder="Enter role"
-              type="text"
-              bind:value={draftRole}
-              class="editable-input"
-            />
+            {#each FORM_FIELDS as field}
+              <label for="field-{field.key}" class="input-label">{field.label}</label>
+              <input
+                id="field-{field.key}"
+                placeholder={field.placeholder}
+                type="text"
+                bind:value={draft[field.key]}
+                class="editable-input"
+              />
+            {/each}
 
             <button type="submit" style="display: none;"></button>
           </form>
 
           <div class="button-group">
-            <button class="secondary-button" onclick={cancelEdit} type="button">
-              Cancel
-            </button>
-            <button class="secondary-button" onclick={saveSpeakers} type="button">
-              Save
-            </button>
+            <button class="secondary-button" onclick={cancelEdit} type="button">Cancel</button>
+            <button class="secondary-button" onclick={saveSpeakers} type="button">Save</button>
           </div>
 
         {:else}
           <div class="speaker-display">
-            <label class="input-label">Name</label>
-            <div class="display-text">{activeSpeaker.name || "Name not provided"}</div>
-
-            <label class="input-label">Role</label>
-            <div class="display-text">{activeSpeaker.role_tag || "Role not provided"}</div>
+            {#each FORM_FIELDS as field}
+              {#if activeSpeaker[field.key]}
+                <label class="input-label">{field.label}</label>
+                <div class="display-text">{activeSpeaker[field.key]}</div>
+              {/if}
+            {/each}
           </div>
 
           <div class="button-group">
-            <button class="secondary-button" onclick={startEdit} aria-label="Edit">
-              Edit
-            </button>
+            <button class="secondary-button" onclick={startEdit}>Edit</button>
           </div>
         {/if}
 
       {:else}
         <div class="speaker-display">
-          <label class="input-label">Name</label>
-          <div class="display-text">{activeSpeaker.name || "Name not provided"}</div>
-
-          <label class="input-label">Role</label>
-          <div class="display-text">{activeSpeaker.role_tag || "Role not provided"}</div>
+          {#each FORM_FIELDS as field}
+             {#if activeSpeaker[field.key]}
+                <label class="input-label">{field.label}</label>
+                 <div class="display-text">{activeSpeaker[field.key]}</div>
+             {/if}
+          {/each}
         </div>
       {/if}
 

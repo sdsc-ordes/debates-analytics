@@ -12,7 +12,10 @@ export const load: PageServerLoad = async ({ fetch }) => {
 
   if (error || !data) {
     console.error("Load Error:", error)
-    return { items: [] }
+    return {
+      items: [],
+      error: (error as any)?.detail || "System Unavailable: Unable to fetch media list."
+    }
   }
 
   const sortedItems = (data.items || []).sort(

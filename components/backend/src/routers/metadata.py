@@ -3,10 +3,9 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from services.mongo import get_mongo_manager, MongoManager, DocumentNotFoundError
 from services.s3 import get_s3_manager, S3Manager
 from services.solr import get_solr_manager, SolrManager
-from models.media import S3MediaUrlResponse
 from models.metadata import (
     MetadataResponse, UpdateMetadataResponse, UpdateDebateRequest,
-    UpdateSpeakersRequest, UpdateSubtitlesRequest, MediaType
+    UpdateSpeakersRequest, UpdateSubtitlesRequest, MediaType, S3MediaUrlResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -136,6 +135,7 @@ async def update_speakers(
     logger.info(f"media_id={media_id} - UPDATE speakers request received. Updating {count} speakers.")
 
     speakers_data = [s.dict() for s in request.speakers]
+    logger.info(f"Speakers Data Prepared for Update. {speakers_data}")
 
     try:
         mongo_result = mongo_client.update_speakers(media_id, speakers_data)

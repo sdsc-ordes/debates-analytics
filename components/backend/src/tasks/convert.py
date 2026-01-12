@@ -14,16 +14,14 @@ def process_video(s3_key: str, media_id: str):
     """
     Orchestrates video conversion pipeline (S3 -> FFmpeg -> S3).
     """
-    # 1. Setup Services inside the task (Thread-safe)
+    # Setup Services inside the task (Thread-safe)
     s3 = get_s3_manager()
     rq = get_queue_manager()
     mongo = get_mongo_manager()
     job = get_current_job()
+    reporter = JobReporter(media_id, mongo, logger, job)
 
-    reporter = JobReporter(media_id, mongo, job, logger)
     logger.info(f"media_id={media_id} - Task 'process_video' started.")
-
-    reporter.report_status_change("processing", step_name="conversion_started")
 
     try:
         # Context manager handles folder cleanup automatically
@@ -39,16 +37,14 @@ def process_video(s3_key: str, media_id: str):
 
             logger.info(f"media_id={media_id} - Uploading WAV to S3: {s3_wav_key}")
             s3.upload_file(local_wav, s3_wav_key)
+            reporter.report_status_change("conversion completed", {"s3_wav_key": s3_wav_key})
 
-            logger.info(f"media_id={media_id} - Enqueuing next task (transcription).")
             rq.enqueue_audio_processing(
                 media_id=media_id,
                 s3_key=s3_wav_key,
             )
-            reporter.report_status_change(
-                "transcribing_queued",
-                step_name="conversion_completed"
-            )
+            logger.info(f"media_id={media_id} - queued for transcribing: {s3_wav_key}")
+            reporter.report_status_change("queued_for_transcribing")
 
             return {"status": "success", "wav_key": s3_wav_key}
 

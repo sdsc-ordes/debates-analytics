@@ -16,25 +16,33 @@ class MediaListItem(BaseModel):
     created_at: Optional[datetime] = None
     title: Optional[str] = None
 
+# ---------------------------------
+# routes/admin.py
+# ---------------------------------
+
+# list media response model
 
 class MediaListResponse(BaseModel):
     items: List[MediaListItem]
     total: int
 
 
+# delete media by id request/response models
+
 class DeleteMediaRequest(BaseModel):
     mediaId: str
-
-
-class ReindexMediaRequest(BaseModel):
-    mediaId: str
-
 
 class DeleteMediaResponse(BaseModel):
     status: str
     mediaId: str
     warnings: Optional[List[str]] = None
     errors: Optional[List[str]] = None
+
+
+# reindex media by id request/response models
+
+class ReindexMediaRequest(BaseModel):
+    mediaId: str
 
 
 class ReindexMediaResponse(BaseModel):

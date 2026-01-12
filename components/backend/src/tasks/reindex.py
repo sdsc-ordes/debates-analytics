@@ -4,27 +4,45 @@ from services.solr import get_solr_manager
 from services.mongo import get_mongo_manager
 from services.parser import JsonTranscriptParser
 from config.settings import get_settings
+from services.reporter import JobReporter
+from services.queue import get_queue_manager
+from rq import get_current_job
 
 logger = logging.getLogger(__name__)
 
 
 def reindex_solr(media_id: str):
-    logger.info(f"Starting Reindex Task for {media_id}")
-
+    """
+    1.Reset Solr
+    2.Parse transcript files from S3
+    3.Index to Solr
+    4.Update MongoDB
+    """
     try:
         s3 = get_s3_manager()
         solr = get_solr_manager()
         mongo = get_mongo_manager()
         parser = JsonTranscriptParser()
+        rq = get_queue_manager()
         settings = get_settings()
+
+        job = get_current_job()
+        if job:
+            task_type = "indexing"
+        else:
+            task_type = "reindexing"
+
+        # Start reporter without job as this step can be called outside of RQ
+        reporter = JobReporter(media_id, mongo, logger, job)
+        logger.info(f"Starting {task_type} task for {media_id}")
 
         subtitles_original_key = f"{media_id}/transcripts/subtitles-original.json"
         subtitles_translation_key = f"{media_id}/transcripts/subtitles-translation.json"
 
-        # 1. Reset Solr
+        # 1.Reset Solr
         solr.delete_by_media_id(media_id)
 
-        # 2. Helper to Process Each File Type
+        # Helper to Process Each File Type
         def process_transcript_type(key, subtitle_type, is_original):
             logger.info(f"Processing {key}...")
 
@@ -33,16 +51,15 @@ def reindex_solr(media_id: str):
                 logger.warning(f"Skipping {key} (not found)")
                 return
 
-            # A. Parse Raw -> Enriched Subtitles
+            # Parse Raw -> Enriched Subtitles
             raw_subtitles = parser.enrich_subtitles(content)
 
-            # B. Group into Segments (The new robust structure)
+            # Group into Segments (The new robust structure)
             segments = parser.extract_segments(raw_subtitles)
             logger.info(segments)
             logger.info(f"Extracted {len(segments)} segments for {subtitle_type}")
 
-            # C. Save to MongoDB (Segment by Segment)
-            # This loop replaces the old "save_subtitles" monolithic call
+            # Save to MongoDB (Segment by Segment)
             for seg in segments:
                 mongo.save_segments(
                     media_id=media_id,
@@ -54,20 +71,12 @@ def reindex_solr(media_id: str):
                     subtitles=seg["subtitles"],
                 )
 
-                # Special Case: If this is the ORIGINAL transcript, ensure
-                # the segment metadata (Start/End/Speaker) is also set correctly.
-                # (You might add a specific 'save_segment_metadata' method
-                # or just let 'save_subtitles' handle the upsert logic as we discussed)
-
-            # D. Extract Speakers (Only needed once, usually from original)
+            # Extract Speakers
             if is_original:
                  unique_speakers = parser.extract_speakers(segments)
-                 # Note: use update_speakers, not save_speakers (to avoid overwriting names)
-                 # But for a reindex (fresh start), save_speakers might be okay
-                 # if you want to reset everything.
                  mongo.save_speakers(media_id, unique_speakers)
 
-            # E. Index to Solr
+            # Index to Solr
             solr_docs = parser.parse(segments, media_id, subtitle_type)
             payload = [doc.model_dump() for doc in solr_docs]
 
@@ -75,19 +84,15 @@ def reindex_solr(media_id: str):
                 solr.client.add(payload, commit=True)
                 logger.info(f"Indexed {len(payload)} docs to Solr for {subtitle_type}")
 
-        # 3. Run Process
+        # 2.Parse transcript files and update mongo/solr
         process_transcript_type(subtitles_original_key, settings.type_original, is_original=True)
         process_transcript_type(subtitles_translation_key, settings.type_translation, is_original=False)
 
-        # 4. Finish
-        mongo.update_processing_status(media_id, "indexing_completed")
-        logger.info(f"Reindex task finished for {media_id}")
+        # 3.Finish reporting status
+        reporter.report_status_change(f"{task_type}_completed")
+        logger.info(f"{task_type} task finished for {media_id}")
 
     except Exception as e:
-        logger.exception(f"Reindex Task failed for {media_id}")
-        try:
-            mongo = get_mongo_manager()
-            mongo.update_processing_status(media_id, "indexing_failed", error=str(e))
-        except Exception:
-            pass
+        logger.exception(f"CRITICAL: {task_type} failed for {media_id}")
+        reporter.report_failed(e)
         raise e
