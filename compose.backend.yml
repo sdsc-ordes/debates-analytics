@@ -35,6 +35,7 @@ services:
       - "dev.dozzle.group=App"
     environment:
       <<: *backend-env
+      CORS_ORIGINS: ${CORS_ORIGINS}
     command: ["uvicorn", "app.main:api", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - 8082:8000
