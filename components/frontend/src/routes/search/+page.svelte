@@ -25,7 +25,8 @@
   }
 
   const DEFAULT_FACET_FIELDS = [
-    "debate_schedule",
+    "debate_date",
+    "debate_timeslot",
     "statement_type",
     "debate_session",
     "debate_type",

@@ -222,21 +222,19 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
-    /** DebateAttributes */
-    DebateAttributes: {
-      /** Debate Type */
-      debate_type?: string | null
-      /** Debate Date */
-      debate_date?: string | null
-      /** Debate Link Agenda */
-      debate_link_agenda?: string | null
-      /** Debate Link Mediasource */
-      debate_link_mediasource?: string | null
-      /** Debate Session Timeslot */
-      debate_session_timeslot?: string | null
-    }
     /** DebateDocument */
     DebateDocument: {
+      /** Session */
+      session?: string | null
+      /** Debate Type */
+      debate_type?: string | null
+      timeslot?: components["schemas"]["Timeslot"] | null
+      /** Date */
+      date?: string | null
+      /** Link Agenda */
+      link_agenda?: string | null
+      /** Link Mediasource */
+      link_mediasource?: string | null
       /** Media Id */
       media_id: string
       /** S3 Key */
@@ -266,9 +264,8 @@ export interface components {
       updated_at?: string | null
       /** Error Message */
       error_message?: string | null
-      /** File Name */
-      file_name?: string | null
-      debate_attributes?: components["schemas"]["DebateAttributes"]
+      /** Name */
+      name?: string | null
     }
     /** DeleteMediaRequest */
     DeleteMediaRequest: {
@@ -466,14 +463,25 @@ export interface components {
       id: string
       /** Media Id */
       media_id: string
+      /** Segment Nr */
+      segment_nr: number
+      /** Speaker Id */
+      speaker_id: string
       /** Statement */
       statement: string[]
+      statement_type: components["schemas"]["StatementType"]
       /** Start */
       start: number
       /** End */
       end: number
-      speaker?: components["schemas"]["SpeakerAttributes"] | null
-      debate?: components["schemas"]["DebateAttributes"] | null
+      /** Debate Date */
+      debate_date?: string | null
+      /** Debate Type */
+      debate_type?: string | null
+      /** Debate Session */
+      debate_session?: string | null
+      /** Statement Language */
+      statement_language?: string | null
     }
     /** SearchResponse */
     SearchResponse: {
@@ -502,10 +510,7 @@ export interface components {
       start: number
       /** End */
       end: number
-      /**
-       * Speaker Id
-       * @default UNKNOWN
-       */
+      /** Speaker Id */
       speaker_id: string | null
       /**
        * Subtitles Original
@@ -522,17 +527,27 @@ export interface components {
     Speaker: {
       /** Speaker Id */
       speaker_id: string
-      speaker_attributes?: components["schemas"]["SpeakerAttributes"]
+      /**
+       * Name
+       * @default
+       */
+      name: string | null
+      /**
+       * Role Tag
+       * @default
+       */
+      role_tag: string | null
+      /**
+       * Country
+       * @default
+       */
+      country: string | null
     }
-    /** SpeakerAttributes */
-    SpeakerAttributes: {
-      /** Speaker Name */
-      speaker_name?: string | null
-      /** Speaker Role Tag */
-      speaker_role_tag?: string | null
-      /** Speaker Country */
-      speaker_country?: string | null
-    }
+    /**
+     * StatementType
+     * @enum {string}
+     */
+    StatementType: "original" | "translation"
     /** Subtitle */
     Subtitle: {
       /** Start */
@@ -547,16 +562,26 @@ export interface components {
      * @enum {string}
      */
     SubtitleType: "original" | "translation"
+    /**
+     * Timeslot
+     * @enum {string}
+     */
+    Timeslot: "am" | "pm"
     /** UpdateDebateRequest */
     UpdateDebateRequest: {
-      /** Media Id */
-      media_id: string
       /** Session */
       session?: string | null
       /** Debate Type */
       debate_type?: string | null
-      /** Schedule */
-      schedule?: string | null
+      timeslot?: components["schemas"]["Timeslot"] | null
+      /** Date */
+      date?: string | null
+      /** Link Agenda */
+      link_agenda?: string | null
+      /** Link Mediasource */
+      link_mediasource?: string | null
+      /** Media Id */
+      media_id: string
     }
     /** UpdateMetadataResponse */
     UpdateMetadataResponse: {

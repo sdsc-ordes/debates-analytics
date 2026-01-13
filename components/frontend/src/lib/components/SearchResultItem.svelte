@@ -82,11 +82,11 @@ function replaceWithHighlightedVersion(
                 {/if}
             </p>
             <div class="datetime-container">
-                {#if doc.debate_schedule}
+                {#if doc.debate_date}
                 <div class="date-time-item">
                     <i class="fa fa-calendar" aria-hidden="true"></i>
                     <small class="card-subtle"
-                        >{displayIsoDate(doc.debate_schedule)}</small
+                        >{displayIsoDate(doc.debate_date)}</small
                     >
                 </div>
                 {/if}
