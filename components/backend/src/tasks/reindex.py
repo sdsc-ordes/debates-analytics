@@ -92,5 +92,5 @@ def reindex_solr(media_id: str):
 
     except Exception as e:
         logger.exception(f"CRITICAL: {task_type} failed for {media_id}")
-        reporter.report_failed(e)
+        reporter.mark_failed(e)
         raise e

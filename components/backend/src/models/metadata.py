@@ -1,7 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 from datetime import datetime
 from enum import Enum
+
+
+class S3MediaUrls(BaseModel):
+    url: str = Field(..., description="Url")
+    label: str = Field(..., description="Label for Url")
 
 
 class MediaType(str, Enum):
@@ -18,6 +23,7 @@ class Speaker(BaseModel):
     speaker_id: str
     name: Optional[str] = ""
     role_tag: Optional[str] = ""
+    country: Optional[str] = ""
 
 
 class Subtitle(BaseModel):
@@ -53,11 +59,30 @@ class DebateDocument(BaseModel):
     name: Optional[str] = None
 
 
+# ---------------------------------
+# routes/metadata.py
+# ---------------------------------
+
+# s3 presigned download urls request/response model
+
+class S3MediaUrlRequest(BaseModel):
+    media_id: str = Field(..., description="media_id", examples=["df2afc83-7e69-4868-ba4c-b7c4afed6218"])
+
+
+class S3MediaUrlResponse(BaseModel):
+    signedUrls: List[S3MediaUrls] = Field(..., description="List of presigned URLs")
+    signedMediaUrl: str = Field(None, description="Presigned URL for video or audio file")
+
+
+# get metadata response model
+
 class MetadataResponse(BaseModel):
     debate: DebateDocument
     speakers: List[Speaker] = []
     segments: List[Segment] = []
 
+
+# update metadata request models
 
 class UpdateSpeakersRequest(BaseModel):
     media_id: str
@@ -71,13 +96,15 @@ class UpdateSubtitlesRequest(BaseModel):
     subtitle_type: SubtitleType
 
 
-class UpdateMetadataResponse(BaseModel):
-    status: str
-    media_id: str
-
-
 class UpdateDebateRequest(BaseModel):
     media_id: str
     session: Optional[str] = None
     debate_type: Optional[str] = None
     schedule: Optional[str] = None
+
+
+# update metadata response model
+
+class UpdateMetadataResponse(BaseModel):
+    status: str
+    media_id: str

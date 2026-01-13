@@ -34,8 +34,8 @@ class FacetValue(BaseModel):
 
 
 class FacetField(BaseModel):
-    field_name: str         # e.g. "speaker_name"
-    values: List[FacetValue] # e.g. [{"label": "Alice", "count": 10}, ...]
+    field_name: str
+    values: List[FacetValue]
 
 
 class HighlightedDoc(BaseModel):
@@ -56,6 +56,12 @@ class SearchDocument(BaseModel):
     debate_session: Optional[str]= None
     statement_language: Optional[str]= None
 
+
+# ---------------------------------
+# routes/search.py
+# ---------------------------------
+
+# search response model
 
 class SearchResponse(BaseModel):
     docs: List[SearchDocument]

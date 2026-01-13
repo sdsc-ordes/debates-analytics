@@ -30,6 +30,7 @@ class SolrManager:
             speaker_id = speaker["speaker_id"]
             speaker_name = speaker.get("name", None)
             speaker_role_tag = speaker.get("role_tag", None)
+            speaker_country = speaker.get("country", None)
 
             query = f'speaker_id:{speaker_id} AND media_id:{media_id}'
 
@@ -41,7 +42,8 @@ class SolrManager:
                     updated_doc = {
                         "id": doc["id"],
                         "speaker_name": {"set": speaker_name},
-                        "speaker_role_tag": {"set": speaker_role_tag}
+                        "speaker_role_tag": {"set": speaker_role_tag},
+                        "speaker_country": {"set": speaker_country},
                     }
                     docs_to_update.append(updated_doc)
 

@@ -14,7 +14,7 @@ async def search_solr(
     q: Optional[str] = Query(None, alias="queryTerm", description="The main search string"),
     raw_filters: List[str] = Query([], alias="facetFilters", description="List of filters in 'field:value' format"),
     facet_fields: List[str] = Query(
-        ["debate_schedule", "statement_type", "debate_session", "speaker_name", "speaker_role_tag"],
+        ["debate_schedule", "statement_type", "debate_session", "speaker_name", "speaker_role_tag", "speaker_country"],
         alias="facetFields"
     ),
     sort_by: Optional[str] = Query(None, alias="sortBy"),

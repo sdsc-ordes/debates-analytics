@@ -17,16 +17,19 @@ class MediaListItem(BaseModel):
     title: Optional[str] = None
 
 
+# ---------------------------------
+# routes/admin.py
+# ---------------------------------
+
+# list media response model
+
 class MediaListResponse(BaseModel):
     items: List[MediaListItem]
     total: int
 
+# list media request/response model
 
 class DeleteMediaRequest(BaseModel):
-    mediaId: str
-
-
-class ReindexMediaRequest(BaseModel):
     mediaId: str
 
 
@@ -35,6 +38,12 @@ class DeleteMediaResponse(BaseModel):
     mediaId: str
     warnings: Optional[List[str]] = None
     errors: Optional[List[str]] = None
+
+
+# delete media request/response model
+
+class ReindexMediaRequest(BaseModel):
+    mediaId: str
 
 
 class ReindexMediaResponse(BaseModel):
