@@ -5,7 +5,7 @@
 !!! note
 
     Loading the data into the App assumes that you have the backend running:
-    See [Install options](../install/index.md) for setup options
+    See [Install options](install/options.md) for setup options
 
 The processed data is loaded from **Pipeline S3** into 3 databases:
 
