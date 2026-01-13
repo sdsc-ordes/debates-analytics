@@ -41,6 +41,7 @@
     // Copy current values to draft
     draftName = activeSpeaker.name || '';
     draftRole = activeSpeaker.role_tag || '';
+    draftCountry = activeSpeaker.country || '';
     editingSpeakerId = activeSpeaker.speaker_id || null;
 
     errorMessage = null;
@@ -62,6 +63,7 @@
     // updating it here updates the main array automatically.
     activeSpeaker.name = draftName;
     activeSpeaker.role_tag = draftRole;
+    activeSpeaker.country = draftCountry;
 
     const SpeakerUpdateRequest = {
       media_id: mediaId,
@@ -138,6 +140,9 @@
 
             <label class="input-label">Role</label>
             <div class="display-text">{activeSpeaker.role_tag || "Role not provided"}</div>
+
+            <label class="input-label">Representing Country</label>
+            <div class="display-text">{activeSpeaker.country || "Country not provided"}</div>
           </div>
 
           <div class="button-group">
@@ -154,6 +159,9 @@
 
           <label class="input-label">Role</label>
           <div class="display-text">{activeSpeaker.role_tag || "Role not provided"}</div>
+
+          <label class="input-label">Role</label>
+          <div class="display-text">{activeSpeaker.country || "Country not provided"}</div>
         </div>
       {/if}
 

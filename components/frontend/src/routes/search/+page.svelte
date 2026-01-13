@@ -31,6 +31,7 @@
     "debate_type",
     "speaker_name",
     "speaker_role_tag",
+    "speaker_country",
     "statement_language",
     "media_id",
   ]
