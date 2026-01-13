@@ -1,43 +1,38 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
+    import { page } from '$app/state';
+    import { auth } from "$lib/auth";
 
-	import { page } from '$app/stores';
-	import { canEdit } from "$lib/stores/auth";
-	let homePath = $state('/');
-	run(() => {
-		if ($canEdit) {
-	        console.log("User can edit!");
-			homePath = '/edit';
-	    }
-	});
+    let homePath = $derived(auth.canEdit ? '/' : '/');
 </script>
 
 <header>
-	<div class="corner">
-		<nav>
-			<label>
-			{#if !$canEdit}
-			    Reader
-			{:else}
-			    Editor
-			{/if}
-			</label>
-			<ul>
-				<li aria-current={$page.url.pathname === homePath ? 'page' : undefined}>
-					<a href="{homePath}">Home</a>
-				</li>
-				<li aria-current={$page.url.pathname === '/search' ? 'page' : undefined}>
-					<a href="/search">Search</a>
-				</li>
-			    {#if $canEdit}
-					<li aria-current={$page.url.pathname === '/dashboard' ? 'page' : undefined}>
-						<a href="/dashboard">Dashboard</a>
-					</li>
-				{/if}
-			</ul>
-		</nav>
-	</div>
+    <div class="corner">
+        <nav>
+            <label>
+                {auth.canEdit ? 'Editor' : 'Reader'}
+            </label>
+            <ul>
+                <li aria-current={page.url.pathname === homePath ? 'page' : undefined}>
+                    <a href={homePath}>Home</a>
+                </li>
 
+                <li aria-current={page.url.pathname === '/search' ? 'page' : undefined}>
+                    <a href="/search">Search</a>
+                </li>
+
+                {#if auth.canEdit}
+                    <li aria-current={page.url.pathname === '/dashboard' ? 'page' : undefined}>
+                        <a href="/dashboard">Dashboard</a>
+                    </li>
+                    <li>
+                        <form method="POST" action="/dev/login?/logout">
+                           <button type="submit" class="link-button">Logout</button>
+                        </form>
+                    </li>
+                {/if}
+            </ul>
+        </nav>
+    </div>
 </header>
 
 <style>
@@ -119,7 +114,7 @@
 		height: 100%;
 		align-items: center;
 		margin: 15px;
-		padding: 20 0.5rem;
+		padding: 0 0.5rem;
 		color: var(--text-color);
 		font-weight: 700;
 		font-size: 0.8rem;
@@ -133,4 +128,33 @@
 	a:hover {
 		color: var(--secondary-color);
 	}
+
+    form {
+        height: 100%;
+        display: flex;
+    }
+
+    nav a,
+    button.link-button {
+        display: flex;
+        height: 100%;
+        align-items: center;
+        padding: 0 0.5rem;
+        color: var(--text-color);
+        font-weight: 700;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        text-decoration: none;
+        transition: color 0.2s linear;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+    }
+
+    nav a:hover,
+    button.link-button:hover {
+        color: var(--secondary-color);
+    }
 </style>

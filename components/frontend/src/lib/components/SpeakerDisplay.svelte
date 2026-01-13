@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { canEdit } from "$lib/stores/auth";
+  import { auth } from "$lib/auth";
   import { client } from '$lib/api/client';
   import type { components } from '$lib/api/schema';
 
@@ -97,7 +97,7 @@
         <div class="alert alert-danger">{errorMessage}</div>
       {/if}
 
-      {#if $canEdit && editSpeakers}
+      {#if auth.canEdit && editSpeakers}
         <p class="card-subtle">Edit speaker details below:</p>
         <form class="speaker-form" onsubmit={(e) => { e.preventDefault(); saveSpeakers(); }}>
 
@@ -130,7 +130,7 @@
           {/each}
         </div>
 
-        {#if $canEdit}
+        {#if auth.canEdit}
           <div class="button-group">
             <button class="secondary-button" onclick={startEdit} aria-label="Edit">
               Edit

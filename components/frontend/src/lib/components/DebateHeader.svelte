@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { canEdit } from "$lib/stores/auth";
+  import { auth } from '$lib/auth';
   import { displayIsoDate } from "$lib/utils/displayUtils";
   import { client } from '$lib/api/client';
   import type { components } from '$lib/api/schema';
@@ -20,7 +20,7 @@
     { key: 'session', label: 'Session', type: 'text', placeholder: 'e.g. 55th Session' },
     { key: 'debate_type', label: 'Type', type: 'text', placeholder: 'e.g. Working Group' },
     // Note: type="date" inputs expect "YYYY-MM-DD"
-    { key: 'date', label: 'Date', type: 'date', placeholder: '' }, 
+    { key: 'date', label: 'Date', type: 'date', placeholder: '' },
     { key: 'link_mediasource', label: 'Link Mediasource', type: 'url', placeholder: 'https://...' },
     { key: 'link_agenda', label: 'Link Agenda', type: 'url', placeholder: 'https://...' },
   ] as const;
@@ -156,7 +156,7 @@
             </div>
         </div>
 
-        {#if $canEdit}
+        {#if auth.canEdit}
             <div class="button-group" style="align-self: flex-start;">
                 <button class="secondary-button" onclick={startEdit} aria-label="Edit">
                 Edit
