@@ -453,9 +453,13 @@
   <field name="_version_" type="plong" indexed="false" stored="false"/>
   <field name="debate_public" type="boolean" uninvertible="false" docValues="true" indexed="true" stored="true"/>
   <field name="debate_schedule" type="pdate" uninvertible="false" docValues="true" indexed="true" stored="true"/>
+  <field name="debate_date" type="pdate" uninvertible="false" docValues="true" indexed="true" stored="true"/>
   <field name="debate_session" type="string" uninvertible="true" docValues="true" multiValued="false" indexed="true" stored="true"/>
   <field name="debate_tags" type="strings" uninvertible="true" docValues="true" multiValued="true" indexed="true" stored="true"/>
   <field name="debate_type" type="string" uninvertible="false" docValues="true" indexed="true" stored="true"/>
+  <field name="debate_timeslot" type="string" uninvertible="false" docValues="true" indexed="true" stored="true"/>
+  <field name="debate_link_agenda" type="strings" uninvertible="true" docValues="true" multiValued="true" indexed="true" stored="true"/>
+  <field name="debate_link_mediasource" type="strings" uninvertible="true" docValues="true" multiValued="true" indexed="true" stored="true"/>
   <field name="end" type="pfloat" uninvertible="false" docValues="true" indexed="true" stored="true"/>
   <field name="id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>
   <field name="media_id" type="string" multiValued="false" indexed="true" required="true" stored="true"/>

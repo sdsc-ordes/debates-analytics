@@ -14,7 +14,7 @@ class SearchQuery(BaseModel):
     sortBy: str = Field(..., description="Solr sort option", examples=["start asc"])
     facetFields: List[str] = Field(
         ..., description="Solr facet field to return",
-        examples = [["debate_schedule", "statement_type"]]
+        examples = [["debate_date", "statement_type"]]
     )
     facetFilters: List[FacetFilter]  = Field(
         ..., description="Solr facet filters with set values"
@@ -24,8 +24,8 @@ class SearchQuery(BaseModel):
 
 
 class StatementType(str, Enum):
-    ORIGINAL = "original"
-    TRANSLATION = "translation"
+    original = "original"
+    translation = "translation"
 
 
 class FacetValue(BaseModel):
@@ -51,7 +51,7 @@ class SearchDocument(BaseModel):
     statement_type: StatementType
     start: float
     end: float
-    debate_schedule: Optional[datetime]= None
+    debate_date: Optional[datetime]= None
     debate_type: Optional[str]= None
     debate_session: Optional[str]= None
     statement_language: Optional[str]= None

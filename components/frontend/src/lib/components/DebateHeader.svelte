@@ -15,19 +15,31 @@
   let isEditing = $state(false);
   let errorMessage = $state<string | null>(null);
 
+  // --- CONFIGURATION ---
+  const FIELDS = [
+    { key: 'session', label: 'Session', type: 'text', placeholder: 'e.g. 55th Session' },
+    { key: 'debate_type', label: 'Type', type: 'text', placeholder: 'e.g. Working Group' },
+    // Note: type="date" inputs expect "YYYY-MM-DD"
+    { key: 'date', label: 'Date', type: 'date', placeholder: '' }, 
+    { key: 'link_mediasource', label: 'Link Mediasource', type: 'url', placeholder: 'https://...' },
+    { key: 'link_agenda', label: 'Link Agenda', type: 'url', placeholder: 'https://...' },
+  ] as const;
+
   // --- DRAFT STATE ---
-  let draftSession = $state("");
-  let draftType = $state("");
-  let draftSchedule = $state("");
+  let draftData = $state<Record<string, string>>({});
 
   function startEdit() {
-    // Copy current values to draft
-    draftSession = debate.session || "";
-    draftType = debate.type || "";
+    FIELDS.forEach(field => {
+        // @ts-ignore - dynamic access
+        const val = debate[field.key];
 
-    // Format ISO date for datetime-local input (YYYY-MM-DDTHH:mm)
-    // If debate.schedule is undefined, use empty string.
-    draftSchedule = debate.schedule ? debate.schedule.slice(0, 16) : "";
+        if (field.key === 'date' && val) {
+            // For <input type="date">, we need YYYY-MM-DD (first 10 chars)
+            draftData[field.key] = val.slice(0, 10);
+        } else {
+            draftData[field.key] = val || "";
+        }
+    });
 
     errorMessage = null;
     isEditing = true;
@@ -36,28 +48,32 @@
   function cancelEdit() {
     isEditing = false;
     errorMessage = null;
+    draftData = {};
   }
 
   async function saveDebate() {
-    // 1. Optimistic Update (Update UI immediately)
-    const oldDebate = { ...debate };
-    
-    debate.session = draftSession;
-    debate.type = draftType;
-    // Append ':00Z' to make it a valid simplified ISO string if needed, 
-    // or just save what the input gives if your backend handles it.
-    debate.schedule = draftSchedule ? new Date(draftSchedule).toISOString() : null;
+    const oldDebate = $state.snapshot(debate);
+
+    // 1. Optimistic Update
+    FIELDS.forEach(field => {
+        const val = draftData[field.key];
+        // @ts-ignore
+        debate[field.key] = val || null; // Save as null if empty string
+    });
 
     isEditing = false;
     errorMessage = null;
 
     try {
+      // 2. Send ALL fields to the backend
       const { error } = await client.POST("/db/update-debate", {
         body: {
           media_id: debate.media_id,
           session: debate.session,
-          type: debate.type,
-          schedule: debate.schedule
+          debate_type: debate.debate_type,
+          date: debate.date,
+          link_agenda: debate.link_agenda,
+          link_mediasource: debate.link_mediasource
         }
       });
 
@@ -66,88 +82,82 @@
     } catch (err: any) {
       console.error(err);
       errorMessage = "Save failed. Reverting changes.";
-      debate = oldDebate; // Revert UI
-      isEditing = true;   // Re-open edit mode
+      Object.assign(debate, oldDebate); // Revert UI
+      isEditing = true;
     }
   }
 
   const get_debate_title = () => {
-      if (debate.session && debate.type) {
-          return `${debate.session} ${debate.type}`
-      } else if (debate.session) {
-          return debate.session
-      } else {
-          return debate.media_id
-      }
+      // Fixed: use 'debate_type' to match schema
+      const parts = [debate.session, debate.debate_type].filter(Boolean);
+      return parts.length > 0 ? parts.join(' - ') : debate.media_id;
   }
 </script>
 
 <div class="card">
   <div class="card-body">
-    
+
     {#if isEditing}
       <p class="card-subtle">Edit debate details:</p>
-      
+
       {#if errorMessage}
         <div class="alert alert-danger">{errorMessage}</div>
       {/if}
 
       <form class="debate-form" onsubmit={(e) => { e.preventDefault(); saveDebate(); }}>
-        
-        <label for="debate-session" class="input-label">Session</label>
-        <input
-          id="debate-session"
-          placeholder="e.g. 55th Session"
-          type="text"
-          bind:value={draftSession}
-          class="editable-input"
-        />
-
-        <label for="debate-type" class="input-label">Type</label>
-        <input
-          id="debate-type"
-          placeholder="e.g. Working Group"
-          type="text"
-          bind:value={draftType}
-          class="editable-input"
-        />
-
-        <label for="debate-schedule" class="input-label">Date & Time</label>
-        <input
-          id="debate-schedule"
-          type="datetime-local"
-          bind:value={draftSchedule}
-          class="editable-input"
-        />
+        {#each FIELDS as field}
+            <label for="debate-{field.key}" class="input-label">{field.label}</label>
+            <input
+              id="debate-{field.key}"
+              type={field.type}
+              placeholder={field.placeholder}
+              bind:value={draftData[field.key]}
+              class="editable-input"
+            />
+        {/each}
 
         <button type="submit" style="display: none;"></button>
       </form>
 
       <div class="button-group">
-        <button class="secondary-button" onclick={cancelEdit} type="button">
-          Cancel
-        </button>
-        <button class="secondary-button" onclick={saveDebate} type="button">
-          Save
-        </button>
+        <button class="secondary-button" onclick={cancelEdit} type="button">Cancel</button>
+        <button class="secondary-button" onclick={saveDebate} type="button">Save</button>
       </div>
 
     {:else}
       <div class="header-content">
         <div>
             <div class="card-title-large" style="color: var(--primary-dark-color);">
-            {get_debate_title()}
+                {get_debate_title()}
             </div>
 
-            {#if debate.schedule}
-            <div class="date-time-item">
-                <div class="card-title-small">{displayIsoDate(debate.schedule)}</div>
+            <div class="metadata-grid" style="margin-top: 1rem;">
+                {#each FIELDS as field}
+                    {#if field.key !== 'session' && field.key !== 'debate_type'}
+                        <div class="metadata-item">
+                            <span class="input-label" style="margin-bottom: 0;">{field.label}:</span>
+
+                            <span class="display-text">
+                                {#if !debate[field.key]}
+                                    <span style="opacity: 0.5;">-</span>
+                                {:else if field.type === 'url'}
+                                    <a href={debate[field.key]} target="_blank" rel="noopener noreferrer" class="link">
+                                        Open Link ↗
+                                    </a>
+                                {:else if field.key === 'date'}
+                                    {displayIsoDate(debate[field.key])}
+                                {:else}
+                                    {debate[field.key]}
+                                {/if}
+                            </span>
+                        </div>
+                    {/if}
+                {/each}
             </div>
-            {/if}
         </div>
 
         {#if $canEdit}
-            <div class="button-group">
+            <div class="button-group" style="align-self: flex-start;">
                 <button class="secondary-button" onclick={startEdit} aria-label="Edit">
                 Edit
                 </button>
@@ -160,7 +170,22 @@
 </div>
 
 <style>
-  /* Reuse the exact styles from your Speaker component */
+    /* Optional quick styling for the metadata grid */
+    .metadata-grid {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 1rem;
+        row-gap: 0.5rem;
+        align-items: center;
+    }
+    .link {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+    .link:hover {
+        text-decoration: underline;
+    }
+
   .card {
     max-width: 100%;
     border-radius: 10px;
@@ -179,7 +204,7 @@
   .debate-form {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem; 
+    gap: 0.5rem;
   }
 
   .header-content {

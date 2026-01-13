@@ -15,7 +15,7 @@
   let { searchQuery = $bindable(), facets, onSearch }: Props = $props();
 
   const displayFunctions: Record<string, (label: string) => string> = {
-    debate_schedule: displayIsoDate,
+    debate_date: displayIsoDate,
     media_id: (label) => label.slice(0, 8) + '...' + label.slice(-4),
   };
 
@@ -62,7 +62,7 @@
       }
 
       // B. Date Logic (Reusing the helper)
-      if (facetField === 'debate_schedule' && facet.facetField === 'debate_schedule') {
+      if (facetField === 'debate_date' && facet.facetField === 'debate_date') {
         // If dates match, return FALSE to remove it
         if (isSameDate(facet.facetValue, facetValue)) {
           return false;
@@ -84,7 +84,7 @@
       }
 
       // B. Date Logic (Reusing the helper)
-      if (facetField === 'debate_schedule' && facet.facetField === 'debate_schedule') {
+      if (facetField === 'debate_date' && facet.facetField === 'debate_date') {
         return isSameDate(facet.facetValue, facetLabel);
       }
 

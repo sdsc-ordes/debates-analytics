@@ -168,7 +168,7 @@ class MongoManager:
 
     def update_debate_details(self, media_id: str, update_data: Dict[str, Any]):
         """
-        Updates arbitrary fields in the debate document (session, type, schedule, etc.).
+        Updates arbitrary fields in the debate document (session, type, etc.).
         """
         fields_to_set = update_data.copy()
 

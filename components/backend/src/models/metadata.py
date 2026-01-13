@@ -14,6 +14,11 @@ class MediaType(str, Enum):
     audio = "audio"
 
 
+class Timeslot(str, Enum):
+    morning = "am"
+    afternoon = "pm"
+
+
 class SubtitleType(str, Enum):
     transcript = "original"
     translation = "translation"
@@ -21,9 +26,38 @@ class SubtitleType(str, Enum):
 
 class Speaker(BaseModel):
     speaker_id: str
+    # optional attributes: must be registered in Solr
     name: Optional[str] = ""
     role_tag: Optional[str] = ""
     country: Optional[str] = ""
+
+
+class DebateKey(BaseModel):
+    media_id: str
+
+
+class DebateOperational(BaseModel):
+    media_id: str
+    s3_key: str
+    original_filename: str
+    media_type: MediaType
+    status: str
+    created_at: datetime
+    job_id: Optional[str] = None
+    s3_audio_key: Optional[str] = None
+    transcript_s3_keys: Dict[str, str] = {}
+    updated_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+    name: Optional[str] = None
+
+
+class DebateOptional(BaseModel):
+    session: Optional[str] = None
+    debate_type: Optional[str] = None
+    timeslot: Optional[Timeslot] = None
+    date: Optional[str] = None
+    link_agenda: Optional[str] = None
+    link_mediasource: Optional[str] = None
 
 
 class Subtitle(BaseModel):
@@ -36,27 +70,13 @@ class Segment(BaseModel):
     segment_nr: int
     start: float
     end: float
-    speaker_id: Optional[str] = "UNKNOWN"
+    speaker_id: Optional[str]
     subtitles_original: List[Subtitle] = []
     subtitles_translation: List[Subtitle] = []
 
 
-class DebateDocument(BaseModel):
-    media_id: str
-    s3_key: str
-    original_filename: str
-    media_type: MediaType
-    status: str
-    created_at: datetime
-    job_id: Optional[str] = None
-    s3_audio_key: Optional[str] = None
-    transcript_s3_keys: Dict[str, str] = {}
-    updated_at: Optional[datetime] = None
-    error_message: Optional[str] = None
-    session: Optional[str] = None
-    debate_type: Optional[str] = None
-    schedule: Optional[str] = None
-    name: Optional[str] = None
+class DebateDocument(DebateOperational, DebateOptional):
+    pass
 
 
 # ---------------------------------
@@ -96,11 +116,8 @@ class UpdateSubtitlesRequest(BaseModel):
     subtitle_type: SubtitleType
 
 
-class UpdateDebateRequest(BaseModel):
-    media_id: str
-    session: Optional[str] = None
-    debate_type: Optional[str] = None
-    schedule: Optional[str] = None
+class UpdateDebateRequest(DebateKey, DebateOptional):
+    pass
 
 
 # update metadata response model

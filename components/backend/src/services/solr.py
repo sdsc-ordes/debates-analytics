@@ -10,7 +10,10 @@ from models.search import SearchQuery
 DEBATE_DETAILS_MAPPING = {
     "session": "debate_session",
     "debate_type": "debate_type",
-    "schedule": "debate_schedule",
+    "date": "debate_date",
+    "timeslot": "debate_timeslot",
+    "link_mediasource": "debate_link_mediasource",
+    "link_agenda": "debate_link_agenda",
 }
 
 logger = logging.getLogger(__name__)
@@ -101,8 +104,8 @@ class SolrManager:
             field = f.facetField
             value = f.facetValue
 
-            # Special handling for debate_schedule (Date Range)
-            if field == "debate_schedule":
+            # Special handling for debate_date (Date Range)
+            if field == "debate_date":
                 # Assume value is "YYYY-MM-DD" or "YYYY-MM-DDTHH..."
                 # We strip it to the date part and create a 24-hour range
                 if len(value) >= 10:
@@ -140,11 +143,25 @@ class SolrManager:
         Driven by DEBATE_DETAILS_MAPPING configuration.
         """
         # Build the Atomic Update Payload dynamically
-        # We only include fields that are actually present in the 'details' dict
         solr_updates = {}
+
         for api_field, solr_field in DEBATE_DETAILS_MAPPING.items():
-            if api_field in details and details[api_field] is not None:
-                solr_updates[solr_field] = {"set": details[api_field]}
+            # Skip if field is missing from input
+            if api_field not in details or details[api_field] is None:
+                continue
+
+            value = details[api_field]
+
+            # --- FIX: Date Normalization ---
+            # Solr requires "YYYY-MM-DDThh:mm:ssZ", but inputs might be "YYYY-MM-DD"
+            # We detect this pattern and append the time component.
+            if isinstance(value, str) and len(value) == 10:
+                # Basic check: does it look like 2026-01-01?
+                if value[4] == '-' and value[7] == '-':
+                     value = f"{value}T00:00:00Z"
+            # -------------------------------
+
+            solr_updates[solr_field] = {"set": value}
 
         if not solr_updates:
             logger.info("No mapped fields found to update in Solr.")
@@ -153,6 +170,7 @@ class SolrManager:
         logger.info(f"Updating Solr metadata for {media_id}: {solr_updates}")
 
         # Fetch all Segment IDs for this Media
+        # Note: We only need the ID to target the update
         query = f"media_id:{media_id}"
         results = self.client.search(query, fl="id", rows=10000)
 
@@ -169,8 +187,12 @@ class SolrManager:
 
         # Commit
         if batch_update:
-            self.client.add(batch_update, commit=True)
-            logger.info(f"Updated {len(batch_update)} documents in Solr.")
+            try:
+                self.client.add(batch_update, commit=True)
+                logger.info(f"Updated {len(batch_update)} documents in Solr.")
+            except Exception as e:
+                logger.error(f"Solr batch update failed: {e}")
+                raise e
 
 
 @lru_cache()

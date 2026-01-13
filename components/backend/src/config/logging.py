@@ -22,14 +22,14 @@ def configure_logging():
     settings = get_settings()
     # Define the format. We added [%(request_id)s] here.
     log_format = (
-        '%(asctime)s - [%(levelname)s] - [%(request_id)s] - '
-        '(%(filename)s:%(lineno)d) - %(funcName)s - %(message)s'
+        '%(asctime)s - [%(levelname)s] - [%(request_id)s]'
+        '(%(filename)s:%(lineno)d) - %(funcName)s - \n%(message)s'
     )
-    
+
     # Create the handler
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(logging.Formatter(log_format, datefmt='%Y-%m-%d %H:%M:%S'))
-    
+
     # Create the filter instance
     request_id_filter = RequestIDFilter()
     handler.addFilter(request_id_filter)
@@ -38,6 +38,6 @@ def configure_logging():
     root_logger = logging.getLogger()
     root_logger.setLevel(settings.log_level.upper())
     root_logger.handlers = [handler]
-    
+
     # Silence uvicorn's default noise so we don't get duplicate logs
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)

@@ -14,12 +14,13 @@ export function formatTimeForDisplay(seconds: number): string {
   return `${minsStr}:${secsStr}`
 }
 
-export function displayIsoDate(isoDate: string): string {
-  const date = new Date(isoDate)
-  const month = (date.getMonth() + 1).toString().padStart(2, "0") // Months are zero-based, so add 1
-  const day = date.getDate().toString().padStart(2, "0")
-  const year = date.getFullYear()
-  return `${month}/${day}/${year}`
+export function displayIsoDate(dateStr: string | null | undefined): string {
+    if (!dateStr) return '';
+    try {
+        return new Date(dateStr).toLocaleDateString();
+    } catch (e) {
+        return dateStr;
+    }
 }
 
 export function displaySpeaker(speakerId: string, speakers: Speaker[]): string {
