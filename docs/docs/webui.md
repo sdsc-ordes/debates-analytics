@@ -25,7 +25,7 @@ graph TB
 ## User Roles
 
 Currently the User interface has no Authentication added. In a
-[Server installation](../install/server.md) we installed two password protected
+[Server installation](install/server.md) we installed two password protected
 users: (see `nginx` folder)
 
 - `reader`: can only view the page

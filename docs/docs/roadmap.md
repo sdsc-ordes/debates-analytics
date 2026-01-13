@@ -16,10 +16,10 @@
 
 ## Debates Dataloader
 
-- **Backend API**: improve the [API documentation](../architecture/api.md): add
+- **Backend API**: improve the [API documentation](architecture.md): add
   response structure for api routes
 
 ## Additional Configuration
 
-- [**S3 File Structure**](../architecture/processing.md) The file names in the
+- [**S3 File Structure**](architecture.md) The file names in the
   S3 are currently hard coded: they can be made configurable

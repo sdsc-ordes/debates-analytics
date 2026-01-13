@@ -13,7 +13,7 @@ flowchart LR
     D --> E
 ```
 
-- [**loading results into secondary databases**](loading.md): the processed data
+- [**loading results into secondary databases**](dataloader.md): the processed data
   is loaded into structured databases to improve findability
 
 ```mermaid
