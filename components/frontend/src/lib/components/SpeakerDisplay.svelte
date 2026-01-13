@@ -7,7 +7,7 @@
 
   interface Props {
     speakers: Speaker[];
-    activeSpeaker?: Speaker; // activeSpeaker can be undefined!
+    activeSpeaker?: Speaker;
     mediaId: string;
   }
 
@@ -20,16 +20,17 @@
   let editSpeakers = $state(false);
   let errorMessage = $state<string | null>(null);
 
-  // --- DRAFT STATE ---
-  // Hold changes here so we don't mutate the live object until we save.
-  let draftName = $state('');
-  let draftRole = $state('');
+  const FIELDS = [
+    { key: 'name', label: 'Name', placeholder: 'Enter name' },
+    { key: 'role_tag', label: 'Role', placeholder: 'Enter role' },
+    { key: 'country', label: 'Country', placeholder: 'Enter country' }
+  ] as const;
+
+  let draftData = $state<Record<string, string>>({});
   let editingSpeakerId = $state<string | null>(null);
 
   // Watch for external changes (e.g. video playing forward)
   $effect(() => {
-    // If the active speaker changes while we are editing, we must abort
-    // to prevent overwriting the wrong person.
     if (editSpeakers && activeSpeaker?.speaker_id !== editingSpeakerId) {
         cancelEdit();
     }
@@ -38,12 +39,12 @@
   function startEdit() {
     if (!activeSpeaker) return;
 
-    // Copy current values to draft
-    draftName = activeSpeaker.name || '';
-    draftRole = activeSpeaker.role_tag || '';
-    draftCountry = activeSpeaker.country || '';
-    editingSpeakerId = activeSpeaker.speaker_id || null;
+    FIELDS.forEach(field => {
+      // @ts-ignore - Dynamic access to speaker properties
+      draftData[field.key] = activeSpeaker[field.key] || '';
+    });
 
+    editingSpeakerId = activeSpeaker.speaker_id || null;
     errorMessage = null;
     editSpeakers = true;
   }
@@ -52,18 +53,16 @@
     editSpeakers = false;
     errorMessage = null;
     editingSpeakerId = null;
+    draftData = {};
   }
 
   async function saveSpeakers() {
-    // 1. Safety Check: Ensure we still have a speaker to update
     if (!activeSpeaker) return;
 
-    // 2. Commit Draft to Real State (Optimistic Update)
-    // Because activeSpeaker is a reference to an object inside 'speakers',
-    // updating it here updates the main array automatically.
-    activeSpeaker.name = draftName;
-    activeSpeaker.role_tag = draftRole;
-    activeSpeaker.country = draftCountry;
+    FIELDS.forEach(field => {
+      // @ts-ignore - Dynamic assignment
+      activeSpeaker[field.key] = draftData[field.key];
+    });
 
     const SpeakerUpdateRequest = {
       media_id: mediaId,
@@ -82,7 +81,7 @@
         throw new Error("Update of speakers failed.");
       }
     } catch (err: any) {
-      editSpeakers = true; // Re-open on failure so user doesn't lose text
+      editSpeakers = true;
       errorMessage = err.message || 'Unknown error occurred';
       console.error(err);
     }
@@ -98,71 +97,46 @@
         <div class="alert alert-danger">{errorMessage}</div>
       {/if}
 
-      {#if $canEdit}
-        {#if editSpeakers}
-          <p class="card-subtle">Edit speaker details below:</p>
-          <form class="speaker-form" onsubmit={(e) => { e.preventDefault(); saveSpeakers(); }}>
+      {#if $canEdit && editSpeakers}
+        <p class="card-subtle">Edit speaker details below:</p>
+        <form class="speaker-form" onsubmit={(e) => { e.preventDefault(); saveSpeakers(); }}>
 
-            <label for="speaker-name" class="input-label">Name</label>
+          {#each FIELDS as field}
+            <label for="speaker-{field.key}" class="input-label">{field.label}</label>
             <input
-              id="speaker-name"
-              placeholder="Enter name"
+              id="speaker-{field.key}"
+              placeholder={field.placeholder}
               type="text"
-              bind:value={draftName}
+              bind:value={draftData[field.key]}
               class="editable-input"
             />
+          {/each}
 
-            <label for="speaker-role" class="input-label">Role</label>
-            <input
-              id="speaker-role"
-              placeholder="Enter role"
-              type="text"
-              bind:value={draftRole}
-              class="editable-input"
-            />
+          <button type="submit" style="display: none;"></button>
+        </form>
 
-            <button type="submit" style="display: none;"></button>
-          </form>
+        <div class="button-group">
+          <button class="secondary-button" onclick={cancelEdit} type="button">Cancel</button>
+          <button class="secondary-button" onclick={saveSpeakers} type="button">Save</button>
+        </div>
 
-          <div class="button-group">
-            <button class="secondary-button" onclick={cancelEdit} type="button">
-              Cancel
-            </button>
-            <button class="secondary-button" onclick={saveSpeakers} type="button">
-              Save
-            </button>
-          </div>
+      {:else}
+        <div class="speaker-display">
+          {#each FIELDS as field}
+            <label class="input-label">{field.label}</label>
+            <div class="display-text">
+              {activeSpeaker[field.key] || `${field.label} not provided`}
+            </div>
+          {/each}
+        </div>
 
-        {:else}
-          <div class="speaker-display">
-            <label class="input-label">Name</label>
-            <div class="display-text">{activeSpeaker.name || "Name not provided"}</div>
-
-            <label class="input-label">Role</label>
-            <div class="display-text">{activeSpeaker.role_tag || "Role not provided"}</div>
-
-            <label class="input-label">Representing Country</label>
-            <div class="display-text">{activeSpeaker.country || "Country not provided"}</div>
-          </div>
-
+        {#if $canEdit}
           <div class="button-group">
             <button class="secondary-button" onclick={startEdit} aria-label="Edit">
               Edit
             </button>
           </div>
         {/if}
-
-      {:else}
-        <div class="speaker-display">
-          <label class="input-label">Name</label>
-          <div class="display-text">{activeSpeaker.name || "Name not provided"}</div>
-
-          <label class="input-label">Role</label>
-          <div class="display-text">{activeSpeaker.role_tag || "Role not provided"}</div>
-
-          <label class="input-label">Role</label>
-          <div class="display-text">{activeSpeaker.country || "Country not provided"}</div>
-        </div>
       {/if}
 
     {:else}
