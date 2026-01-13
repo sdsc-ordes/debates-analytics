@@ -42,8 +42,8 @@ class SolrManager:
                     updated_doc = {
                         "id": doc["id"],
                         "speaker_name": {"set": speaker_name},
-                        "speaker_role_tag": {"set": speaker_role_tag}
-                        "speaker_country": {"set": speaker_country}
+                        "speaker_role_tag": {"set": speaker_role_tag},
+                        "speaker_country": {"set": speaker_country},
                     }
                     docs_to_update.append(updated_doc)
 

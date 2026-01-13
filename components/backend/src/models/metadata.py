@@ -21,10 +21,6 @@ class SubtitleType(str, Enum):
 
 class Speaker(BaseModel):
     speaker_id: str
-    attributes: SpeakerAttributes
-
-
-class SpeakerAttributes(BaseModel):
     name: Optional[str] = ""
     role_tag: Optional[str] = ""
     country: Optional[str] = ""

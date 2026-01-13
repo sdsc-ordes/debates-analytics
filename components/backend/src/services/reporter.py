@@ -54,9 +54,10 @@ class JobReporter:
 
         self.logger.error(f"Job {self.media_id} FAILED: {error_msg}")
 
-        self.job.meta['progress'] = 'failed'
-        self.job.meta['error'] = error_msg
-        self.job.save_meta()
+        if self.job:
+            self.job.meta['progress'] = 'failed'
+            self.job.meta['error'] = error_msg
+            self.job.save_meta()
 
         self.mongo.update_status_with_history(
             media_id=self.media_id,

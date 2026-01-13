@@ -65,7 +65,7 @@ class MongoManager:
         )
 
     def save_speakers(self, media_id: str, speaker_ids: Set[str]):
-        speakers = [{"speaker_id": sid, "name": "", "role_tag": "", speaker_country=""} for sid in speaker_ids]
+        speakers = [{"speaker_id": sid, "name": "", "role_tag": "", "country": ""} for sid in speaker_ids]
         doc = {
             "media_id": media_id,
             "speakers": speakers,
