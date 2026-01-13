@@ -15,12 +15,12 @@ export function formatTimeForDisplay(seconds: number): string {
 }
 
 export function displayIsoDate(dateStr: string | null | undefined): string {
-    if (!dateStr) return '';
-    try {
-        return new Date(dateStr).toLocaleDateString();
-    } catch (e) {
-        return dateStr;
-    }
+  if (!dateStr) return ""
+  try {
+    return new Date(dateStr).toLocaleDateString()
+  } catch (e) {
+    return dateStr
+  }
 }
 
 export function displaySpeaker(speakerId: string, speakers: Speaker[]): string {
