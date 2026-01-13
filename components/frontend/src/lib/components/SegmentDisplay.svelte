@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { canEdit } from "$lib/stores/auth";
+  import { auth } from "$lib/auth";
   import { jumpToTime } from "$lib/utils/mediaStartUtils";
   import type { components } from '$lib/api/schema';
   import { client } from '$lib/api/client';
@@ -83,7 +83,7 @@
     <div class="text-block">
       <div class="header-row">
         <div class="card-title-small">Transcription</div>
-        {#if $canEdit && activeSegment}
+        {#if auth.canEdit && activeSegment}
           {#if !editTranscript}
             <button class="secondary-button" onclick={() => editTranscript = true}>Edit</button>
           {:else}
@@ -123,7 +123,7 @@
   <div class="text-block">
     <div class="header-row">
       <div class="card-title-small">Translation</div>
-      {#if $canEdit && activeSegment}
+      {#if auth.canEdit && activeSegment}
         {#if !editTranslation}
           <button class="secondary-button" onclick={() => editTranslation = true}>Edit</button>
         {:else}

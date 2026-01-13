@@ -1,0 +1,34 @@
+import { redirect } from '@sveltejs/kit';
+import type { Actions } from './$types';
+
+export const actions: Actions = {
+    // This handles the POST to /dev/login?/logout
+    logout: async ({ cookies }) => {
+        // 1. Delete the session cookie
+        cookies.delete('session_id', { path: '/' });
+
+        // 2. Redirect to the home page
+        throw redirect(303, '/');
+    },
+
+    // Include these if you want the "Login as Editor" buttons to work too
+    loginEditor: async ({ cookies }) => {
+        cookies.set('session_id', 'editor-secret', {
+            path: '/',
+            httpOnly: true,
+            secure: false,
+            maxAge: 60 * 60 * 24
+        });
+        throw redirect(303, '/dashboard');
+    },
+
+    loginReader: async ({ cookies }) => {
+        cookies.set('session_id', 'reader-token', {
+            path: '/',
+            httpOnly: true,
+            secure: false,
+            maxAge: 60 * 60 * 24
+        });
+        throw redirect(303, '/');
+    }
+};

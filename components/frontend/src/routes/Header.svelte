@@ -1,43 +1,38 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
+    import { page } from '$app/state'; // Use the new global state (replaces $page store)
+    import { auth } from "$lib/auth";
 
-	import { page } from '$app/stores';
-	import { canEdit } from "$lib/stores/auth";
-	let homePath = $state('/');
-	run(() => {
-		if ($canEdit) {
-	        console.log("User can edit!");
-			homePath = '/edit';
-	    }
-	});
+    let homePath = $derived(auth.canEdit ? '/' : '/');
 </script>
 
 <header>
-	<div class="corner">
-		<nav>
-			<label>
-			{#if !$canEdit}
-			    Reader
-			{:else}
-			    Editor
-			{/if}
-			</label>
-			<ul>
-				<li aria-current={$page.url.pathname === homePath ? 'page' : undefined}>
-					<a href="{homePath}">Home</a>
-				</li>
-				<li aria-current={$page.url.pathname === '/search' ? 'page' : undefined}>
-					<a href="/search">Search</a>
-				</li>
-			    {#if $canEdit}
-					<li aria-current={$page.url.pathname === '/dashboard' ? 'page' : undefined}>
-						<a href="/dashboard">Dashboard</a>
-					</li>
-				{/if}
-			</ul>
-		</nav>
-	</div>
+    <div class="corner">
+        <nav>
+            <label>
+                {auth.canEdit ? 'Editor' : 'Reader'}
+            </label>
+            <ul>
+                <li aria-current={page.url.pathname === homePath ? 'page' : undefined}>
+                    <a href={homePath}>Home</a>
+                </li>
 
+                <li aria-current={page.url.pathname === '/search' ? 'page' : undefined}>
+                    <a href="/search">Search</a>
+                </li>
+
+                {#if auth.canEdit}
+                    <li aria-current={page.url.pathname === '/dashboard' ? 'page' : undefined}>
+                        <a href="/dashboard">Dashboard</a>
+                    </li>
+                    <li>
+                        <form method="POST" action="/dev/login?/logout">
+                           <button type="submit" class="link-button">Logout</button>
+                        </form>
+                    </li>
+                {/if}
+            </ul>
+        </nav>
+    </div>
 </header>
 
 <style>
@@ -133,4 +128,37 @@
 	a:hover {
 		color: var(--secondary-color);
 	}
+
+    form {
+        height: 100%;
+        display: flex;
+    }
+
+    /* 2. Apply the exact same styles to the link AND the button */
+    nav a,
+    button.link-button {
+        display: flex;
+        height: 100%;
+        align-items: center;
+        padding: 0 0.5rem;
+        color: var(--text-color);
+        font-weight: 700;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        text-decoration: none;
+        transition: color 0.2s linear;
+
+        /* 3. Strip default button styles */
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: inherit; /* Important so it uses your app's font */
+    }
+
+    /* 4. Ensure hover effects work on both */
+    nav a:hover,
+    button.link-button:hover {
+        color: var(--secondary-color);
+    }
 </style>
