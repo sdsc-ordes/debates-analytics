@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { page } from '$app/state'; // Use the new global state (replaces $page store)
+    import { page } from '$app/state';
     import { auth } from "$lib/auth";
 
     let homePath = $derived(auth.canEdit ? '/' : '/');
@@ -114,7 +114,7 @@
 		height: 100%;
 		align-items: center;
 		margin: 15px;
-		padding: 20 0.5rem;
+		padding: 0 0.5rem;
 		color: var(--text-color);
 		font-weight: 700;
 		font-size: 0.8rem;
@@ -134,7 +134,6 @@
         display: flex;
     }
 
-    /* 2. Apply the exact same styles to the link AND the button */
     nav a,
     button.link-button {
         display: flex;
@@ -148,15 +147,12 @@
         letter-spacing: 0.1em;
         text-decoration: none;
         transition: color 0.2s linear;
-
-        /* 3. Strip default button styles */
         background: none;
         border: none;
         cursor: pointer;
-        font-family: inherit; /* Important so it uses your app's font */
+        font-family: inherit;
     }
 
-    /* 4. Ensure hover effects work on both */
     nav a:hover,
     button.link-button:hover {
         color: var(--secondary-color);
