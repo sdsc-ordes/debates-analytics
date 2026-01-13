@@ -11,7 +11,6 @@ services:
     depends_on:
       - backend
     environment:
-      PUBLIC_BACKEND_SERVER: ${PUBLIC_BACKEND_SERVER}
       ORIGIN: http://localhost:3000
       TYPE_TRANSLATION: ${TYPE_TRANSLATION}
       TYPE_ORIGINAL: ${TYPE_ORIGINAL}

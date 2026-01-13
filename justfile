@@ -46,6 +46,10 @@ up *args:
     @echo "Starting services..."
     docker compose {{docker_compose_files}} up -d {{args}}
 
+# Start services in production mode
+up-prod *args:
+    COMPOSE_PROFILES=prod just up {{args}}
+
 build *args:
     docker compose {{docker_compose_files}} build --no-cache {{args}}
 
