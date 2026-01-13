@@ -50,3 +50,6 @@ example/
 
 # But, *allow* our shared test config file
 !example/*.mp4
+
+# docs/build folder
+docs/site/
