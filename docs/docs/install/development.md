@@ -56,8 +56,8 @@ PROD_S3_REGION_NAME=
 The `PROD_S3_*` are there for the transfer of data from the Pipeline S3 to the
 App S3.
 
-After you have [loaded the data into the App S3](../architecture.md),
-you can build the backend and then serve the backend api:
+After you have [loaded the data into the App S3](../architecture.md), you can
+build the backend and then serve the backend api:
 
 ```
 cd dataloader

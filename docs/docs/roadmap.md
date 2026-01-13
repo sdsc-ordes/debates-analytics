@@ -21,5 +21,5 @@
 
 ## Additional Configuration
 
-- [**S3 File Structure**](architecture.md) The file names in the
-  S3 are currently hard coded: they can be made configurable
+- [**S3 File Structure**](architecture.md) The file names in the S3 are
+  currently hard coded: they can be made configurable
