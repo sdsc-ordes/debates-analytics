@@ -1,11 +1,25 @@
 <script lang="ts">
   import { Clock } from 'lucide-svelte';
-  // Define the type for a history item based on your data
+
   type HistoryItem = {
     step: string;
     timestamp: string;
   };
-  let { history }: { history: HistoryItem[] } = $props();
+
+  let { history, anchorEl }: { history: HistoryItem[]; anchorEl: HTMLElement } = $props();
+
+  const tooltipWidth = 280;
+  let left = $state(0);
+  let top = $state(0);
+
+  $effect(() => {
+    if (anchorEl) {
+      const rect = anchorEl.getBoundingClientRect();
+      left = rect.left + rect.width / 2 - tooltipWidth / 2;
+      top = rect.bottom + 8;
+    }
+  });
+
   function formatTime(isoString: string) {
     if (!isoString) return '';
     return new Date(isoString).toLocaleTimeString('en-US', {
@@ -15,14 +29,15 @@
       hour12: false
     });
   }
+
   function formatStepName(step: string) {
     return step
       .replace(/_/g, ' ')
-      .replace(/\b\w/g, (l) => l.toUpperCase()); // Title Case
+      .replace(/\b\w/g, (l) => l.toUpperCase());
   }
 </script>
 
-<div class="history-tooltip">
+<div class="history-tooltip" style="left: {left}px; top: {top}px;">
   <div class="tooltip-header">
     <Clock size={14} class="text-muted" />
     <span>Processing History</span>
@@ -57,22 +72,18 @@
 
 <style>
   .history-tooltip {
-    position: absolute;
-    top: 100%;       /* Position right below the status badge */
-    left: 50%;
-    transform: translateX(-50%);
-    margin-top: 8px; /* Small gap */
+    position: fixed;
     width: 280px;
     background: white;
     border: 1px solid #e2e8f0;
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     border-radius: 8px;
     padding: 12px;
-    z-index: 50;     /* Ensure it sits on top of other table rows */
-    pointer-events: none; /* Let clicks pass through, or set to auto if you want to select text */
+    z-index: 50;   /* High z-index to sit on top of everything */
+    pointer-events: none;
     text-align: left;
   }
-  /* Optional: Add a little arrow pointing up */
+  /* Arrow pointing up to the badge */
   .history-tooltip::before {
     content: '';
     position: absolute;
