@@ -55,7 +55,7 @@ async def get_media_urls(
     for object_key in file_keys:
         try:
             filename = _get_file_name_from_s3_key(object_key)
-            url = s3_client.get_presigned_url(object_key)
+            url = s3_client.get_presigned_url(object_key, as_attachment=True)
 
             download_urls.append({
                 "url": url,
@@ -63,10 +63,9 @@ async def get_media_urls(
             })
 
             if _is_audio_file(filename) and media_type == MediaType.audio.value:
-                media_url = url
+                media_url = s3_client.get_presigned_url(object_key, as_attachment=False)
             elif _is_video_file(filename) and media_type == MediaType.video.value:
-                media_url = url
-
+                media_url = s3_client.get_presigned_url(object_key, as_attachment=False)
         except Exception as e:
             # Log specific signing failure, but don't crash the whole request
             logger.error(f"media_id={media_id} - Failed to sign URL for key '{object_key}': {e}")
@@ -76,6 +75,7 @@ async def get_media_urls(
 
     logger.info(f"media_id={media_id} - Returning {len(download_urls)} signed URLs.")
 
+    logger.info(f"response: urls {download_urls}, media_url: {media_url}")
     return {
         "signedUrls": download_urls,
         "signedMediaUrl": media_url,

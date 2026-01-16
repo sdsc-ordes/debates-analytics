@@ -11,7 +11,7 @@ services:
     depends_on:
       - backend
     environment:
-      ORIGIN: http://localhost:3000
+      ORIGIN: https://debates.swisscustodian.ch
       TYPE_TRANSLATION: ${TYPE_TRANSLATION}
       TYPE_ORIGINAL: ${TYPE_ORIGINAL}
       PUBLIC_SEARCH_PAGE_SIZE: ${SEARCH_PAGE_SIZE}

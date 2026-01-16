@@ -1,4 +1,5 @@
 import boto3
+import os
 from botocore.client import Config
 from dotenv import load_dotenv
 import logging
@@ -23,6 +24,7 @@ class S3Manager:
         self.server_url = settings.s3_server
         self.bucket_name = settings.s3_bucket_name
         self.s3_frontend_base_url = settings.s3_frontend_base_url
+        logger.info(f"S3_FRONTEND_BASE_URL {self.s3_frontend_base_url}")
 
         if not all([self.access_key, self.secret_key, self.server_url]):
             logger.error("Missing S3 environment variables!")
@@ -33,37 +35,40 @@ class S3Manager:
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
             region_name='garage',
-            config=Config(
-                signature_version='s3v4'
-            )
+            config=Config(s3={'addressing_style': 'path'}, signature_version='s3v4'),
         )
 
         # Public Signer (For generating URLs that work in the browser)
         self.s3_signer = boto3.client(
             's3',
-            endpoint_url=self.s3_frontend_base_url,
+            endpoint_url="http://garage:3900",
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
             region_name='garage',
-            config=Config(signature_version='s3v4')
+            config=Config(s3={'addressing_style': 'path'}, signature_version='s3v4')
         )
 
-    def get_presigned_url(self, object_key, expiration=3600):
+    def get_presigned_url(self, object_key, as_attachment=False, expiration=3600):
         """
         Generate a presigned URL for an S3 object.
         """
         try:
-            print(f"presign download url for s3 key {object_key}")
+            params = {
+                "Bucket": self.bucket_name,
+                "Key": object_key,
+            }
+            if as_attachment:
+                clean_filename = os.path.basename(object_key)
+                logger.info(f"presign download url for s3 key {object_key} with {clean_filename}")
+                params["ResponseContentDisposition"] = f'attachment; filename="{clean_filename}"'
             url = self.s3_signer.generate_presigned_url(
                 'get_object',
-                Params={
-                    "Bucket": self.bucket_name,
-                    "Key": object_key,
-                    "ResponseContentDisposition": f"attachment; filename={object_key}",
-                },
+                Params=params,
                 ExpiresIn=expiration
             )
-            return url
+            public_url = url.replace("http://garage:3900", "https://debates.swisscustodian.ch")
+            logger.info(f"public_url: {public_url}")
+            return public_url
         except DataNotFoundError:
             print(f"s3 key not found: {object_key}")
         except NoCredentialsError:
