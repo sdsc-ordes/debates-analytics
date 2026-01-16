@@ -2,6 +2,8 @@
   import { auth } from "$lib/auth";
   import { client } from '$lib/api/client';
   import type { components } from '$lib/api/schema';
+  import { User, Briefcase, MapPin, Pencil } from 'lucide-svelte';
+  import Modal from '$lib/components/FormEditModal.svelte';
 
   type Speaker = components['schemas']['Speaker'];
 
@@ -17,13 +19,14 @@
     mediaId
   }: Props = $props();
 
-  let editSpeakers = $state(false);
+  let showModal = $state(false);
   let errorMessage = $state<string | null>(null);
+  let isSaving = $state(false);
 
   const FIELDS = [
-    { key: 'name', label: 'Name', placeholder: 'Enter name' },
-    { key: 'role_tag', label: 'Role', placeholder: 'Enter role' },
-    { key: 'country', label: 'Country', placeholder: 'Enter country' }
+    { key: 'name', label: 'Name', placeholder: 'Enter name', icon: User },
+    { key: 'role_tag', label: 'Role', placeholder: 'Enter role', icon: Briefcase },
+    { key: 'country', label: 'Country', placeholder: 'Enter country', icon: MapPin }
   ] as const;
 
   let draftData = $state<Record<string, string>>({});
@@ -31,12 +34,12 @@
 
   // Watch for external changes (e.g. video playing forward)
   $effect(() => {
-    if (editSpeakers && activeSpeaker?.speaker_id !== editingSpeakerId) {
-        cancelEdit();
+    if (showModal && activeSpeaker?.speaker_id !== editingSpeakerId) {
+      closeModal();
     }
   });
 
-  function startEdit() {
+  function openModal() {
     if (!activeSpeaker) return;
 
     FIELDS.forEach(field => {
@@ -46,11 +49,11 @@
 
     editingSpeakerId = activeSpeaker.speaker_id || null;
     errorMessage = null;
-    editSpeakers = true;
+    showModal = true;
   }
 
-  function cancelEdit() {
-    editSpeakers = false;
+  function closeModal() {
+    showModal = false;
     errorMessage = null;
     editingSpeakerId = null;
     draftData = {};
@@ -58,6 +61,8 @@
 
   async function saveSpeakers() {
     if (!activeSpeaker) return;
+
+    isSaving = true;
 
     FIELDS.forEach(field => {
       // @ts-ignore - Dynamic assignment
@@ -69,9 +74,6 @@
       speakers: speakers,
     };
 
-    editSpeakers = false;
-    errorMessage = null;
-
     try {
       const { error: speakerUpdateError } = await client.POST("/db/update-speakers", {
           body: SpeakerUpdateRequest,
@@ -80,137 +82,288 @@
       if (speakerUpdateError) {
         throw new Error("Update of speakers failed.");
       }
+
+      closeModal();
     } catch (err: any) {
-      editSpeakers = true;
       errorMessage = err.message || 'Unknown error occurred';
       console.error(err);
+    } finally {
+      isSaving = false;
     }
   }
 </script>
 
-<div class="card">
-  <div class="card-body">
-    {#if activeSpeaker}
-      <div class="card-title-small">{activeSpeaker.speaker_id}</div>
+<div class="speaker-card">
+  {#if activeSpeaker}
+    <div class="speaker-header">
+      <span class="speaker-id">{activeSpeaker.speaker_id}</span>
+      {#if auth.canEdit}
+        <button class="edit-btn" onclick={openModal} title="Edit speaker">
+          <Pencil size={14} />
+        </button>
+      {/if}
+    </div>
 
-      {#if errorMessage}
-        <div class="alert alert-danger">{errorMessage}</div>
+    <div class="speaker-info">
+      <div class="speaker-name">
+        {activeSpeaker.name || 'Unknown Speaker'}
+      </div>
+
+      {#if activeSpeaker.role_tag}
+        <div class="speaker-detail">
+          <Briefcase size={14} />
+          <span>{activeSpeaker.role_tag}</span>
+        </div>
       {/if}
 
-      {#if auth.canEdit && editSpeakers}
-        <p class="card-subtle">Edit speaker details below:</p>
-        <form class="speaker-form" onsubmit={(e) => { e.preventDefault(); saveSpeakers(); }}>
-
-          {#each FIELDS as field}
-            <label for="speaker-{field.key}" class="input-label">{field.label}</label>
-            <input
-              id="speaker-{field.key}"
-              placeholder={field.placeholder}
-              type="text"
-              bind:value={draftData[field.key]}
-              class="editable-input"
-            />
-          {/each}
-
-          <button type="submit" style="display: none;"></button>
-        </form>
-
-        <div class="button-group">
-          <button class="secondary-button" onclick={cancelEdit} type="button">Cancel</button>
-          <button class="secondary-button" onclick={saveSpeakers} type="button">Save</button>
+      {#if activeSpeaker.country}
+        <div class="speaker-detail">
+          <MapPin size={14} />
+          <span>{activeSpeaker.country}</span>
         </div>
-
-      {:else}
-        <div class="speaker-display">
-          {#each FIELDS as field}
-            <label class="input-label">{field.label}</label>
-            <div class="display-text">
-              {activeSpeaker[field.key] || `${field.label} not provided`}
-            </div>
-          {/each}
-        </div>
-
-        {#if auth.canEdit}
-          <div class="button-group">
-            <button class="secondary-button" onclick={startEdit} aria-label="Edit">
-              Edit
-            </button>
-          </div>
-        {/if}
       {/if}
 
-    {:else}
-      <p class="card-subtle">No active speaker for this segment.</p>
-    {/if}
-  </div>
+      {#if !activeSpeaker.name && !activeSpeaker.role_tag && !activeSpeaker.country}
+        <p class="no-details">No details available</p>
+      {/if}
+    </div>
+
+  {:else}
+    <div class="no-speaker">
+      <User size={24} strokeWidth={1.5} />
+      <p>No active speaker</p>
+    </div>
+  {/if}
 </div>
 
+<Modal show={showModal} title="Edit Speaker" onClose={closeModal}>
+  <div class="speaker-id-badge">{editingSpeakerId}</div>
+
+  {#if errorMessage}
+    <div class="error-message">{errorMessage}</div>
+  {/if}
+
+  <form class="speaker-form" onsubmit={(e) => { e.preventDefault(); saveSpeakers(); }}>
+    {#each FIELDS as field}
+      <div class="form-group">
+        <label for="speaker-{field.key}" class="form-label">
+          {#if field.key === 'name'}
+            <User size={14} />
+          {:else if field.key === 'role_tag'}
+            <Briefcase size={14} />
+          {:else}
+            <MapPin size={14} />
+          {/if}
+          {field.label}
+        </label>
+        <input
+          id="speaker-{field.key}"
+          placeholder={field.placeholder}
+          type="text"
+          bind:value={draftData[field.key]}
+          class="form-input"
+        />
+      </div>
+    {/each}
+
+    <button type="submit" style="display: none;" aria-hidden="true">Submit</button>
+  </form>
+
+  {#snippet footer()}
+    <button class="btn btn-secondary" onclick={closeModal} type="button" disabled={isSaving}>
+      Cancel
+    </button>
+    <button class="btn btn-primary" onclick={saveSpeakers} type="button" disabled={isSaving}>
+      {isSaving ? 'Saving...' : 'Save Changes'}
+    </button>
+  {/snippet}
+</Modal>
+
 <style>
-  .card {
-    /* width: fit-content; */
-    max-width: 100%;
-    max-height: 100%;
+  /* ========== Variables ========== */
+  .speaker-card {
+    --border-color: #e2e8f0;
+    --bg-muted: #f1f5f9;
+    --text-muted: #64748b;
+    --text-light: #94a3b8;
+  }
+
+  /* ========== Speaker Card ========== */
+  .speaker-card {
+    background: white;
+    border: 1px solid #eaeaea;
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
     padding: 1rem;
-    box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
-  .card-body {
+  .speaker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--bg-muted);
+  }
+
+  .speaker-id,
+  .speaker-id-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--bg-muted);
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+
+  .speaker-id-badge {
+    font-size: 10px;
+    padding: 3px 6px;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+  }
+
+  .speaker-info {
     display: flex;
     flex-direction: column;
-    /* gap: 1rem; */
+    gap: 0.5rem;
   }
 
-  .speaker-form,
-  .speaker-display {
-    display: flex;
-    flex-direction: column;
-    /* gap: 1rem; */
+  .speaker-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
   }
 
-  .input-label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #333;
-  }
-
-  .editable-input {
-    height: 40px;
-    padding: 0 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    width: 100%;
-  }
-
-  .editable-input:focus {
-    border-color: var(--primary-color);
-    outline: none;
-  }
-
-  .editable-input::placeholder {
-    color: gray;
-    font-style: italic;
-  }
-  .display-text {
-    height: 40px;
-    padding: 0 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
-    color: grey;
+  .speaker-detail {
     display: flex;
     align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
   }
 
-  .button-group {
+  .no-details,
+  .no-speaker p {
+    font-size: 13px;
+    color: var(--text-light);
+    margin: 0;
+  }
+
+  .no-details { font-style: italic; }
+
+  .no-speaker {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 1rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    color: var(--text-light);
+    gap: 0.5rem;
   }
 
+  /* ========== Edit Button ========== */
+  .edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    padding: 6px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .edit-btn:hover {
+    background: var(--bg-muted);
+    color: var(--primary-color);
+  }
+
+  /* ========== Form ========== */
+  .speaker-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .form-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #475569;
+  }
+
+  .form-input {
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .form-input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .form-input::placeholder {
+    color: var(--text-light);
+  }
+
+  .error-message {
+    background: #fef2f2;
+    color: #b91c1c;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 1rem;
+  }
+
+  /* ========== Buttons ========== */
+  .btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+  }
+
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: white;
+    color: #475569;
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-secondary:hover:not(:disabled) { background: #f8fafc; }
+
+  .btn-primary {
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .btn-primary:hover:not(:disabled) { opacity: 0.9; }
 </style>
