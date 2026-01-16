@@ -316,8 +316,8 @@ button:focus:not(:focus-visible) {
   color: var(--text-light);
 }
 
-/* Modal Buttons */
-.btn {
+/* Modal/Form Buttons */
+.form-btn {
   padding: 8px 14px;
   border-radius: 6px;
   font-size: 13px;
@@ -327,27 +327,27 @@ button:focus:not(:focus-visible) {
   transition: background-color 0.2s, opacity 0.2s;
 }
 
-.btn:disabled {
+.form-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-secondary {
+.form-btn-secondary {
   background: white;
   color: #475569;
   border: 1px solid var(--border-color);
 }
 
-.btn-secondary:hover:not(:disabled) {
+.form-btn-secondary:hover:not(:disabled) {
   background: #f8fafc;
 }
 
-.btn-primary {
+.form-btn-primary {
   background: var(--primary-color);
   color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
+.form-btn-primary:hover:not(:disabled) {
   opacity: 0.9;
 }
 

@@ -170,10 +170,10 @@
   </form>
 
   {#snippet footer()}
-    <button class="btn btn-secondary" onclick={closeModal} type="button" disabled={isSaving}>
+    <button class="form-btn form-btn-secondary" onclick={closeModal} type="button" disabled={isSaving}>
       Cancel
     </button>
-    <button class="btn btn-primary" onclick={saveSpeakers} type="button" disabled={isSaving}>
+    <button class="form-btn form-btn-primary" onclick={saveSpeakers} type="button" disabled={isSaving}>
       {isSaving ? 'Saving...' : 'Save Changes'}
     </button>
   {/snippet}
