@@ -3,6 +3,8 @@
   import { displayIsoDate } from "$lib/utils/displayUtils";
   import { client } from '$lib/api/client';
   import type { components } from '$lib/api/schema';
+  import { Pencil, Calendar, Link, FileText, Briefcase } from 'lucide-svelte';
+  import Modal from '$lib/components/FormEditModal.svelte';
 
   type DebateDocument = components['schemas']['DebateDocument'];
 
@@ -12,60 +14,53 @@
 
   let { debate = $bindable() }: Props = $props();
 
-  let isEditing = $state(false);
+  let showModal = $state(false);
   let errorMessage = $state<string | null>(null);
+  let isSaving = $state(false);
 
-  // --- CONFIGURATION ---
   const FIELDS = [
-    { key: 'session', label: 'Session', type: 'text', placeholder: 'e.g. 55th Session' },
-    { key: 'debate_type', label: 'Type', type: 'text', placeholder: 'e.g. Working Group' },
-    // Note: type="date" inputs expect "YYYY-MM-DD"
-    { key: 'date', label: 'Date', type: 'date', placeholder: '' },
-    { key: 'link_mediasource', label: 'Link Mediasource', type: 'url', placeholder: 'https://...' },
-    { key: 'link_agenda', label: 'Link Agenda', type: 'url', placeholder: 'https://...' },
+    { key: 'session', label: 'Session', type: 'text', placeholder: 'e.g. 55th Session', icon: Briefcase },
+    { key: 'debate_type', label: 'Type', type: 'text', placeholder: 'e.g. Working Group', icon: FileText },
+    { key: 'date', label: 'Date', type: 'date', placeholder: '', icon: Calendar },
+    { key: 'link_mediasource', label: 'Media Source', type: 'url', placeholder: 'https://...', icon: Link },
+    { key: 'link_agenda', label: 'Agenda', type: 'url', placeholder: 'https://...', icon: Link },
   ] as const;
 
-  // --- DRAFT STATE ---
   let draftData = $state<Record<string, string>>({});
 
-  function startEdit() {
+  function openModal() {
     FIELDS.forEach(field => {
-        // @ts-ignore - dynamic access
-        const val = debate[field.key];
+      // @ts-ignore - dynamic access
+      const val = debate[field.key];
 
-        if (field.key === 'date' && val) {
-            // For <input type="date">, we need YYYY-MM-DD (first 10 chars)
-            draftData[field.key] = val.slice(0, 10);
-        } else {
-            draftData[field.key] = val || "";
-        }
+      if (field.key === 'date' && val) {
+        draftData[field.key] = val.slice(0, 10);
+      } else {
+        draftData[field.key] = val || "";
+      }
     });
 
     errorMessage = null;
-    isEditing = true;
+    showModal = true;
   }
 
-  function cancelEdit() {
-    isEditing = false;
+  function closeModal() {
+    showModal = false;
     errorMessage = null;
     draftData = {};
   }
 
   async function saveDebate() {
     const oldDebate = $state.snapshot(debate);
+    isSaving = true;
 
-    // 1. Optimistic Update
     FIELDS.forEach(field => {
-        const val = draftData[field.key];
-        // @ts-ignore
-        debate[field.key] = val || null; // Save as null if empty string
+      const val = draftData[field.key];
+      // @ts-ignore
+      debate[field.key] = val || null;
     });
 
-    isEditing = false;
-    errorMessage = null;
-
     try {
-      // 2. Send ALL fields to the backend
       const { error } = await client.POST("/db/update-debate", {
         body: {
           media_id: debate.media_id,
@@ -78,173 +73,246 @@
       });
 
       if (error) throw new Error("Update of debate details failed.");
-
+      closeModal();
     } catch (err: any) {
       console.error(err);
-      errorMessage = "Save failed. Reverting changes.";
-      Object.assign(debate, oldDebate); // Revert UI
-      isEditing = true;
+      errorMessage = "Save failed. Please try again.";
+      Object.assign(debate, oldDebate);
+    } finally {
+      isSaving = false;
     }
   }
 
-  const get_debate_title = () => {
-      // Fixed: use 'debate_type' to match schema
-      const parts = [debate.session, debate.debate_type].filter(Boolean);
-      return parts.length > 0 ? parts.join(' - ') : debate.media_id;
+  const getDebateTitle = () => {
+    const parts = [debate.session, debate.debate_type].filter(Boolean);
+    return parts.length > 0 ? parts.join(' - ') : 'Untitled Debate';
   }
 </script>
 
-<div class="card">
-  <div class="card-body">
+{#if debate}
+  <div class="debate-header">
+    <h1 class="debate-title">{getDebateTitle()}</h1>
 
-    {#if isEditing}
-      <p class="card-subtle">Edit debate details:</p>
-
-      {#if errorMessage}
-        <div class="alert alert-danger">{errorMessage}</div>
+    <div class="metadata">
+      {#if debate.date}
+        <div class="metadata-item">
+          <Calendar size={14} />
+          <span>{displayIsoDate(debate.date)}</span>
+        </div>
       {/if}
 
-      <form class="debate-form" onsubmit={(e) => { e.preventDefault(); saveDebate(); }}>
-        {#each FIELDS as field}
-            <label for="debate-{field.key}" class="input-label">{field.label}</label>
-            <input
-              id="debate-{field.key}"
-              type={field.type}
-              placeholder={field.placeholder}
-              bind:value={draftData[field.key]}
-              class="editable-input"
-            />
-        {/each}
+      {#if debate.link_mediasource}
+        <a href={debate.link_mediasource} target="_blank" rel="noopener noreferrer" class="metadata-link">
+          <Link size={14} />
+          <span>Media Source</span>
+        </a>
+      {/if}
 
-        <button type="submit" style="display: none;"></button>
-      </form>
+      {#if debate.link_agenda}
+        <a href={debate.link_agenda} target="_blank" rel="noopener noreferrer" class="metadata-link">
+          <Link size={14} />
+          <span>Agenda</span>
+        </a>
+      {/if}
 
-      <div class="button-group">
-        <button class="secondary-button" onclick={cancelEdit} type="button">Cancel</button>
-        <button class="secondary-button" onclick={saveDebate} type="button">Save</button>
-      </div>
-
-    {:else}
-      <div class="header-content">
-        <div>
-            <div class="card-title-large" style="color: var(--primary-dark-color);">
-                {get_debate_title()}
-            </div>
-
-            <div class="metadata-grid" style="margin-top: 1rem;">
-                {#each FIELDS as field}
-                    {#if field.key !== 'session' && field.key !== 'debate_type'}
-                        <div class="metadata-item">
-                            <span class="input-label" style="margin-bottom: 0;">{field.label}:</span>
-
-                            <span class="display-text">
-                                {#if !debate[field.key]}
-                                    <span style="opacity: 0.5;">-</span>
-                                {:else if field.type === 'url'}
-                                    <a href={debate[field.key]} target="_blank" rel="noopener noreferrer" class="link">
-                                        Open Link ↗
-                                    </a>
-                                {:else if field.key === 'date'}
-                                    {displayIsoDate(debate[field.key])}
-                                {:else}
-                                    {debate[field.key]}
-                                {/if}
-                            </span>
-                        </div>
-                    {/if}
-                {/each}
-            </div>
-        </div>
-
-        {#if auth.canEdit}
-            <div class="button-group" style="align-self: flex-start;">
-                <button class="secondary-button" onclick={startEdit} aria-label="Edit">
-                Edit
-                </button>
-            </div>
-        {/if}
-      </div>
-    {/if}
-
+      {#if auth.canEdit}
+        <button class="edit-btn" onclick={openModal} title="Edit debate details">
+          <Pencil size={14} />
+        </button>
+      {/if}
+    </div>
   </div>
-</div>
+{/if}
+
+<Modal show={showModal} title="Edit Debate" onClose={closeModal} width="360px">
+  {#if errorMessage}
+    <div class="error-message">{errorMessage}</div>
+  {/if}
+
+  <form class="debate-form" onsubmit={(e) => { e.preventDefault(); saveDebate(); }}>
+    {#each FIELDS as field}
+      <div class="form-group">
+        <label for="debate-{field.key}" class="form-label">
+          {#if field.key === 'session'}
+            <Briefcase size={14} />
+          {:else if field.key === 'debate_type'}
+            <FileText size={14} />
+          {:else if field.key === 'date'}
+            <Calendar size={14} />
+          {:else}
+            <Link size={14} />
+          {/if}
+          {field.label}
+        </label>
+        <input
+          id="debate-{field.key}"
+          type={field.type}
+          placeholder={field.placeholder}
+          bind:value={draftData[field.key]}
+          class="form-input"
+        />
+      </div>
+    {/each}
+
+    <button type="submit" style="display: none;" aria-hidden="true">Submit</button>
+  </form>
+
+  {#snippet footer()}
+    <button class="btn btn-secondary" onclick={closeModal} type="button" disabled={isSaving}>
+      Cancel
+    </button>
+    <button class="btn btn-primary" onclick={saveDebate} type="button" disabled={isSaving}>
+      {isSaving ? 'Saving...' : 'Save Changes'}
+    </button>
+  {/snippet}
+</Modal>
 
 <style>
-    /* Optional quick styling for the metadata grid */
-    .metadata-grid {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        column-gap: 1rem;
-        row-gap: 0.5rem;
-        align-items: center;
-    }
-    .link {
-        color: var(--primary-color);
-        text-decoration: none;
-    }
-    .link:hover {
-        text-decoration: underline;
-    }
+  .debate-header {
+    --border-color: #e2e8f0;
+    --bg-muted: #f1f5f9;
+    --text-muted: #64748b;
+    --text-light: #94a3b8;
 
-  .card {
-    max-width: 100%;
-    border-radius: 10px;
-    /* You can remove box-shadow/border if you want it to blend in more like a header */
-    /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); */
-    padding: 0.5rem 1rem;
-    box-sizing: border-box;
-    margin-bottom: 1rem; /* Add spacing below header */
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border-color);
   }
 
-  .card-body {
+  .debate-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--primary-dark-color, var(--text-color));
+    margin: 0 0 0.5rem 0;
+  }
+
+  .metadata {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
   }
 
+  .metadata-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .metadata-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .metadata-link:hover {
+    opacity: 0.8;
+  }
+
+  .edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .edit-btn:hover {
+    background: var(--bg-muted);
+    color: var(--primary-color);
+  }
+
+  /* Form styles */
   .debate-form {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
-  .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
-  .input-label {
-    font-size: 14px;
+  .form-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
     font-weight: 500;
-    color: #333;
-    margin-top: 0.5rem;
+    color: #475569;
   }
 
-  .editable-input {
-    height: 40px;
+  .form-input {
+    height: 36px;
     padding: 0 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 13px;
     width: 100%;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
-  .editable-input:focus {
+  .form-input:focus {
     border-color: var(--primary-color);
     outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 
-  .button-group {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 0.25rem;
+  .form-input::placeholder {
+    color: var(--text-light);
   }
 
-  .card-subtle {
-      font-size: 0.9rem;
-      color: #666;
-      margin-bottom: 1rem;
+  .error-message {
+    background: #fef2f2;
+    color: #b91c1c;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 1rem;
   }
+
+  /* Buttons */
+  .btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+  }
+
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: white;
+    color: #475569;
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-secondary:hover:not(:disabled) { background: #f8fafc; }
+
+  .btn-primary {
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .btn-primary:hover:not(:disabled) { opacity: 0.9; }
 </style>
