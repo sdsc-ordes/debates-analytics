@@ -180,15 +180,6 @@
 </Modal>
 
 <style>
-  /* ========== Variables ========== */
-  .speaker-card {
-    --border-color: #e2e8f0;
-    --bg-muted: #f1f5f9;
-    --text-muted: #64748b;
-    --text-light: #94a3b8;
-  }
-
-  /* ========== Speaker Card ========== */
   .speaker-card {
     background: white;
     border: 1px solid #eaeaea;
@@ -253,7 +244,9 @@
     margin: 0;
   }
 
-  .no-details { font-style: italic; }
+  .no-details {
+    font-style: italic;
+  }
 
   .no-speaker {
     display: flex;
@@ -265,105 +258,9 @@
     gap: 0.5rem;
   }
 
-  /* ========== Edit Button ========== */
-  .edit-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-light);
-    padding: 6px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s, color 0.2s;
-  }
-
-  .edit-btn:hover {
-    background: var(--bg-muted);
-    color: var(--primary-color);
-  }
-
-  /* ========== Form ========== */
   .speaker-form {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
   }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .form-label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    font-weight: 500;
-    color: #475569;
-  }
-
-  .form-input {
-    height: 36px;
-    padding: 0 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 13px;
-    width: 100%;
-    box-sizing: border-box;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-
-  .form-input:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .form-input::placeholder {
-    color: var(--text-light);
-  }
-
-  .error-message {
-    background: #fef2f2;
-    color: #b91c1c;
-    padding: 10px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    margin-bottom: 1rem;
-  }
-
-  /* ========== Buttons ========== */
-  .btn {
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.2s, opacity 0.2s;
-  }
-
-  .btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  .btn-secondary {
-    background: white;
-    color: #475569;
-    border: 1px solid var(--border-color);
-  }
-
-  .btn-secondary:hover:not(:disabled) { background: #f8fafc; }
-
-  .btn-primary {
-    background: var(--primary-color);
-    color: white;
-  }
-
-  .btn-primary:hover:not(:disabled) { opacity: 0.9; }
 </style>

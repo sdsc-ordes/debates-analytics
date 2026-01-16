@@ -66,8 +66,6 @@
   }
 
   .modal {
-    --border-color: #e2e8f0;
-
     position: fixed;
     top: 50%;
     left: 50%;
@@ -104,7 +102,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: #94a3b8;
+    color: var(--text-light);
     padding: 4px;
     border-radius: 6px;
     display: flex;
@@ -114,8 +112,8 @@
   }
 
   .close-btn:hover {
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--bg-muted);
+    color: var(--text-muted);
   }
 
   .modal-body {

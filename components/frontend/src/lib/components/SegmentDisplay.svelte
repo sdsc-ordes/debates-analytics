@@ -208,39 +208,9 @@
     margin-bottom: 0.5rem;
   }
 
-  .edit-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #94a3b8;
-    padding: 4px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s, color 0.2s;
-  }
-
-  .edit-btn:hover {
-    background: #f1f5f9;
-    color: var(--primary-color);
-  }
-
-  .edit-btn.cancel:hover {
-    color: #ef4444;
-  }
-
-  .edit-btn.save:hover {
-    color: #22c55e;
-  }
-
-  .edit-actions {
-    display: flex;
-    gap: 4px;
-  }
-
   .highlighted {
     color: var(--secondary-color);
+    font-weight: bold;
   }
 
   .editable-textarea {
@@ -252,11 +222,6 @@
     margin: 0;
     padding: 0;
     word-wrap: break-word;
-  }
-
-  .highlighted {
-    color: var(--secondary-color);
-    font-weight: bold;
   }
 
   .term-found {

@@ -15,6 +15,12 @@
   --text-color: #1e1e1e;
   --heading-font: "Helvetica-Neue", sans-serif;
   --body-font: "Helvetica-Neue", sans-serif;
+
+  /* UI Component Variables */
+  --border-color: #e2e8f0;
+  --bg-muted: #f1f5f9;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
 }
 
 body {
@@ -235,4 +241,122 @@ button:focus:not(:focus-visible) {
   position: absolute;
   width: 1px;
   white-space: nowrap;
+}
+
+/* ========================================
+   Shared Component Styles
+   ======================================== */
+
+/* Icon Edit Button */
+.edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-light);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.edit-btn:hover {
+  background: var(--bg-muted);
+  color: var(--primary-color);
+}
+
+.edit-btn.cancel:hover {
+  color: #ef4444;
+}
+
+.edit-btn.save:hover {
+  color: #22c55e;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* Form Styles */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.form-input {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input::placeholder {
+  color: var(--text-light);
+}
+
+/* Modal Buttons */
+.btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: white;
+  color: #475569;
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+/* Error Message */
+.error-message {
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 1rem;
 }
