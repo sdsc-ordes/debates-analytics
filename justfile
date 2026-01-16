@@ -72,6 +72,10 @@ stop *args:
 ps *args:
     docker compose {{docker_compose_files}} ps {{args}}
 
+# Exec containers.
+exec *args:
+    docker compose {{docker_compose_files}} exec {{args}}
+
 # Restart services.
 restart *args:
     @echo "Restarting services..."

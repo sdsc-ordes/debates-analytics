@@ -1,4 +1,5 @@
 import boto3
+from botocore.client import Config
 from dotenv import load_dotenv
 import logging
 from functools import lru_cache
@@ -8,7 +9,6 @@ from botocore.exceptions import (
     NoCredentialsError, DataNotFoundError, ClientError
 )
 
-# Setup Logging
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -32,6 +32,20 @@ class S3Manager:
             endpoint_url=self.server_url,
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
+            region_name='garage',
+            config=Config(
+                signature_version='s3v4'
+            )
+        )
+
+        # Public Signer (For generating URLs that work in the browser)
+        self.s3_signer = boto3.client(
+            's3',
+            endpoint_url=self.s3_frontend_base_url,
+            aws_access_key_id=self.access_key,
+            aws_secret_access_key=self.secret_key,
+            region_name='garage',
+            config=Config(signature_version='s3v4')
         )
 
     def get_presigned_url(self, object_key, expiration=3600):
@@ -40,17 +54,16 @@ class S3Manager:
         """
         try:
             print(f"presign download url for s3 key {object_key}")
-            response = self.s3.generate_presigned_url(
-                "get_object",
+            url = self.s3_signer.generate_presigned_url(
+                'get_object',
                 Params={
                     "Bucket": self.bucket_name,
                     "Key": object_key,
-                    "ResponseContentDisposition": f"attachment; filename={object_key}"
+                    "ResponseContentDisposition": f"attachment; filename={object_key}",
                 },
-                ExpiresIn=expiration,
+                ExpiresIn=expiration
             )
-            frontend_url = response.replace(self.server_url, self.s3_frontend_base_url)
-            return frontend_url
+            return url
         except DataNotFoundError:
             print(f"s3 key not found: {object_key}")
         except NoCredentialsError:
@@ -108,7 +121,7 @@ class S3Manager:
         The URL returned is adjusted to use the S3_FRONTEND_BASE_URL hostname.
         """
         try:
-            logging.info(f"Generating presigned POST for key: {object_key}")
+            logging.info(f"Generating presigned POST for key: {object_key}, bucket {self.bucket_name}")
 
             conditions = [
                 {"acl": "public-read"},
@@ -123,7 +136,8 @@ class S3Manager:
                 Key=object_key,
                 Fields={
                     "acl": "public-read",
-                    "success_action_status": "201"
+                    "success_action_status": "201",
+                    "bucket": self.bucket_name,
                 },
                 Conditions=conditions,
                 ExpiresIn=expiration
