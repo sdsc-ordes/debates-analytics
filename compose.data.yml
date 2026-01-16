@@ -1,56 +1,6 @@
 version: "3.8"
 
 services:
-  # --- S3 Service (MinIO Instance) ---
-  minio-instance:
-    image: minio/minio
-    volumes:
-      - ${MINIO_PATH}:/data
-    container_name: s3
-    labels:
-      - "dev.dozzle.name=S3"
-      - "dev.dozzle.group=Services"
-    ports:
-      - 9000:9000
-      - 9001:9001
-    environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
-    command: server --address 0.0.0.0:9000 --console-address :9001 /data
-    networks:
-      - debates_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # --- MinIO Setup Service (Event & CORS Configuration) ---
-  minio-setup:
-    image: minio/mc
-    depends_on:
-      minio-instance:
-        condition: service_healthy
-    container_name: s3-setup
-    labels:
-      - "dev.dozzle.name=S3 Setup"
-      - "dev.dozzle.group=Setup"
-    networks:
-      - debates_network
-    environment:
-      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${S3_SECRET_KEY}
-      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
-    volumes:
-      - ./scripts/minio-setup.sh:/tmp/minio-setup.sh
-    entrypoint: /bin/sh
-    command: -c "
-      echo 'Waiting for Minio...';
-      /usr/bin/mc alias set myminio http://minio-instance:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY;
-      echo 'Alias set.';
-      /usr/bin/mc mb myminio/$$S3_BUCKET_NAME || echo 'Bucket already exists.';
-      echo 'Bucket setup complete.';
-      exit 0;"
 
   solr:
     build:

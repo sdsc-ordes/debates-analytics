@@ -1,0 +1,25 @@
+# --- CORE PATHS (Top Level) ---
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+
+# --- DATABASE ENGINE ---
+# 'lmdb' is standard, 'sqlite' is slower but uses less RAM
+db_engine = "lmdb"
+
+# --- REPLICATION (Single Node Mode) ---
+replication_factor = 1
+
+# --- RPC (Internal Node Communication) ---
+# You must set a secret for security, even in dev (secret is not used for single node)
+rpc_bind_addr = "[::]:3901"
+rpc_secret = "a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890a1b2c3d4e5f67890"
+
+# --- S3 API ---
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.localhost"
+
+# --- ADMIN API (Used by scripts) ---
+[admin]
+api_bind_addr = "[::]:3903"
