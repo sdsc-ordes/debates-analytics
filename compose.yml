@@ -20,13 +20,14 @@ networks:
 
 # Global volumes used for persistence
 volumes:
-  reddis_data:
-  minio_data:
+  redis_data:
+  garage_data:
   solr_data:
   mongo_data:
 
 # Include other compose files
 include:
   - compose.data.yml
+  - compose.garage.yml
   - compose.backend.yml
   - compose.frontend.yml
