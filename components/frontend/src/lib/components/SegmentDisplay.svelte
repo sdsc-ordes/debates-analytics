@@ -3,6 +3,7 @@
   import { jumpToTime } from "$lib/utils/mediaStartUtils";
   import type { components } from '$lib/api/schema';
   import { client } from '$lib/api/client';
+  import { Pencil, Check, X } from 'lucide-svelte';
 
   type Subtitle = components['schemas']['Subtitle'];
   type Segment = components['schemas']['Segment'];
@@ -85,10 +86,18 @@
         <div class="card-title-small">Transcription</div>
         {#if auth.canEdit && activeSegment}
           {#if !editTranscript}
-            <button class="secondary-button" onclick={() => editTranscript = true}>Edit</button>
+            <button class="edit-btn" onclick={() => editTranscript = true} title="Edit transcription">
+              <Pencil size={14} />
+            </button>
           {:else}
-            <button class="secondary-button" onclick={() => editTranscript = false}>Cancel</button>
-            <button class="secondary-button" onclick={() => saveGroup(activeGroupOriginal, typeTranscript)}>Save</button>
+            <div class="edit-actions">
+              <button class="edit-btn cancel" onclick={() => editTranscript = false} title="Cancel">
+                <X size={14} />
+              </button>
+              <button class="edit-btn save" onclick={() => saveGroup(activeGroupOriginal, typeTranscript)} title="Save">
+                <Check size={14} />
+              </button>
+            </div>
           {/if}
         {/if}
       </div>
@@ -125,10 +134,18 @@
       <div class="card-title-small">Translation</div>
       {#if auth.canEdit && activeSegment}
         {#if !editTranslation}
-          <button class="secondary-button" onclick={() => editTranslation = true}>Edit</button>
+          <button class="edit-btn" onclick={() => editTranslation = true} title="Edit translation">
+            <Pencil size={14} />
+          </button>
         {:else}
-          <button class="secondary-button" onclick={() => editTranslation = false}>Cancel</button>
-          <button class="secondary-button" onclick={() => saveGroup(activeGroupTranslation, typeTranslation)}>Save</button>
+          <div class="edit-actions">
+            <button class="edit-btn cancel" onclick={() => editTranslation = false} title="Cancel">
+              <X size={14} />
+            </button>
+            <button class="edit-btn save" onclick={() => saveGroup(activeGroupTranslation, typeTranslation)} title="Save">
+              <Check size={14} />
+            </button>
+          </div>
         {/if}
       {/if}
     </div>
@@ -184,6 +201,44 @@
     overflow-y: auto;
   }
 
+  .header-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .edit-btn:hover {
+    background: #f1f5f9;
+    color: var(--primary-color);
+  }
+
+  .edit-btn.cancel:hover {
+    color: #ef4444;
+  }
+
+  .edit-btn.save:hover {
+    color: #22c55e;
+  }
+
+  .edit-actions {
+    display: flex;
+    gap: 4px;
+  }
+
   .highlighted {
     color: var(--secondary-color);
   }
@@ -191,10 +246,6 @@
   .editable-textarea {
     width: 100%;
     height: 50px;
-  }
-
-  .highlighted-textarea {
-    border: 2px solid var(--secondary-color);
   }
 
   p {
@@ -205,14 +256,12 @@
 
   .highlighted {
     color: var(--secondary-color);
-    font-weight: bold; /* Optional: makes active line pop more */
+    font-weight: bold;
   }
 
-  /* NEW STYLE for search term matches */
   .term-found {
-    background-color: #fff9c4; /* Light Yellow Highlight */
+    background-color: #fff9c4;
     border-radius: 2px;
-    box-shadow: 0 0 2px #fbc02d; /* Optional: adds a subtle glow */
+    box-shadow: 0 0 2px #fbc02d;
   }
-
 </style>
