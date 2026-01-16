@@ -12,7 +12,7 @@ until nc -z localhost 3903; do sleep 1; done
 sleep 3
 
 echo "🛠  Configuring Garage..."
--
+
 if ! garage layout show | grep -q "Capacity"; then
     echo "⚙️  Initializing fresh single-node layout..."
 
