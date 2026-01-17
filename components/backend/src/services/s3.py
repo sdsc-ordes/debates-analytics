@@ -41,7 +41,7 @@ class S3Manager:
         # Public Signer (For generating URLs that work in the browser)
         self.s3_signer = boto3.client(
             's3',
-            endpoint_url="http://garage:3900",
+            endpoint_url=self.server_url,
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
             region_name='garage',
@@ -66,7 +66,7 @@ class S3Manager:
                 Params=params,
                 ExpiresIn=expiration
             )
-            public_url = url.replace("http://garage:3900", "https://debates.swisscustodian.ch")
+            public_url = url.replace(self.server_url, self.s3_frontend_base_url)
             logger.info(f"public_url: {public_url}")
             return public_url
         except DataNotFoundError:
