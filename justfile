@@ -6,7 +6,7 @@ root_dir := `git rev-parse --show-toplevel`
 flake_dir := root_dir / "tools/nix"
 output_dir := root_dir / ".output"
 build_dir := output_dir / "build"
-docker_compose_files := "--env-file config/.env.secret --env-file config/.env.test"
+docker_compose_files := "--env-file config/.env.secret --env-file config/.env"
 
 # --- Modularity ---
 mod nix "./tools/just/nix.just"

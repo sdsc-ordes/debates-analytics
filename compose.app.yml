@@ -64,3 +64,36 @@ services:
       HF_MODEL: ${HF_MODEL}
     networks:
       - debates_network
+
+  frontend:
+    build:
+      context: ./components/frontend
+    container_name: frontend
+    labels:
+      - "dev.dozzle.name=Frontend"
+      - "dev.dozzle.group=App"
+    ports:
+      - 3000:3000
+    depends_on:
+      - backend
+    environment:
+      ORIGIN: ${ORIGIN}
+      TYPE_TRANSLATION: ${TYPE_TRANSLATION}
+      TYPE_ORIGINAL: ${TYPE_ORIGINAL}
+      PUBLIC_SEARCH_PAGE_SIZE: ${SEARCH_PAGE_SIZE}
+    networks:
+      - debates_network
+    command: ["node", "build"]
+    profiles:
+      - prod
+
+  docs:
+    build:
+      context: ./docs
+      dockerfile: Dockerfile
+    networks:
+      - debates_network
+    ports:
+      - 8001:8000
+    profiles:
+      - prod
