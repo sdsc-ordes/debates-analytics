@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { Trash2, FileIcon, Loader, TriangleAlert, RefreshCw, Upload, Copy, Check, ListRestart, AlertTriangle } from 'lucide-svelte';
+  import { Trash2, FileIcon, Loader, TriangleAlert, RefreshCw, Upload, Copy, Check, ListRestart, AlertTriangle, Clock } from 'lucide-svelte';
   import type { PageData, ActionData } from './$types';
   import { invalidateAll } from '$app/navigation';
   import type { components } from '$lib/api/schema';
@@ -17,7 +17,23 @@
   let isReindexing = $state<string | null>(null);
   let copiedId = $state<string | null>(null);
   let reindexSuccessId = $state<string | null>(null);
-  let hoveredStatusId = $state<string | null>(null);
+  let activeStatusId = $state<string | null>(null);
+  let tooltipAnchorEl = $state<HTMLElement | null>(null);
+
+  function closeTooltip() {
+    activeStatusId = null;
+    tooltipAnchorEl = null;
+  }
+
+  function toggleTooltip(e: MouseEvent, mediaId: string) {
+    e.stopPropagation();
+    if (activeStatusId === mediaId) {
+      closeTooltip();
+    } else {
+      activeStatusId = mediaId;
+      tooltipAnchorEl = e.currentTarget as HTMLElement;
+    }
+  }
 
   function formatDate(isoString: string) {
     if(!isoString) return "-";
@@ -42,6 +58,8 @@
 <svelte:head>
   <title>Dashboard</title>
 </svelte:head>
+
+<svelte:window onclick={closeTooltip} />
 
 <section class="page-layout">
   <div class="dashboard-card">
@@ -114,18 +132,21 @@
                 </td>
 
                 <td>
-                  <div
-                    class="status-wrapper"
-                    role="tooltip"
-                    onmouseenter={() => hoveredStatusId = item.media_id}
-                    onmouseleave={() => hoveredStatusId = null}
-                  >
+                  <div class="status-cell">
                     <span class="badge {getStatusClass(item.status)}">
                       {item.status.replace(/_/g, ' ')}
                     </span>
+                    <button
+                      class="info-btn"
+                      type="button"
+                      title="View processing history"
+                      onclick={(e) => toggleTooltip(e, item.media_id)}
+                    >
+                      <Clock size={14} />
+                    </button>
 
-                    {#if hoveredStatusId === item.media_id}
-                      <HistoryTooltip history={item.processing_history || []} />
+                    {#if activeStatusId === item.media_id && tooltipAnchorEl}
+                      <HistoryTooltip history={item.processing_history || []} anchorEl={tooltipAnchorEl} />
                     {/if}
                   </div>
                 </td>
@@ -416,13 +437,27 @@
     .dashboard-card { padding: 1rem; }
   }
 
-  .status-wrapper {
-    position: relative;
-    display: inline-block;
-    cursor: help;
+  .status-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   }
 
-  td {
-    overflow: visible;
+  .info-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .info-btn:hover {
+    background-color: var(--background-color);
+    color: var(--primary-color);
   }
 </style>
