@@ -13,6 +13,6 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
   })
 
   // Redirect to the home page
-  const returnTo = url.searchParams.get("returnTo") || "/"
+  const returnTo = url.searchParams.get("returnTo") || "/dashboard"
   throw redirect(303, returnTo)
 }
