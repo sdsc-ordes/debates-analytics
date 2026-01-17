@@ -59,7 +59,6 @@ class S3Manager:
             }
             if as_attachment:
                 clean_filename = os.path.basename(object_key)
-                logger.info(f"presign download url for s3 key {object_key} with {clean_filename}")
                 params["ResponseContentDisposition"] = f'attachment; filename="{clean_filename}"'
             url = self.s3_signer.generate_presigned_url(
                 'get_object',
@@ -67,7 +66,8 @@ class S3Manager:
                 ExpiresIn=expiration
             )
             public_url = url.replace(self.server_url, self.s3_frontend_base_url)
-            logger.info(f"public_url: {public_url}")
+            logger.info(f"signed url created for s3 key {object_key} with params {params}")
+
             return public_url
         except DataNotFoundError:
             print(f"s3 key not found: {object_key}")

@@ -75,7 +75,6 @@ async def get_media_urls(
 
     logger.info(f"media_id={media_id} - Returning {len(download_urls)} signed URLs.")
 
-    logger.info(f"response: urls {download_urls}, media_url: {media_url}")
     return {
         "signedUrls": download_urls,
         "signedMediaUrl": media_url,
