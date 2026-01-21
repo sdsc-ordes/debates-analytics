@@ -10,7 +10,8 @@ x-backend-env: &backend-env
   # Shared External Services
   S3_SERVER: ${S3_SERVER}
   S3_BUCKET_NAME: ${S3_BUCKET_NAME}
-  S3_FRONTEND_BASE_URL: ${S3_FRONTEND_BASE_URL}
+  S3_PUBLIC_URL: ${S3_PUBLIC_URL}
+  S3_SIGNING_URL: ${S3_SIGNING_URL}
   S3_ACCESS_KEY: ${S3_ACCESS_KEY}
   S3_SECRET_KEY: ${S3_SECRET_KEY}
   REDIS_URL: ${REDIS_URL}
@@ -84,8 +85,6 @@ services:
     networks:
       - debates_network
     command: ["node", "build"]
-    profiles:
-      - prod
 
   docs:
     build:
@@ -95,5 +94,3 @@ services:
       - debates_network
     ports:
       - 8001:8000
-    profiles:
-      - prod
