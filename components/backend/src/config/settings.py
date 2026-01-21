@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     s3_secret_key: str
     s3_server: str
     s3_bucket_name: str
-    s3_frontend_base_url: str
+    s3_public_url: str
+    s3_signing_url: str
 
     # Mongo Config
     mongo_url: str
