@@ -33,7 +33,7 @@ services:
       - htpasswd_combined
       - htpasswd_editor
       - htpasswd_reader
-      - ssl_private_key
+      - ssl_certificate_key
     profiles:
       - prod
 
@@ -44,8 +44,8 @@ secrets:
     file: ${HTPASSWD_EDITOR}
   htpasswd_reader:
     file: ${HTPASSWD_READER}
-  ssl_private_key:
-    file: ${SSL_PRIVATE_KEY}
+  ssl_certificate_key:
+    file: ${SSL_CERTIFICATE_KEY}
 
 # Global networks used for inter-service communication
 networks:
@@ -54,10 +54,10 @@ networks:
 
 # Global volumes used for persistence
 volumes:
-  redis_data:
-  garage_data:
-  solr_data:
-  mongo_data:
+  redis:
+  garage:
+  solr:
+  mongo:
 
 # Include other compose files
 include:

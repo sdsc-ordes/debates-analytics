@@ -50,20 +50,19 @@ setup *args:
 [group('deploy')]
 up *args:
     @echo "Starting services..."
-    cd deploy/compose && \
-        just compose up -d "$@"
+    just compose up -d "$@"
 
 # Build the compose setup.
 [group('deploy')]
 build *args:
     @echo "Build compose file..."
-    cd deploy/compose && \
-        just compose build "$@"
+    just compose build "$@"
 
 # Run the compose command.
 [group('deploy')]
 [no-cd]
 compose *args:
+    cd deploy/compose && \
     just container::mgr compose \
         --env-file .env --env-file .env.secret "$@"
 
