@@ -37,7 +37,8 @@ data/
 # Ignore all .env files by default
 .env
 .env.*
-config/.env.*
+!.env.tmpl
+!.env.secret.tmpl
 
 # But, *allow* our shared test config file
 !config/.env.test
