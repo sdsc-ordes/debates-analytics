@@ -1,7 +1,7 @@
 services:
   solr:
     build:
-      context: ./components/solr
+      context: ../../components/solr
     ports:
       - 8983:8983
     networks:
@@ -90,7 +90,7 @@ services:
 
   garage:
     build:
-      context: components/garage
+      context: ../../components/garage
     container_name: garage
     restart: unless-stopped
     labels:
