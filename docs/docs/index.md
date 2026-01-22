@@ -30,9 +30,7 @@ Both roles have access to the user interface, but the reader is restricted to ce
 
 ### Dashboard
 
-![Search interface](static/content/dashboard.png){ width="800",
-caption="hello" } /// caption Search interface to make speaker statements
-searchable ///
+![Searchpage](static/content/dashboard.png "Dashboard to upload and administer media files"){ width="800" }
 
 - only the `Editor` has access
 - new videos and audio files can be uploaded to start processing
@@ -41,42 +39,23 @@ searchable ///
 
 ### Searchpage
 
+![Searchpage](static/content/searchpage.png "Search interface to make speaker statements searchable"){ width="800" }
+
 - both roles have access
 - the search page can be used to search in speaker statements for a term or filter the statements by certain criteria that have been added as tags to the segments by the `Editor`.
 
-### Mediaplayer page
+### Mediaplayer
 
-: A dashboard for administering the video and audio data and metadata, that also allows to start processing for newly uploaded video and audio files
-- `Reader` and `Editor`: Search page to search in transcripts
-- `
+![Mediaplayer](static/content/mediaplayer.png "Mediaplayer to compare media with transcripts and translations"){ width="800" }
 
-, that allows to:
-
-- start processing of media files: videos as `mp4` and audios as `wav``
-- 
-
-
-shows maybe best what has been achieved:
-
-- There is a search interface, where the videos and audios are searchable by
-  speaker statements in both original language and english translation
-
-- You can jump into the media player page for each statement and hear/watch the
-  statement while at the same time being able to compare against transcript and
-  translation. You can also edit the speaker, transcript and translation of the
-  statement.
-
-![Search interface](static/content/search-interface.png){ width="800",
-caption="hello" } /// caption Search interface to make speaker statements
-searchable ///
-
-![Search interface](static/content/mediaplayer-interface.png){ width="800" } ///
-caption Media player to compare and edit speaker information, transcripts and
-translations ///
+- both roles have access
+- the `Editor` can edit and add metadata on speakers and videos and correct transcripts and translations
+- the `Reader` can view and jump around in the media replay via pointing to text in transcripts and translations
 
 ## PoC
 
-The project has been done as a Proof of Concept: it is not production ready and
-some steps that can be automated are still manual. Also some settings that could
-be custom are currently hard coded. In Roadmap we describe the next steps to
-generalize the project.
+The project has been done as a Proof of Concept: it is not production ready in the following ways:
+- the data is stored on docker volumes. The volumes are limited by the diskspace on the server and their are no data recovery strategies in place
+- the authentication uses nginx basic auth to distinguish between just two roles. There is no real user authentication in place besides these teo roles.
+
+

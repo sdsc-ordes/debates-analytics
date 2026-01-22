@@ -7,10 +7,7 @@ use_directory_urls: false
 plugins:
   - search
   - link-marker
-  - neoteroi.mkdocsoad:
-      use_pymdownx: true
-extra_css:
-  - stylesheets/mkdocsoad.css
+  - swagger-ui-tag
 
 theme:
   name: material
@@ -31,15 +28,16 @@ markdown_extensions:
   - footnotes
   - pymdownx.arithmatex:
       generic: true
-  - pymdownx.blocks.caption
+  - pymdownx.blocks.caption:
+      prepend: false
+      auto: true
   - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
   - pymdownx.mark
   - pymdownx.snippets:
-      auto_append:
-        - includes/glossary.md
+      check_paths: true
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -57,8 +55,9 @@ nav:
   - Architecture: architecture.md
   - Processing Pipeline: processing.md
   - Dataloader: dataloader.md
-  - WebUI: webui.md
-  - Backend API: api.md
+  - UI:
+      - Ingest: ui/ingest.md
+  - API: api/api.md
   - Installation:
       - Options: install/options.md
       - Docker Compose Setup: install/compose.md
