@@ -31,14 +31,6 @@ __pycache*
 .yamllint.yaml
 .typos.toml
 
-# Ignore data folders
-data/
-
-# Ignore all .env files by default
-.env
-.env.*
-config/.env.*
-
 # But, *allow* our shared test config file
 !config/.env.test
 
@@ -50,3 +42,10 @@ example/
 
 # But, *allow* our shared test config file
 !example/*.mp4
+
+# Ignore all .env files by default
+.env
+.env.*
+
+# Allow template files
+!.env.*.tmpl

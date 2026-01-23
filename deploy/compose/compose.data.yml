@@ -1,7 +1,7 @@
 services:
   solr:
     build:
-      context: ./components/solr
+      context: ../../components/solr
     ports:
       - 8983:8983
     networks:
@@ -17,7 +17,7 @@ services:
       timeout: 10s
       retries: 5
     volumes:
-      - ${SOLR_PATH}:/var/solr
+      - solr:/var/solr
     command:
       - solr-precreate
       - debates
@@ -38,7 +38,7 @@ services:
     networks:
       - debates_network
     volumes:
-      - ${MONGO_PATH}:/data/db
+      - mongo:/data/db
     healthcheck:
       # We use $$ to tell Docker Compose "don't replace this, let the container shell handle it"
       test:
@@ -81,7 +81,7 @@ services:
       - "dev.dozzle.name=Redis"
       - "dev.dozzle.group=Services"
     volumes:
-      - ${REDIS_PATH}:/data
+      - redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -90,7 +90,7 @@ services:
 
   garage:
     build:
-      context: components/garage
+      context: ../../components/garage
     container_name: garage
     restart: unless-stopped
     labels:
@@ -99,7 +99,7 @@ services:
     ports:
       - "3900:3900"
     volumes:
-      - ${GARAGE_PATH}:/var/lib/garage
+      - garage:/var/lib/garage
     environment:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}

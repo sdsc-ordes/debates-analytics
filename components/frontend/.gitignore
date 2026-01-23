@@ -15,7 +15,7 @@ Thumbs.db
 
 # Env
 .env
-.env.computer
+!.env.tmpl
 .env.compose
 
 # Vite

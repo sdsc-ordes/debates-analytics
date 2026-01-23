@@ -14,21 +14,27 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-
 class S3Manager:
     def __init__(self):
         settings = get_settings()
-
         self.access_key = settings.s3_access_key
         self.secret_key = settings.s3_secret_key
-        self.server_url = settings.s3_server
         self.bucket_name = settings.s3_bucket_name
-        self.s3_frontend_base_url = settings.s3_frontend_base_url
-        logger.info(f"S3_FRONTEND_BASE_URL {self.s3_frontend_base_url}")
 
-        if not all([self.access_key, self.secret_key, self.server_url]):
-            logger.error("Missing S3 environment variables!")
+        # 1. Internal Connection (Backend <-> Garage)
+        self.server_url = settings.s3_server
+        
+        # 2. Signing URL (What the final receiver expects the Host header to be)
+        # In Prod: This is 'garage:3900' (because Nginx rewrites headers)
+        # In Local: This is 'localhost:3900' (because Browser sends headers)
+        self.signing_url = settings.s3_signing_url 
+        
+        # 3. Public URL (What the user clicks)
+        self.public_url = settings.s3_public_url
 
+        # ... checks ...
+
+        # Internal Client (Uses S3_SERVER_URL)
         self.s3 = boto3.client(
             's3',
             endpoint_url=self.server_url,
@@ -38,10 +44,10 @@ class S3Manager:
             config=Config(s3={'addressing_style': 'path'}, signature_version='s3v4'),
         )
 
-        # Public Signer (For generating URLs that work in the browser)
+        # Signer Client (Uses S3_SIGNING_URL) 👈 The Fix
         self.s3_signer = boto3.client(
             's3',
-            endpoint_url=self.server_url,
+            endpoint_url=self.signing_url,
             aws_access_key_id=self.access_key,
             aws_secret_access_key=self.secret_key,
             region_name='garage',
@@ -49,9 +55,9 @@ class S3Manager:
         )
 
     def get_presigned_url(self, object_key, as_attachment=False, expiration=3600):
-        """
-        Generate a presigned URL for an S3 object.
-        """
+        # 1. Generate URL using the SIGNING endpoint
+        # The signature is now calculated for the correct expected Host
+
         try:
             params = {
                 "Bucket": self.bucket_name,
@@ -65,10 +71,12 @@ class S3Manager:
                 Params=params,
                 ExpiresIn=expiration
             )
-            public_url = url.replace(self.server_url, self.s3_frontend_base_url)
-            logger.info(f"signed url created for s3 key {object_key} with params {params}")
 
-            return public_url
+            # 2. Replace the Signing URL with the Public URL
+            # This makes the link clickable for the user
+            final_url = url.replace(self.signing_url, self.public_url)
+
+            return final_url
         except DataNotFoundError:
             print(f"s3 key not found: {object_key}")
         except NoCredentialsError:
@@ -123,7 +131,7 @@ class S3Manager:
     def get_presigned_post(self, object_key: str, expiration: int = 3600) -> Union[Dict[str, Any], None]:
         """
         Generates a presigned URL and fields for a client-side HTTP POST upload.
-        The URL returned is adjusted to use the S3_FRONTEND_BASE_URL hostname.
+        The URL returned is adjusted to use the S3_PUBLIC_URL hostname.
         """
         try:
             logging.info(f"Generating presigned POST for key: {object_key}, bucket {self.bucket_name}")
@@ -148,9 +156,9 @@ class S3Manager:
                 ExpiresIn=expiration
             )
 
-            response["url"] = response["url"].replace(self.server_url, self.s3_frontend_base_url)
+            response["url"] = response["url"].replace(self.server_url, self.s3_public_url)
 
-            logging.info(f"Returning external POST URL: {response['url']}")
+            logging.info("Returning external POST URL")
 
             return response
 

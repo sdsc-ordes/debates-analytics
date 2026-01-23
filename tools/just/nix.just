@@ -6,6 +6,7 @@ default:
 
 # Enter the Nix development shell `$1` and execute the command `${@:2}`.
 [no-cd]
+[group('nix')]
 develop *args:
     #!/usr/bin/env bash
     set -eu
@@ -26,6 +27,7 @@ develop *args:
 
 # Start an Nix interpreter with loaded flake.
 [no-cd]
+[group('nix')]
 repl *args:
     #!/usr/bin/env bash
     set -eu
@@ -59,6 +61,7 @@ package attrname *args:
 
 # Show all packages.
 [no-cd]
+[group('nix')]
 show:
     #!/usr/bin/env bash
     set -eu
