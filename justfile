@@ -5,19 +5,16 @@ root_dir := `git rev-parse --show-toplevel`
 flake_dir := root_dir / "tools/nix"
 output_dir := root_dir / ".output"
 build_dir := output_dir / "build"
+export CONTAINER_MGR := env("CONTAINER_MGR", "docker")
 
 # Nix functionality.
 mod nix "./tools/just/nix.just"
 # Container functionality.
 mod container "./tools/just/container.just"
 
-# The default container manager (e.g 'podman' or 'docker').
-export CONTAINER_MGR := env("CONTAINER_MGR", "docker")
-# The default compose profile (production: "prod").
-export COMPOSE_PROFILES := env("COMPOSE_PROFILES", "")
-
 # Default target: List available recipes.
 default:
+    @echo "CONTAINER_MGR=${CONTAINER_MGR}"
     @just --list --unsorted
 
 # Enter the default Nix development shell and execute the command `"$@`.
@@ -38,6 +35,7 @@ format *args:
     "{{root_dir}}/tools/scripts/setup-config-files.sh"
     @echo "Running treefmt..."
     nix run --accept-flake-config "{{flake_dir}}#treefmt" -- "$@"
+
 
 # Setup the project (e.g., install dependencies, configure environment).
 [group('general')]

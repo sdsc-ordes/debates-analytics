@@ -6,6 +6,10 @@ services:
     container_name: dozzle
     ports:
       - "8080:8080"
+    networks:
+      - debates_network
+    environment:
+      - DOZZLE_BASE=/logs
     volumes:
       # Dozzle needs access to the Docker socket
       # to read logs from all other running containers.
@@ -22,30 +26,35 @@ services:
       - 80:80
     volumes:
       - type: bind
-        source: ${SSL_CERTIFICATE}
-        target: /etc/political-debates/nginx/ssl/cert;
+        source: /etc/letsencrypt/archive/debates.swisscustodian.ch/cert7.pem
+        target: /etc/nginx/ssl/debates.swisscustodian.ch.cert
         read_only: true
       - type: bind
-        source: ./components/nginx/nginx.conf
+        source: ../../components/nginx/nginx.conf
         target: /etc/nginx/conf.d/default.conf
         read_only: true
     secrets:
       - htpasswd_combined
       - htpasswd_editor
       - htpasswd_reader
-      - ssl_certificate_key
+      - ssl_private_key
+    depends_on:
+      - backend
+      - frontend
+      - dozzle
+      - docs
     profiles:
       - prod
 
 secrets:
   htpasswd_combined:
-    file: ${HTPASSWD_COMBINED}
+    file: /etc/apache2/combined.htpasswd
   htpasswd_editor:
-    file: ${HTPASSWD_EDITOR}
+    file: /etc/apache2/editor.htpasswd
   htpasswd_reader:
-    file: ${HTPASSWD_READER}
-  ssl_certificate_key:
-    file: ${SSL_CERTIFICATE_KEY}
+    file: /etc/apache2/reader.htpasswd
+  ssl_private_key:
+    file: /etc/letsencrypt/archive/debates.swisscustodian.ch/privkey7.pem
 
 # Global networks used for inter-service communication
 networks:
