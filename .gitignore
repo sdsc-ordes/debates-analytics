@@ -31,12 +31,6 @@ __pycache*
 .yamllint.yaml
 .typos.toml
 
-# Ignore all .env files by default
-.env
-.env.*
-!.env.tmpl
-!.env.secret.tmpl
-
 # But, *allow* our shared test config file
 !config/.env.test
 
@@ -51,3 +45,10 @@ example/
 
 # docs/build folder
 docs/site/
+
+# Ignore all .env files by default
+.env
+.env.*
+
+# Allow template files
+!.env.*.tmpl
