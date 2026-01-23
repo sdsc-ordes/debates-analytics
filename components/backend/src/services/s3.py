@@ -158,7 +158,7 @@ class S3Manager:
 
             response["url"] = response["url"].replace(self.server_url, self.s3_public_url)
 
-            logging.info(f"Returning external POST URL")
+            logging.info("Returning external POST URL")
 
             return response
 
