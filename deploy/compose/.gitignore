@@ -1,0 +1,6 @@
+# Ignore all .env files by default
+.env
+.env.*
+
+# Allow template files
+!.env.*.tmpl
