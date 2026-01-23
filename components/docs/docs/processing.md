@@ -344,5 +344,4 @@ files:
     description: PDF file containing the English translation ...
 ```
 
-After the media has been processed it is loaded into the Debates App via the
-[dataloader](dataloader.md).
+After the media has been processed it is loaded into the Debates App.

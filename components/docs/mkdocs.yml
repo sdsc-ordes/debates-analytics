@@ -54,7 +54,6 @@ nav:
   - Home: index.md
   - Architecture: architecture.md
   - Processing Pipeline: processing.md
-  - Dataloader: dataloader.md
   - UI:
       - Ingest: ui/ingest.md
   - API: api/api.md

@@ -24,7 +24,7 @@ See [Frontend](../ui/ingest.md)
 - `ingest/process`: triggers the first job on redis queue: either a `convert` or
   a `trnascribe` task, depending on the type of the media.
 
-See [Frontend](../ui/metadata.md)
+See Frontend
 
 ## Search
 
@@ -37,7 +37,7 @@ See [Frontend](../ui/metadata.md)
 - `ingest/process`: triggers the first job on redis queue: either a `convert` or
   a `trnascribe` task, depending on the type of the media.
 
-See [Frontend](../ui/search.md)
+See Frontend
 
 ## Admin
 
@@ -48,7 +48,7 @@ See [Frontend](../ui/search.md)
 - `ingest/process`: triggers the first job on redis queue: either a `convert` or
   a `trnascribe` task, depending on the type of the media.
 
-See [Frontend](../ui/admin.md)
+See Frontend
 
 ## API Spec
 
