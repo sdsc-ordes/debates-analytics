@@ -89,7 +89,7 @@ services:
 
   docs:
     build:
-      context: ./docs
+      context: ../../components/docs
       dockerfile: Dockerfile
     networks:
       - debates_network
