@@ -156,18 +156,15 @@ class S3Manager:
                 ExpiresIn=expiration
             )
 
-            response["url"] = response["url"].replace(self.server_url, self.s3_public_url)
+            response["url"] = response["url"].replace(self.server_url, self.public_url)
 
             logging.info("Returning external POST URL")
 
             return response
 
-        except NoCredentialsError:
-            logging.error("Credentials not available for S3 POST.")
-            return None
         except Exception as e:
             logging.error(f"Error generating presigned POST: {e}")
-            return None
+            raise e
 
     def download_file(self, s3_key: str, local_path: str):
         """Used by Workers to download source files"""
