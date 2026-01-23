@@ -1,0 +1,24 @@
+set positional-arguments
+set fallback := true
+set shell := ["bash", "-cue"]
+root_dir := `git rev-parse --show-toplevel`
+comp_dir := justfile_directory()
+
+
+default:
+    just --list --unsorted
+
+# Build the docs in strict mode (as in CI)
+build *args:
+    uv sync
+    uv run mkdocs build --strict
+
+
+# Updated serve recipe
+serve:
+    # 1. Fetch the latest spec from the running backend
+    @echo "Fetching openapi.json..."
+    @curl -s http://localhost:8082/openapi.json -o docs/openapi.json || echo "⚠️ Warning: Backend not running, using cached spec."
+
+    # 2. Run MkDocs
+    uv run mkdocs serve -w ../backend -w docs -a 127.0.0.1:8000

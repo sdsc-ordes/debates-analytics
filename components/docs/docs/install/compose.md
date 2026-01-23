@@ -3,15 +3,20 @@
 ## Clone the repo:
 
 ```
-git clone git@github.com:sdsc-ordes/debates-app.git
-cd debates-app
-git submodule update --init
+git clone git@github.com:sdsc-ordes/debates-analytics.git
+cd debates-analytics
 ```
+
+The repository uses nix:
+
+## Nix setup
 
 ## Environment variables for Debates App
 
 ```
-cp .env.dist .env
+cd deploy
+cp .env.tmpl .env
+cp .env.secret.tmpl .env.secret
 ```
 
 You need to set the following credentials:
@@ -81,7 +86,7 @@ The url connects it to the backend.
 Now you are ready to build and run docker compose
 
 ```
-docker compose -f docker-compose.compose build
+docker compose build
 docker compose -f docker-compose.compose up -d
 ```
 
