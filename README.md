@@ -9,7 +9,7 @@
 </p>
 
 [![Current Release](https://img.shields.io/github/release/sdsc-ordes/debates-analytics.svg?label=release)](https://github.com/sdsc-ordes/debates-analytics/releases/latest)
-[![Pipeline Status](https://img.shields.io/github/actions/workflow/status/sdsc-ordes/debates-analytics/normal.yaml?label=ci)](https://github.com/sdsc-ordes/debates-analytics/actions/workflows/normal.yaml)
+[![Pipeline Status](https://img.shields.io/github/actions/workflow/status/sdsc-ordes/debates-analytics/normal.yaml?label=ci)](https://github.com/sdsc-ordes/debates-analytics/actions/workflows/format.yaml)
 [![License label](https://img.shields.io/badge/License-Apache2.0-blue.svg?)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
 **Authors:**
