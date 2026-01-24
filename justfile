@@ -52,14 +52,12 @@ setup *args:
 [group('deploy')]
 up *args:
     @echo "Starting services..."
-    just api
     just compose up -d "$@"
 
 # Build the compose setup.
 [group('deploy')]
 build *args:
     @echo "Build compose file..."
-    just api
     just compose build "$@"
 
 # Run the compose command.
