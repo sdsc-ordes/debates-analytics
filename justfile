@@ -86,6 +86,27 @@ api:
 reindex *args:
     just container::mgr exec -it backend python cli.py {{args}}
 
+# Bulk upload a local folder to S3/Mongo
+# Usage: just upload ./my-videos
+[group('tools')]
+upload host_path:
+    @echo "📦 Preparing to upload from: {{host_path}}"
+
+    # 1. Create a temp directory inside the container
+    {{CONTAINER_MGR}} exec backend mkdir -p /tmp/bulk_import
+
+    # 2. Copy local files to the container
+    #    Note: We append '/.' to copy contents, not the folder itself
+    {{CONTAINER_MGR}} cp "{{host_path}}/." backend:/tmp/bulk_import/
+
+    # 3. Run the Python CLI command
+    @echo "🚀 Starting Import Process..."
+    {{CONTAINER_MGR}} exec backend python cli.py upload-folder /tmp/bulk_import
+
+    # 4. Cleanup
+    @echo "🧹 Cleaning up temp files..."
+    {{CONTAINER_MGR}} exec backend rm -rf /tmp/bulk_import
+
 # Build the documentation site (Strict mode for CI)
 [group('docs')]
 build-docs:
