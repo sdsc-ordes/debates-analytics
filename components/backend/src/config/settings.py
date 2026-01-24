@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     task_convert: str = "tasks.convert.process_video"
     task_transcribe: str = "tasks.transcribe.process_transcription"
     task_reindex: str = "tasks.reindex.reindex_solr"
+    hf_model: str = "large-v3"
+    hf_token: str
+    hf_space_url: str = "https://katospiegel-odtp-pyannote-whisper.hf.space/"
 
     type_translation: str
     type_original: str
