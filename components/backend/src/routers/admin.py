@@ -33,6 +33,7 @@ async def list_media(
                 media_id=d.get("media_id", str(d.get("_id"))),
                 filename=d.get("original_filename", "Unknown"),
                 status=d.get("status", "unknown"),
+                error_message=d.get("error_message", None),
                 processing_history=d.get("processing_history", []),
                 created_at=d.get("created_at"),
                 title=d.get("title")
