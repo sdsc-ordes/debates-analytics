@@ -5,7 +5,10 @@ root_dir := `git rev-parse --show-toplevel`
 flake_dir := root_dir / "tools/nix"
 output_dir := root_dir / ".output"
 build_dir := output_dir / "build"
+docs_dir := root_dir / "components/docs"
+backend_dir := root_dir / "components/backend"
 export CONTAINER_MGR := env("CONTAINER_MGR", "docker")
+export OPENAPI_URL := env("OPENAPI_URL", "")
 
 # Nix functionality.
 mod nix "./tools/just/nix.just"
@@ -15,6 +18,7 @@ mod container "./tools/just/container.just"
 # Default target: List available recipes.
 default:
     @echo "CONTAINER_MGR=${CONTAINER_MGR}"
+    @echo "OPENAPI_URL=${OPENAPI_URL}"
     @just --list --unsorted
 
 # Enter the default Nix development shell and execute the command `"$@`.
@@ -71,9 +75,28 @@ compose *args:
 api:
     @echo "Fetching OpenAPI spec from backend..."
     cd components/frontend && \
-    pnpm dlx openapi-typescript http://localhost:8082/openapi.json -o ./src/lib/api/schema.d.ts
+    pnpm dlx openapi-typescript {{OPENAPI_URL}} -o ./src/lib/api/schema.d.ts
+    @echo "Copying OpenAPI spec for docs..."
+    @curl -s {{OPENAPI_URL}} -o components/docs/docs/api/openapi.json \
+        && echo "✅ OpenAPI spec copied to docs." \
+        || echo "⚠️ Warning: Fetch failed"
 
 # Load or reindex solr for a media_id
 [group('tools')]
 reindex *args:
     just container::mgr exec -it backend python cli.py {{args}}
+
+# Build the documentation site (Strict mode for CI)
+[group('docs')]
+build-docs:
+    @echo "Building documentation..."
+    # Ensure dependencies are synced
+    cd {{docs_dir}} && uv sync
+    cd {{docs_dir}} && uv run mkdocs build --strict
+
+# Serve the docs locally with live reload
+[group('docs')]
+serve-docs:
+    @echo "📖 Starting MkDocs..."
+    # We watch both 'docs' and 'backend' so changes trigger reloads
+    cd {{docs_dir}} && uv run mkdocs serve
