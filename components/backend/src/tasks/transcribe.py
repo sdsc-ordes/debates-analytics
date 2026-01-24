@@ -7,6 +7,7 @@ from services.queue import get_queue_manager
 from services.filesystem import temp_workspace
 from services.mongo import get_mongo_manager
 from services.reporter import JobReporter
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,17 +18,24 @@ def process_transcription(s3_key, media_id):
     3.Uploads artifacts
     4.Queues for indexing
     """
-    s3 = get_s3_manager()
-    mongo = get_mongo_manager()
-    whisper_service = WhisperService()
-    job = get_current_job()
-    rq = get_queue_manager()
-    reporter = JobReporter(media_id, mongo, logger, job)
-
-    logger.info(f"media_id={media_id} - Task 'process_transcription' started.")
-    reporter.report_status_change("transcribing_started")
-
     try:
+        logger.info(f"media_id={media_id} - Task 'process_transcription' started.")
+        s3 = get_s3_manager()
+        mongo = get_mongo_manager()
+        job = get_current_job()
+        rq = get_queue_manager()
+        reporter = JobReporter(media_id, mongo, logger, job)
+        settings = get_settings()
+
+        logger.info(f"media_id={media_id} - Status change on mongodb: transcribing_started.")
+        reporter.report_status_change("transcribing_started")
+
+        hf_model = settings.hf_model
+        hf_token = settings.hf_token
+        hf_space_url = settings.hf_space_url
+        whisper_service = WhisperService(hf_space_url=hf_space_url, hf_token=hf_token, hf_model=hf_model)
+        logger.info(f"WhisperService initialized with model={hf_model} at {hf_space_url}")
+
         with temp_workspace() as work_dir:
 
             # 1.Downloads audio
@@ -90,11 +98,21 @@ def process_transcription(s3_key, media_id):
 
 
 class WhisperService:
-    def __init__(self):
-        self.space_url = os.getenv("HF_SPACE_URL")
-        self.hf_token = os.getenv("HF_TOKEN")
-        self.hf_model = os.getenv("HF_MODEL")
-        self.client = Client(self.space_url)
+    def __init__(self, hf_space_url, hf_token, hf_model):
+        self.hf_space_url = hf_space_url
+        self.hf_token = hf_token
+        self.hf_model = hf_model
+
+        try:
+            self.client = Client(
+                self.hf_space_url,
+                hf_token=self.hf_token,
+                verbose=False
+            )
+            logger.info(f"Connected to HF Space at {self.hf_space_url} and model {self.hf_model}")
+        except Exception as e:
+            logger.error(f"Error connecting to HF Space: {e}")
+            raise ConnectionError(f"Failed to connect to HF Space ({self.hf_space_url}). Error: {e}") from e
 
     def run_inference(self, file_path, task="transcribe", media_id="SYSTEM"):
         """
