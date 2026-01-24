@@ -1,5 +1,7 @@
-import { PUBLIC_BACKEND_SERVER } from "$env/static/public"
-import { PUBLIC_SEARCH_PAGE_SIZE } from "$env/static/public"
+import { env } from "$env/dynamic/public"
 
-export const BackendUrl = PUBLIC_BACKEND_SERVER
-export const SearchPageSize = parseInt(PUBLIC_SEARCH_PAGE_SIZE)
+export const BackendUrl = env.PUBLIC_BACKEND_SERVER || "http://backend:8000"
+
+export const SearchPageSize = env.PUBLIC_SEARCH_PAGE_SIZE
+  ? parseInt(env.PUBLIC_SEARCH_PAGE_SIZE)
+  : 20

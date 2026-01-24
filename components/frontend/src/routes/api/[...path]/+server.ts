@@ -1,8 +1,9 @@
 import { env } from "$env/dynamic/private"
 import type { RequestHandler } from "./$types"
 import { logger } from "$lib/utils/logger"
+import { BackendUrl } from "$lib/config"
 
-const BACKEND_URL = env.PUBLIC_BACKEND_SERVER || "http://backend:8000"
+const BACKEND_URL = BackendUrl
 
 const proxy: RequestHandler = async ({ request, params, url }) => {
   const path = params.path
