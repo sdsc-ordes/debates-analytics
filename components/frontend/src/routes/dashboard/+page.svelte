@@ -8,7 +8,6 @@
   type MediaListItem = components["schemas"]["MediaListItem"]
 
   let { data }: { data: PageData } = $props();
-  $inspect("data", data);
 
   let items: MediaListItem[] = $derived(data.items);
   let errorMessage = $derived(data.error);
@@ -19,18 +18,24 @@
   let reindexSuccessId = $state<string | null>(null);
   let activeStatusId = $state<string | null>(null);
   let tooltipAnchorEl = $state<HTMLElement | null>(null);
+  let activeTooltipType = $state<'history' | 'error' | null>(null);
 
-  function closeTooltip() {
+function closeTooltip() {
     activeStatusId = null;
     tooltipAnchorEl = null;
+    activeTooltipType = null; // Reset type
   }
 
-  function toggleTooltip(e: MouseEvent, mediaId: string) {
+  // 2. UPDATE: Accept a 'type' argument
+  function toggleTooltip(e: MouseEvent, mediaId: string, type: 'history' | 'error') {
     e.stopPropagation();
-    if (activeStatusId === mediaId) {
+
+    // Close if clicking the same button on the same row
+    if (activeStatusId === mediaId && activeTooltipType === type) {
       closeTooltip();
     } else {
       activeStatusId = mediaId;
+      activeTooltipType = type; // Set current type
       tooltipAnchorEl = e.currentTarget as HTMLElement;
     }
   }
@@ -132,22 +137,46 @@
                 </td>
 
                 <td>
-                  <div class="status-cell">
+                  <div class="status-cell" style="position: relative;">
+
                     <span class="badge {getStatusClass(item.status)}">
                       {item.status.replace(/_/g, ' ')}
                     </span>
+
+                    {#if item.error_message}
+                      <button
+                        class="info-btn error-btn"
+                        type="button"
+                        title="View Error Details"
+                        onclick={(e) => toggleTooltip(e, item.media_id, 'error')}
+                      >
+                        <TriangleAlert size={14} />
+                      </button>
+                    {/if}
+
                     <button
                       class="info-btn"
                       type="button"
                       title="View processing history"
-                      onclick={(e) => toggleTooltip(e, item.media_id)}
+                      onclick={(e) => toggleTooltip(e, item.media_id, 'history')}
                     >
                       <Clock size={14} />
                     </button>
 
-                    {#if activeStatusId === item.media_id && tooltipAnchorEl}
-                      <HistoryTooltip history={item.processing_history || []} anchorEl={tooltipAnchorEl} />
+                    {#if activeStatusId === item.media_id}
+                      {#if activeTooltipType === 'history' && tooltipAnchorEl}
+                        <HistoryTooltip history={item.processing_history || []} anchorEl={tooltipAnchorEl} />
+                      {/if}
+
+                      {#if activeTooltipType === 'error'}
+                        <div class="error-popup" onclick={(e) => e.stopPropagation()}>
+                          <div class="error-arrow"></div>
+                          <strong>Error Details:</strong>
+                          <p>{item.error_message}</p>
+                        </div>
+                      {/if}
                     {/if}
+
                   </div>
                 </td>
 
@@ -459,5 +488,60 @@
   .info-btn:hover {
     background-color: var(--background-color);
     color: var(--primary-color);
+  }
+
+/* ... existing styles ... */
+
+  /* Add these new styles */
+  .error-btn {
+    color: #ef4444; /* Red color for the alert icon */
+  }
+  
+  .error-btn:hover {
+    background-color: #fef2f2;
+    color: #b91c1c;
+  }
+
+  .error-popup {
+    position: absolute;
+    top: 100%; /* Position below the button */
+    left: 0;
+    margin-top: 8px;
+    background: white;
+    border: 1px solid #fca5a5;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 12px;
+    border-radius: 6px;
+    width: 280px;
+    z-index: 50;
+    font-size: 12px;
+    color: #7f1d1d;
+    background-color: #fef2f2;
+    white-space: normal; /* Allow text to wrap */
+    text-align: left;
+  }
+
+  .error-popup strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #991b1b;
+  }
+  
+  .error-popup p {
+    margin: 0;
+    word-break: break-word; /* Handle long error codes */
+  }
+
+  /* Optional: Little arrow on top of popup */
+  .error-arrow {
+    position: absolute;
+    top: -5px;
+    left: 10px;
+    width: 8px;
+    height: 8px;
+    background: #fef2f2;
+    border-left: 1px solid #fca5a5;
+    border-top: 1px solid #fca5a5;
+    transform: rotate(45deg);
   }
 </style>

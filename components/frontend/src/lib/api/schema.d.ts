@@ -320,6 +320,8 @@ export interface components {
       filename: string
       /** Status */
       status: string
+      /** Error Message */
+      error_message?: string | null
       /** Processing History */
       processing_history?: components["schemas"]["ProcessingStep"][] | null
       /** Created At */

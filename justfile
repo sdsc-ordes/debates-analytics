@@ -48,12 +48,14 @@ setup *args:
 [group('deploy')]
 up *args:
     @echo "Starting services..."
+    just api
     just compose up -d "$@"
 
 # Build the compose setup.
 [group('deploy')]
 build *args:
     @echo "Build compose file..."
+    just api
     just compose build "$@"
 
 # Run the compose command.
@@ -67,7 +69,6 @@ compose *args:
 # Update the API client (OpenAPI) in frontend.
 [group('tools')]
 api:
-    # FIXME: must be part from build.
     @echo "Fetching OpenAPI spec from backend..."
     cd components/frontend && \
     pnpm dlx openapi-typescript http://localhost:8082/openapi.json -o ./src/lib/api/schema.d.ts

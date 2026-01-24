@@ -12,6 +12,7 @@ class MediaListItem(BaseModel):
     media_id: str
     filename: str
     status: str
+    error_message: Optional[str] = None
     processing_history: Optional[List[ProcessingStep]] = None
     created_at: Optional[datetime] = None
     title: Optional[str] = None

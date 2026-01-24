@@ -16,6 +16,14 @@ x-backend-env: &backend-env
   S3_SECRET_KEY: ${S3_SECRET_KEY}
   REDIS_URL: ${REDIS_URL}
 
+  # Cross-Origin Resource Sharing
+  CORS_ORIGINS: ${CORS_ORIGINS}
+
+  # Hugging Face Settings
+  HF_TOKEN: ${HF_TOKEN}
+  HF_SPACE_URL: ${HF_SPACE_URL}
+  HF_MODEL: ${HF_MODEL}
+
   # Output Types
   TYPE_TRANSLATION: ${TYPE_TRANSLATION}
   TYPE_ORIGINAL: ${TYPE_ORIGINAL}
@@ -36,7 +44,6 @@ services:
       - "dev.dozzle.group=App"
     environment:
       <<: *backend-env
-      CORS_ORIGINS: ${CORS_ORIGINS}
     command: ["uvicorn", "app.main:api", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - 8082:8000
@@ -60,9 +67,6 @@ services:
         condition: service_healthy
     environment:
       <<: *backend-env
-      HF_TOKEN: ${HF_TOKEN}
-      HF_SPACE_URL: ${HF_SPACE_URL}
-      HF_MODEL: ${HF_MODEL}
     networks:
       - debates_network
 

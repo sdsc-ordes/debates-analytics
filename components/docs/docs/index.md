@@ -1,4 +1,4 @@
-# About HELLO vjhvjvj
+# About
 
 Political Debates is a projects that aims to facilitate analysis of video or
 audio content in the following ways:
