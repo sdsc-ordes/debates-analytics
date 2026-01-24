@@ -80,6 +80,8 @@ api:
     @curl -s {{OPENAPI_URL}} -o components/docs/docs/api/openapi.json \
         && echo "✅ OpenAPI spec copied to docs." \
         || echo "⚠️ Warning: Fetch failed"
+    just format components/frontend/src/lib/api/schema.d.ts components/docs/docs/api/openapi.json \
+    && echo "✅ API client and code formatted updated."
 
 # Load or reindex solr for a media_id
 [group('tools')]
