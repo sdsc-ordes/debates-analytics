@@ -1,7 +1,6 @@
 import typer
 import logging
 import uuid
-import os
 from pathlib import Path
 from tasks.reindex import reindex_solr
 from services.s3 import get_s3_manager
@@ -85,7 +84,7 @@ def upload_folder(folder_path: str):
 
     # 4. Register in MongoDB
     try:
-        print(f"   └── Registering in MongoDB...")
+        print("   └── Registering in MongoDB...")
         mongo.insert_initial_media_document(
             media_id=media_id,
             s3_key=media_s3_key,
@@ -93,7 +92,7 @@ def upload_folder(folder_path: str):
             media_type=media_type,
             status="manually uploaded with results"
         )
-        print(f"   ✅ Success")
+        print("   ✅ Success")
     except Exception as e:
         logger.exception(f"Failed to register in mongodb upload for {path}")
         print(f"   ❌ Failed: {e}")

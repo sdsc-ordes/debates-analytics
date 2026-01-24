@@ -1,16 +1,16 @@
 [
-    {
-        "start": "00:00:00",
-        "end": "00:00:09",
-        "text": "Unidas en Ginebra y Presidenta Relatora del Grupo de Trabajo para la presentaci\u00f3n del informe. Excelencia, querida Embajadora, tiene la palabra.",
-        "speaker": "SPEAKER_02",
-        "language": "es"
-    },
-    {
-        "start": "00:00:13",
-        "end": "00:00:28",
-        "text": "Thank you, Chairperson, Excellencies, Ladies and Gentlemen. I'm pleased to introduce the report of the 19th session of the Intergovernmental Working Group on the effective implementation of the Durban Declaration and Programme of Action.",
-        "speaker": "SPEAKER_00",
-        "language": "en"
-    }
+  {
+    "start": "00:00:00",
+    "end": "00:00:09",
+    "text": "Unidas en Ginebra y Presidenta Relatora del Grupo de Trabajo para la presentaci\u00f3n del informe. Excelencia, querida Embajadora, tiene la palabra.",
+    "speaker": "SPEAKER_02",
+    "language": "es"
+  },
+  {
+    "start": "00:00:13",
+    "end": "00:00:28",
+    "text": "Thank you, Chairperson, Excellencies, Ladies and Gentlemen. I'm pleased to introduce the report of the 19th session of the Intergovernmental Working Group on the effective implementation of the Durban Declaration and Programme of Action.",
+    "speaker": "SPEAKER_00",
+    "language": "en"
+  }
 ]

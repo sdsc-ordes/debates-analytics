@@ -4,5 +4,5 @@ import { browser } from "$app/environment"
 import { BackendUrl } from "$lib/config"
 
 export const client = createClient<paths>({
-  baseUrl: browser ? "/api" : BackendUrl
+  baseUrl: browser ? "/api" : BackendUrl,
 })
