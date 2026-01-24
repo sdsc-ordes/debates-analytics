@@ -38,6 +38,7 @@ async def list_media(
                 created_at=d.get("created_at"),
                 title=d.get("title")
             ))
+            logger.info(f"Added media item: {items[-1]}")
 
         logger.info(f"Dashboard list requested. Returning {len(items)} items.")
         return MediaListResponse(items=items, total=len(items))
@@ -60,7 +61,7 @@ async def list_media(
 
     # Catch Logic Issues
     except Exception as e:
-        logger.exception(f"Unexpected logic error in list_media: {e}")
+        logger.exception(f"Unexpected logic error in list_media: {e}, doc: {d}")
         raise HTTPException(
             status_code=500,
             detail="Internal Server Error"

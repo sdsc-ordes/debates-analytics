@@ -10,8 +10,8 @@ class ProcessingStep(BaseModel):
 
 class MediaListItem(BaseModel):
     media_id: str
-    filename: str
-    status: str
+    filename: Optional[str] = None
+    status: Optional[str] = None
     error_message: Optional[str] = None
     processing_history: Optional[List[ProcessingStep]] = None
     created_at: Optional[datetime] = None
