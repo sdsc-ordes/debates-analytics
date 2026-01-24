@@ -104,12 +104,8 @@ class WhisperService:
         self.hf_model = hf_model
 
         try:
-            self.client = Client(
-                self.hf_space_url,
-                hf_token=self.hf_token,
-                verbose=False
-            )
-            logger.info(f"Connected to HF Space at {self.hf_space_url} and model {self.hf_model}")
+            self.client = Client(self.hf_space_url)
+            logger.info(f"Connected to HF Space at {self.hf_space_url}")
         except Exception as e:
             logger.error(f"Error connecting to HF Space: {e}")
             raise ConnectionError(f"Failed to connect to HF Space ({self.hf_space_url}). Error: {e}") from e
@@ -121,7 +117,7 @@ class WhisperService:
         """
         lang = "en" if task == "translate" else "auto"
 
-        logger.info(f"media_id={media_id} - Running Whisper Inference. Task={task}, Language={lang}")
+        logger.info(f"media_id={media_id} - Running Whisper Inference. Task={task}, Language={lang} Model={self.hf_model}")
 
         try:
             result_tuple = self.client.predict(
