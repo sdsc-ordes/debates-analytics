@@ -207,14 +207,16 @@ class MongoManager:
         if result.matched_count == 0:
             raise ValueError(f"Segment {segment_nr} for media {media_id} not found.")
 
-    def insert_initial_media_document(self, media_id: str, s3_key: str, filename: str, media_type: str):
+    def insert_initial_media_document(
+        self, media_id: str, s3_key: str, filename: str, media_type: str, status: str = "uploaded via dashboard"
+    ):
         """First entry of the media in the db: assumes that upload to S3 already happened."""
         document = {
             "_id": media_id,
             "s3_key": s3_key,
             "original_filename": filename,
             "media_type": media_type,
-            "status": "preparing",
+            "status": status,
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "error_message": None
