@@ -612,6 +612,10 @@
           "media_id": { "type": "string", "title": "Media Id" },
           "filename": { "type": "string", "title": "Filename" },
           "status": { "type": "string", "title": "Status" },
+          "error_message": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error Message"
+          },
           "processing_history": {
             "anyOf": [
               {

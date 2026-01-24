@@ -56,10 +56,13 @@ nav:
   - Processing Pipeline: processing.md
   - UI:
       - Ingest: ui/ingest.md
+      - UI: ui/ui.md
+  - Webui: webui.md
   - API: api/api.md
   - Installation:
       - Options: install/options.md
       - Docker Compose Setup: install/compose.md
       - Server Setup: install/server.md
       - Development: install/development.md
+      - Nix: install/nix.md
   - PoC Status: status.md
