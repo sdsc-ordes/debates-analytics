@@ -12,8 +12,8 @@ and successful. These are some of the many ways to contribute:
 
 The goal is to maintain a diverse community that's pleasant for everyone.
 **Please be considerate and respectful of others**. Everyone must abide by our
-[Code of Conduct][components/docs/code-of-conduct.md] and we encourage all to read it
-carefully.
+[Code of Conduct][components/docs/code-of-conduct.md] and we encourage all to
+read it carefully.
 
 ### Maintainers Guide
 
