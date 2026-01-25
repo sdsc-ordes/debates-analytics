@@ -5,7 +5,6 @@
   import { client } from '$lib/api/client';
   import { Pencil, Check, X } from 'lucide-svelte';
 
-  type Subtitle = components['schemas']['Subtitle'];
   type Segment = components['schemas']['Segment'];
 
   // Define types locally if not exported from schema
@@ -73,9 +72,20 @@
     if (type === typeTranslation) editTranslation = false;
   }
 
-  function hasTerm(text: string): boolean {
-    if (!term) return false;
-    return text.toLowerCase().includes(term.toLowerCase());
+  function escapeRegExp(string: string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function getHighlightedParts(text: string, query: string) {
+    if (!query) return [{ text, isMatch: false }];
+
+    const escaped = escapeRegExp(query);
+    const regex = new RegExp(`(${escaped})`, 'gi');
+
+    return text.split(regex).map(part => ({
+      text: part,
+      isMatch: part.toLowerCase() === query.toLowerCase()
+    })).filter(p => p.text);
   }
 </script>
 
@@ -105,9 +115,7 @@
       <p class="subtitle-content">
         {#each activeGroupOriginal as item}
           <span
-            class="subtitle-span
-            {item === currentSubtitle ? 'highlighted' : ''}
-            {hasTerm(item.text) ? 'term-found' : ''}"
+            class="subtitle-span {item === currentSubtitle ? 'highlighted' : ''}" 
             onclick={() => mediaElement && jumpToTime(mediaElement, item.start)}
             role="button"
             tabindex="0"
@@ -121,7 +129,14 @@
                 onclick={(e) => e.stopPropagation()}
               ></textarea>
             {:else}
-              {item.text}{" "}
+              {#each getHighlightedParts(item.text, term) as part}
+                {#if part.isMatch}
+                  <mark class="term-highlight">{part.text}</mark>
+                {:else}
+                  {part.text}
+                {/if}
+              {/each}
+              {" "}
             {/if}
           </span>
         {/each}
@@ -153,15 +168,13 @@
     <p class="subtitle-content">
       {#each activeGroupTranslation as item}
         <span
-          class="subtitle-span
-          {hasTerm(item.text) ? 'term-found' : ''}
-          {item === currentSubtitleEn ? 'highlighted' : ''}"
+          class="subtitle-span {item === currentSubtitleEn ? 'highlighted' : ''}"
           onclick={() => mediaElement && jumpToTime(mediaElement, item.start)}
           role="button"
           tabindex="0"
           onkeydown={() => {}}
         >
-          {#if editTranslation}
+          {#if editTranscript}
             <textarea
               bind:value={item.text}
               class="editable-textarea"
@@ -169,7 +182,14 @@
               onclick={(e) => e.stopPropagation()}
             ></textarea>
           {:else}
-            {item.text}{" "}
+            {#each getHighlightedParts(item.text, term) as part}
+              {#if part.isMatch}
+                <mark class="term-highlight">{part.text}</mark>
+              {:else}
+                {part.text}
+              {/if}
+            {/each}
+            {" "}
           {/if}
         </span>
       {/each}
@@ -228,5 +248,12 @@
     background-color: #fff9c4;
     border-radius: 2px;
     box-shadow: 0 0 2px #fbc02d;
+  }
+  .term-highlight {
+    background-color: #fff9c4; /* Yellow highlight */
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+    font-weight: bold; /* Optional: make the search term pop */
   }
 </style>
