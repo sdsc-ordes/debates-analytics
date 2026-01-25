@@ -22,22 +22,19 @@
 
 ## Installation
 
-Describe the installation instruction here.
+Installation and options for the installations are described in the [documentation](https://sdsc-ordes.github.io/debates-analytics/install/options.html)
 
 ## Usage
 
-Describe the installation instruction here.
+Usage is described in the [documentation](https://sdsc-ordes.github.io/debates-analytics/ui/ui.html)
 
 ## Development
 
 Read first the [Contribution Guidelines](/CONTRIBUTING.md).
 
-For technical documentation on setup and development, see the
-[Development Guide](docs/development-guide.md)
-
 ## Acknowledgement
 
-Acknowledge all contributors and external collaborators here.
+This prototype was developed in collaboration with ...
 
 ## Copyright
 
