@@ -5,6 +5,7 @@
   import SegmentDisplay from "$lib/components/SegmentDisplay.svelte";
   import SpeakerDisplay from "$lib/components/SpeakerDisplay.svelte";
   import DebateToolBar from "$lib/components/DebateToolBar.svelte";
+  import { Search } from 'lucide-svelte';
 
   import type { PageData } from './$types';
   import type { components } from '$lib/api/schema';
@@ -22,27 +23,41 @@
   let mediaElement = $state<HTMLVideoElement>();
   let currentTime = $state(0);
 
+  let term = $state(data.term || '');
+  let lastSegmentIndex = 0;
+
   // --- derived constants ---
   const mediaUrl = $derived(data.signedUrls?.signedMediaUrl);
   const downloadUrls = $derived(data.signedUrls?.signedUrls || []);
   const mediaId = $derived(data.mediaId);
   const mediaType = $derived(data.metadata.debate.media_type);
-  const term = $derived(data.term);
-  let currentSegment = $derived(findCurrentSegment(currentTime));
+
+
+  let currentSegment = $derived.by(() => {
+    const lastSeg = segments[lastSegmentIndex];
+    if (lastSeg && currentTime >= lastSeg.start && currentTime <= lastSeg.end) {
+      return lastSeg;
+    }
+
+    const index = segments.findIndex(s => currentTime >= s.start && currentTime <= s.end);
+
+    if (index !== -1) {
+      lastSegmentIndex = index;
+      return segments[index];
+    }
+    return undefined;
+  });
   let currentSpeaker = $derived(
       currentSegment ? speakers.find(s => s.speaker_id === currentSegment.speaker_id) : undefined
   );
-
-  // Simple helper
-  function findCurrentSegment(time: number) {
-      return segments.find(s => time >= s.start && time <= s.end);
-  }
 
   // Sync on Navigation ---
   $effect(() => {
     debate = data.metadata.debate;
     speakers = data.metadata.speakers || [];
     segments = data.metadata.segments || [];
+
+    term = data.term || '';
 
     if (data.start) {
       currentTime = data.start;
@@ -91,7 +106,21 @@
   </div>
 </div>
 
-<DebateToolBar {downloadUrls} />
+<div class="controls-bar">
+  <DebateToolBar {downloadUrls} />
+
+  <div class="search-container">
+    <span class="icon-wrapper">
+      <Search size={16} />
+    </span>
+    <input
+      type="search"
+      placeholder="Search transcript..."
+      bind:value={term}
+      class="term-input"
+    />
+  </div>
+</div>
 
 <SegmentDisplay
   currentTime={currentTime}
@@ -102,23 +131,56 @@
 />
 
 <style>
+.controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem 1rem 1rem;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.term-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: #334155;
+  width: 200px;
+}
+
+.icon-wrapper {
+  color: #94a3b8;
+  display: flex;
+}
+
 .video-layout {
   display: flex;
-  gap: 1rem; /* Adds spacing between elements */
+  gap: 1rem;
   justify-content: center;
-  align-items: flex-start; /* Aligns everything to the top */
+  align-items: flex-start;
   width: 100%;
-  height:30vh;
   padding-bottom: 1rem;
 }
 
-.segment-container {
-  flex: 1;
-  max-width: 25%;
-  max-height: 100%;
-  overflow: hidden;
+/* Ensure the search container doesn't get squashed */
+.search-container {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
 .speaker-container {
