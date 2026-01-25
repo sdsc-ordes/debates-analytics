@@ -16,15 +16,25 @@
 
 ## About
 
-The goal of that project was to create specialized components for the analysis of videos from United Nations Human Rights Council (UNHRC) debates.
+This repository provides an app that is able to transcribe and translate
+debates, where speakers take turns. Any such video or audio file in the format
+`mp4` or `wav` can be uploaded via a dashboard for analysis.
 
-- Sophisticated Transcription: Integrating and optimizing cutting-edge transcription models (e.g., Whisper 3.0) to ensure accurate, multilingual transcription of UNHRC debates.
+- The analysis is performed with the hugging face component
+  [odtp-pyannote-whisper](https://github.com/sdsc-ordes/odtp-pyannote-whisper),
+  that was developed in the context of this project and can be accessed directly
+  via
+  [hugging face](https://huggingface.co/spaces/katospiegel/odtp-pyannote-whisper).
 
-- Multimodal Data Handling: Developing components tailored to video/audio processing, scene extraction, and diarization.
+- The results of that analysis are loaded into an S3 compatible object store
+  (garage).
 
-- Specialized Database Integration:  Designing and deploying a database structure to effectively store debate transcripts, relevant metadata, and extracted features.
+- From there it will be indexed into the Search Engine Solr. A Mongo db database
+  is used to manage the media processing results and status
 
-- Provide a dashboard to trigger the processing of the videos and display and manage the results.
+- A dashboard is provided to make all processing and results available via a
+  common interface: it consists of a frontend, a backend and a redis queue for a
+  decoupled processing of the long running media analysis jobs on hugging face.
 
 ## Authors
 
@@ -44,11 +54,28 @@ Usage is described in the
 
 ## Development
 
-Read first the [Contribution Guidelines](/CONTRIBUTING.md).
+See [documentation](https://sdsc-ordes.github.io/debates-analytics/index.html)
 
 ## Acknowledgement
 
-This work was originally funded by the SNSF Spark Grant number 221139 “Debating Human Rights” [SNSF Data Portal . Documentation: Political Debates](https://data.snf.ch/grants/grant/221139).
+This work was originally funded by the SNSF Spark Grant number 221139 “Debating
+Human Rights”
+[SNSF Data Portal . Documentation: Political Debates](https://data.snf.ch/grants/grant/221139).
+
+The goal of that project was to create specialized components for the analysis
+of videos from United Nations Human Rights Council (UNHRC) debates.
+
+- Sophisticated Transcription: Integrating and optimizing cutting-edge
+  transcription models (e.g., Whisper 3.0) to ensure accurate, multilingual
+  transcription of UNHRC debates.
+- Multimodal Data Handling: Developing components tailored to video/audio
+  processing, scene extraction, and diarization.
+- Specialized Database Integration: Designing and deploying a database structure
+  to effectively store debate transcripts, relevant metadata, and extracted
+  features.
+
+This repo was created as a wrapup of that project, to make the processings and
+results available in a more general form.
 
 ## Copyright
 
