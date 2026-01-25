@@ -14,7 +14,19 @@
     <img src="https://img.shields.io/badge/LICENSE-Apache2.0-ff69b4.svg?style=for-the-badge" alt="License label" /></a>
 </p>
 
-**Authors:**
+## About
+
+The goal of that project was to create specialized components for the analysis of videos from United Nations Human Rights Council (UNHRC) debates.
+
+- Sophisticated Transcription: Integrating and optimizing cutting-edge transcription models (e.g., Whisper 3.0) to ensure accurate, multilingual transcription of UNHRC debates.
+
+- Multimodal Data Handling: Developing components tailored to video/audio processing, scene extraction, and diarization.
+
+- Specialized Database Integration:  Designing and deploying a database structure to effectively store debate transcripts, relevant metadata, and extracted features.
+
+- Provide a dashboard to trigger the processing of the videos and display and manage the results.
+
+## Authors
 
 - [Sabine Maennel](mailto:sabine.maennel@sdsc.ethz.ch)
 - [Carlos Vivar Rios](mailto:carlos.vivarrios@epfl.ch)
@@ -22,11 +34,13 @@
 
 ## Installation
 
-Installation and options for the installations are described in the [documentation](https://sdsc-ordes.github.io/debates-analytics/install/options.html)
+Installation and options for the installations are described in the
+[documentation](https://sdsc-ordes.github.io/debates-analytics/install/options.html)
 
 ## Usage
 
-Usage is described in the [documentation](https://sdsc-ordes.github.io/debates-analytics/ui/ui.html)
+Usage is described in the
+[documentation](https://sdsc-ordes.github.io/debates-analytics/ui/ui.html)
 
 ## Development
 
@@ -34,7 +48,7 @@ Read first the [Contribution Guidelines](/CONTRIBUTING.md).
 
 ## Acknowledgement
 
-This prototype was developed in collaboration with ...
+This work was originally funded by the SNSF Spark Grant number 221139 “Debating Human Rights” [SNSF Data Portal . Documentation: Political Debates](https://data.snf.ch/grants/grant/221139).
 
 ## Copyright
 
