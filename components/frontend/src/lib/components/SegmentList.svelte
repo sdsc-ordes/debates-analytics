@@ -69,7 +69,7 @@
 <style>
   .scrollable-container {
     overflow-y: auto;
-    max-height: 60vh;
+    max-height: 30vh;
     max-width: 100%;
   }
   ol li {
