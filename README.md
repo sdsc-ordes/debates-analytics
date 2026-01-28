@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./components/docs/assets/political_debates_logo.svg" alt="debates logo" width="250">
+  <img src="./docs/assets/political_debates_logo.svg" alt="debates logo" width="250">
 </p>
 
 <h1 align="center">
