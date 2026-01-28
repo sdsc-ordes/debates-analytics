@@ -7,7 +7,6 @@
   settings.global.excludes = [
     "external/*"
     "docs/**"
-    "components/docs/**"
     "node_modules/**"
   ];
 
