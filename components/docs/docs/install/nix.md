@@ -1,3 +1,0 @@
-# Nix setup
-
-To setup nix ...

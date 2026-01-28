@@ -15,6 +15,7 @@ theme:
   features:
     - navigation.instant
     - content.tooltips
+    - content.code.copy
   palette:
     - scheme: default
       primary: indigo
@@ -24,6 +25,7 @@ markdown_extensions:
   - abbr
   - admonition
   - attr_list
+  - md_in_html
   - def_list
   - footnotes
   - pymdownx.arithmatex:
@@ -45,6 +47,9 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 
 copyright: |
   &copy; 2023 - 2024 SDSC
@@ -52,17 +57,27 @@ copyright: |
 # Page tree
 nav:
   - Home: index.md
-  - Architecture: architecture.md
-  - Processing Pipeline: processing.md
-  - UI:
-      - Ingest: ui/ingest.md
-      - UI: ui/ui.md
-  - Webui: webui.md
-  - API: api/api.md
+  - User Guide:
+      - Roles: userguide/roles.md
+      - Dashboard: userguide/dashboard.md
+      - Search Page: userguide/searchpage.md
+      - Media Player: userguide/mediaplayer.md
+      - Advanced CLI: userguide/commandline.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Datastorage: architecture/datastorage.md
+      - Application: architecture/application.md
+      - Processing: architecture/processing.md
+      - Upload/Download: architecture/presigned-urls.md
+      - WhisperX: architecture/whisperx.md
+  - API:
+      - openapi: api/openapi.md
   - Installation:
-      - Options: install/options.md
-      - Docker Compose Setup: install/compose.md
-      - Server Setup: install/server.md
-      - Development: install/development.md
-      - Nix: install/nix.md
-  - PoC Status: status.md
+      - Options: installation/overview.md
+      - Core Setup: installation/core.md
+      - Server Setup: installation/server.md
+  - Development:
+      - Guidelines: development/setup.md
+      - Contributing: development/contributing.md
+      - Code of Conduct: development/code-of-conduct.md
+  - License: LICENSE.md
