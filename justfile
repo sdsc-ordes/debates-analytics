@@ -7,6 +7,7 @@ output_dir := root_dir / ".output"
 build_dir := output_dir / "build"
 docs_dir := root_dir / "components/docs"
 backend_dir := root_dir / "components/backend"
+profile := env("COMPOSE_PROFILES", "")
 export CONTAINER_MGR := env("CONTAINER_MGR", "docker")
 export OPENAPI_URL := env("OPENAPI_URL", "")
 
@@ -52,17 +53,20 @@ setup *args:
 [group('deploy')]
 up *args:
     @echo "Starting services..."
+    @echo "Profile: {{profile}}"
     just compose up -d "$@"
 
 # Build the compose setup.
 [group('deploy')]
 build *args:
     @echo "Build compose file..."
+    @echo "Profile: {{profile}}"
     just compose build "$@"
 
 # Run the compose command.
 [group('deploy')]
 [no-cd]
+@echo "Profile: {{profile}}"
 compose *args:
     cd deploy/compose && \
     just container::mgr compose \
