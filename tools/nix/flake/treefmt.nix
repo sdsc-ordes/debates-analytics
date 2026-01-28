@@ -3,7 +3,13 @@
   # Used to find the project root
   projectRootFile = ".git/config";
 
-  settings.global.excludes = [ "external/*" ];
+  # files and directories to exclude globally
+  settings.global.excludes = [
+    "external/*"
+    "docs/**"
+    "components/docs/**"
+    "node_modules/**"
+  ];
 
   # Markdown, JSON, YAML, etc.
   programs.prettier.enable = true;
