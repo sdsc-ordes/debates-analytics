@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./components/docs/assets/political_debates_logo.svg" alt="debates logo" width="250">
+  <img src="./docs/assets/political_debates_logo.svg" alt="debates logo" width="250">
 </p>
 
 <h1 align="center">
@@ -45,16 +45,17 @@ debates, where speakers take turns. Any such video or audio file in the format
 ## Installation
 
 Installation and options for the installations are described in the
-[documentation](https://sdsc-ordes.github.io/debates-analytics/install/options.html)
+[documentation](https://sdsc-ordes.github.io/debates-analytics/installation/overview/)
 
 ## Usage
 
 Usage is described in the
-[documentation](https://sdsc-ordes.github.io/debates-analytics/ui/ui.html)
+[documentation](https://sdsc-ordes.github.io/debates-analytics/userguide/roles/)
 
 ## Development
 
-See [documentation](https://sdsc-ordes.github.io/debates-analytics/index.html)
+See
+[documentation](https://sdsc-ordes.github.io/debates-analytics/development/setup/)
 
 ## Acknowledgement
 
