@@ -3,7 +3,6 @@ site_url: https://sdsc-ordes.github.io/debates-analytics/
 repo_url: https://github.com/sdsc-ordes/debates-analytics
 repo_name: sdsc-ordes/debates-analytics
 docs_dir: docs
-use_directory_urls: false
 plugins:
   - search
   - link-marker
