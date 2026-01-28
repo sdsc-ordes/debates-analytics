@@ -23,12 +23,12 @@ class S3Manager:
 
         # 1. Internal Connection (Backend <-> Garage)
         self.server_url = settings.s3_server
-        
+
         # 2. Signing URL (What the final receiver expects the Host header to be)
         # In Prod: This is 'garage:3900' (because Nginx rewrites headers)
         # In Local: This is 'localhost:3900' (because Browser sends headers)
-        self.signing_url = settings.s3_signing_url 
-        
+        self.signing_url = settings.s3_signing_url
+
         # 3. Public URL (What the user clicks)
         self.public_url = settings.s3_public_url
 
@@ -44,7 +44,7 @@ class S3Manager:
             config=Config(s3={'addressing_style': 'path'}, signature_version='s3v4'),
         )
 
-        # Signer Client (Uses S3_SIGNING_URL) 👈 The Fix
+        # Signer Client (Uses S3_SIGNING_URL)
         self.s3_signer = boto3.client(
             's3',
             endpoint_url=self.signing_url,
@@ -55,9 +55,25 @@ class S3Manager:
         )
 
     def get_presigned_url(self, object_key, as_attachment=False, expiration=3600):
-        # 1. Generate URL using the SIGNING endpoint
-        # The signature is now calculated for the correct expected Host
+        """
+        Generates a presigned URL for accessing an S3 object.
 
+        This method employs a "Split-Horizon" signing strategy to handle Docker networking:
+        1. Signs the URL using the internal Docker hostname (e.g., 'http://garage:3900').
+           This matches the 'Host' header Nginx will spoof when proxying the request to S3.
+        2. Swaps the internal hostname for the public-facing domain (e.g., 'https://debates...').
+           This ensures the link is clickable by the user's browser.
+
+        Args:
+            object_key (str): The S3 key of the object.
+            as_attachment (bool): If True, adds Content-Disposition header to force file download.
+            expiration (int): Time in seconds before the link expires.
+
+        Returns:
+            str: A public-facing HTTPS URL with a valid internal signature.
+        """
+        # Generate URL using the SIGNING endpoint
+        # The signature is now calculated for the correct expected Host
         try:
             params = {
                 "Bucket": self.bucket_name,
@@ -71,8 +87,7 @@ class S3Manager:
                 Params=params,
                 ExpiresIn=expiration
             )
-
-            # 2. Replace the Signing URL with the Public URL
+            # Replace the Signing URL with the Public URL
             # This makes the link clickable for the user
             final_url = url.replace(self.signing_url, self.public_url)
 
