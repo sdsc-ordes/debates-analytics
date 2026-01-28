@@ -89,4 +89,3 @@ services:
     networks:
       - debates_network
     command: ["node", "build"]
-
