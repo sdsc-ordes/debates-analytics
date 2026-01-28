@@ -19,6 +19,7 @@ services:
 
   reverse-proxy:
     image: nginx:alpine
+    container_name: reverse-proxy
     networks:
       - debates_network
     ports:
