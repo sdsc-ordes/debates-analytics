@@ -7,9 +7,10 @@ output_dir := root_dir / ".output"
 build_dir := output_dir / "build"
 docs_dir := root_dir / "components/docs"
 backend_dir := root_dir / "components/backend"
-profile := env("COMPOSE_PROFILES", "")
 export CONTAINER_MGR := env("CONTAINER_MGR", "docker")
 export OPENAPI_URL := env("OPENAPI_URL", "")
+export COMPOSE_PROFILES := env("COMPOSE_PROFILES", "")
+
 
 # Nix functionality.
 mod nix "./tools/just/nix.just"
@@ -20,6 +21,7 @@ mod container "./tools/just/container.just"
 default:
     @echo "CONTAINER_MGR=${CONTAINER_MGR}"
     @echo "OPENAPI_URL=${OPENAPI_URL}"
+    @echo "COMPOSE_PROFILES=${COMPOSE_PROFILES}"
     @just --list --unsorted
 
 # Enter the default Nix development shell and execute the command `"$@`.
@@ -53,20 +55,17 @@ setup *args:
 [group('deploy')]
 up *args:
     @echo "Starting services..."
-    @echo "Profile: {{profile}}"
     just compose up -d "$@"
 
 # Build the compose setup.
 [group('deploy')]
 build *args:
     @echo "Build compose file..."
-    @echo "Profile: {{profile}}"
     just compose build "$@"
 
 # Run the compose command.
 [group('deploy')]
 [no-cd]
-@echo "Profile: {{profile}}"
 compose *args:
     cd deploy/compose && \
     just container::mgr compose \
