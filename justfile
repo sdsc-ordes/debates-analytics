@@ -1,4 +1,5 @@
 set positional-arguments
+set dotenv-filename := "config/.env"
 set shell := ["bash", "-cue"]
 set dotenv-load := true
 root_dir := `git rev-parse --show-toplevel`
@@ -6,6 +7,7 @@ flake_dir := root_dir / "tools/nix"
 output_dir := root_dir / ".output"
 build_dir := output_dir / "build"
 docs_dir := root_dir / "components/docs"
+config_dir := root_dir / "config"
 backend_dir := root_dir / "components/backend"
 export CONTAINER_MGR := env("CONTAINER_MGR", "docker")
 export OPENAPI_URL := env("OPENAPI_URL", "")
@@ -69,7 +71,7 @@ build *args:
 compose *args:
     cd deploy/compose && \
     just container::mgr compose \
-        --env-file .env --env-file .env.secret "$@"
+        --env-file {{config_dir}}/.env --env-file {{config_dir}}/.env.secret "$@"
 
 # Update the API client (OpenAPI) in frontend.
 [group('tools')]
