@@ -90,11 +90,3 @@ services:
       - debates_network
     command: ["node", "build"]
 
-  docs:
-    build:
-      context: ../../components/docs
-      dockerfile: Dockerfile
-    networks:
-      - debates_network
-    ports:
-      - 8001:8000
