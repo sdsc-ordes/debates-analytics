@@ -1,4 +1,5 @@
 set positional-arguments
+set dotenv-filename := "config/.env"
 set shell := ["bash", "-cue"]
 set dotenv-load := true
 root_dir := `git rev-parse --show-toplevel`
@@ -6,9 +7,12 @@ flake_dir := root_dir / "tools/nix"
 output_dir := root_dir / ".output"
 build_dir := output_dir / "build"
 docs_dir := root_dir / "components/docs"
+config_dir := root_dir / "config"
 backend_dir := root_dir / "components/backend"
 export CONTAINER_MGR := env("CONTAINER_MGR", "docker")
 export OPENAPI_URL := env("OPENAPI_URL", "")
+export COMPOSE_PROFILES := env("COMPOSE_PROFILES", "")
+
 
 # Nix functionality.
 mod nix "./tools/just/nix.just"
@@ -19,6 +23,7 @@ mod container "./tools/just/container.just"
 default:
     @echo "CONTAINER_MGR=${CONTAINER_MGR}"
     @echo "OPENAPI_URL=${OPENAPI_URL}"
+    @echo "COMPOSE_PROFILES=${COMPOSE_PROFILES}"
     @just --list --unsorted
 
 # Enter the default Nix development shell and execute the command `"$@`.
@@ -66,7 +71,7 @@ build *args:
 compose *args:
     cd deploy/compose && \
     just container::mgr compose \
-        --env-file .env --env-file .env.secret "$@"
+        --env-file {{config_dir}}/.env --env-file {{config_dir}}/.env.secret "$@"
 
 # Update the API client (OpenAPI) in frontend.
 [group('tools')]
