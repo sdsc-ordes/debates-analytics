@@ -65,6 +65,9 @@ def upload_folder(folder_path: str):
             media_filename = filename
             media_s3_key = f"{media_id}/{s3_suffix}"
             s3_key = media_s3_key
+        elif ext == ".wav":
+            s3_suffix = "audio.wav"
+            s3_key = f"{media_id}/{s3_suffix}"
         else:
             s3_suffix = filename.lower()
             s3_key = f"{media_id}/transcripts/{s3_suffix}"
@@ -75,12 +78,21 @@ def upload_folder(folder_path: str):
         try:
             # 3. Upload to S3
             # We use the internal method or client directly
-            print(f"   └── Uploading to S3 ({s3_key})...")
+            print(f"   └── Uploading to S3 ({s3_key})")
             s3.upload_file(str(file_path), s3_key)
 
         except Exception as e:
             logger.exception(f"Failed to process {filename}")
             print(f"   ❌ Failed: {e}")
+
+    # 3. Verify upload
+    print(f"   └── Verifying upload in S3...")
+    try:
+        for key in s3.list_objects_by_prefix(media_id):
+            print(f"   ✅ Uploaded: {key}")
+    except Exception as e:
+        logger.exception(f"Failed to verify upload for {path}")
+        print(f"   ❌ Verification failed: {e}")
 
     # 4. Register in MongoDB
     try:
