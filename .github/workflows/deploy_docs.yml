@@ -27,23 +27,23 @@ jobs:
         uses: astral-sh/setup-uv@v4
         with:
           enable-cache: true
-          cache-dependency-glob: "components/docs/uv.lock"
+          cache-dependency-glob: "docs/uv.lock"
 
       - name: Set up Python
         run: uv python install 3.12
 
       - name: Install dependencies
-        working-directory: ./components/docs
+        working-directory: ./docs
         run: uv sync --frozen
 
       - name: Build with MkDocs
-        working-directory: ./components/docs
+        working-directory: ./docs
         run: uv run mkdocs build --strict
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./components/docs/site
+          path: ./docs/site
 
   deploy:
     if: github.ref == 'refs/heads/main'
