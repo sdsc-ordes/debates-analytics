@@ -45,16 +45,16 @@ debates, where speakers take turns. Any such video or audio file in the format
 ## Installation
 
 Installation and options for the installations are described in the
-[documentation](https://sdsc-ordes.github.io/debates-analytics/install/options.html)
+[documentation](https://sdsc-ordes.github.io/debates-analytics/installation/overview/)
 
 ## Usage
 
 Usage is described in the
-[documentation](https://sdsc-ordes.github.io/debates-analytics/ui/ui.html)
+[documentation](https://sdsc-ordes.github.io/debates-analytics/userguide/roles/)
 
 ## Development
 
-See [documentation](https://sdsc-ordes.github.io/debates-analytics/index.html)
+See [documentation](https://sdsc-ordes.github.io/debates-analytics/development/setup/)
 
 ## Acknowledgement
 
