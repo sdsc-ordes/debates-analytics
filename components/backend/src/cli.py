@@ -86,7 +86,7 @@ def upload_folder(folder_path: str):
             print(f"   ❌ Failed: {e}")
 
     # 3. Verify upload
-    print(f"   └── Verifying upload in S3...")
+    print("   └── Verifying upload in S3...")
     try:
         for key in s3.list_objects_by_prefix(media_id):
             print(f"   ✅ Uploaded: {key}")
