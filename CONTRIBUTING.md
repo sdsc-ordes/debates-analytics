@@ -17,4 +17,5 @@ read it carefully.
 
 ### Maintainers Guide
 
-See the [maintenance guide here](https://sdsc-ordes.github.io/debates-analytics/development/setup/).
+See the
+[maintenance guide here](https://sdsc-ordes.github.io/debates-analytics/development/setup/).

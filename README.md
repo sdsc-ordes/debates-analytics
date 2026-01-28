@@ -54,7 +54,8 @@ Usage is described in the
 
 ## Development
 
-See [documentation](https://sdsc-ordes.github.io/debates-analytics/development/setup/)
+See
+[documentation](https://sdsc-ordes.github.io/debates-analytics/development/setup/)
 
 ## Acknowledgement
 
