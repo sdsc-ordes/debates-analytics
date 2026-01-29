@@ -1,7 +1,6 @@
 import logging
 import os
 from gradio_client import Client, handle_file
-import gradio_client
 from rq import get_current_job
 from services.s3 import get_s3_manager
 from services.queue import get_queue_manager
