@@ -27,7 +27,7 @@ services:
       - 80:80
     volumes:
       - type: bind
-        source: /etc/letsencrypt/live/debates.swisscustodian.ch/cert.pem
+        source: ${SSL_DIR}/fullchain.pem
         target: /etc/nginx/ssl/debates.swisscustodian.ch.cert
         read_only: true
       - type: bind
@@ -48,13 +48,13 @@ services:
 
 secrets:
   htpasswd_combined:
-    file: /etc/apache2/combined.htpasswd
+    file: ${AUTH_DIR}/combined.htpasswd
   htpasswd_editor:
-    file: /etc/apache2/editor.htpasswd
+    file: ${AUTH_DIR}/editor.htpasswd
   htpasswd_reader:
-    file: /etc/apache2/reader.htpasswd
+    file: ${AUTH_DIR}/reader.htpasswd
   ssl_private_key:
-    file: /etc/letsencrypt/live/debates.swisscustodian.ch/privkey.pem
+    file: ${SSL_DIR}/privkey.pem
 
 # Global networks used for inter-service communication
 networks:
