@@ -1,6 +1,7 @@
 import logging
 import os
 from gradio_client import Client, handle_file
+import gradio_client
 from rq import get_current_job
 from services.s3 import get_s3_manager
 from services.queue import get_queue_manager
@@ -8,8 +9,11 @@ from services.filesystem import temp_workspace
 from services.mongo import get_mongo_manager
 from services.reporter import JobReporter
 from config.settings import get_settings
+from app.patches import apply_gradio_upload_patch
 
 logger = logging.getLogger(__name__)
+
+apply_gradio_upload_patch()
 
 def process_transcription(s3_key, media_id):
     """
