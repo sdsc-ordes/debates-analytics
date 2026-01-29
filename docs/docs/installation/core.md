@@ -1,278 +1,120 @@
 # Core Installation (Docker Compose)
 
-This guide covers the setup of the base application using Docker Compose, including the application logic, databases (MongoDB/Solr), and object storage (Garage).
+This guide sets up the complete stack (Frontend, Backend, Database, Storage) using Docker Compose.
 
-!!! abstract "Quick Overview"
-    This installation requires a **two-phase setup** because the S3 storage service must generate credentials before the main application can start.
+!!! abstract "Two-Phase Setup Required"
+    **Why?** You must start the storage service (Garage) *first* to generate the Access Keys needed by the application.
 
-    **Time required:** ~15 minutes
-    **Difficulty:** Intermediate
+## 1. Prerequisites
 
----
+* **Git** & **Bash** terminal
+* **Docker** & **Docker Compose**
+* **Just** runner ([Installation Guide](https://github.com/casey/just#installation))
 
-## Prerequisites
 
-Ensure your environment meets these requirements before beginning:
+## 2. Setup Flow
 
-=== "Required"
-
-    - **Git** - Version control system
-    - **Just** - Command runner ([installation guide](https://github.com/casey/just#installation))
-    - **Docker** & **Docker Compose** - Container runtime
-    - **Bash-compatible terminal** - For running commands
-
-=== "Optional"
-
-    - **Nix** - For development environment isolation (not required for standard installation)
-
----
-
-## Installation Overview
-
-The installation follows a specific sequence because Garage (S3 storage) must generate credentials before other services can connect to it:
 
 ```mermaid
-graph TD
-    Start((Start)) --> Clone[Clone Repository]
-    Clone --> EnvSetup[Configure Runner Environment]
-    EnvSetup --> Secrets1[Generate Initial SecretsMongoDB & Encryption Keys]
-    Secrets1 --> Bootstrap[Bootstrap GarageStart Storage Service Only]
-    Bootstrap --> GenKeys[Generate S3 CredentialsFrom Running Garage]
-    GenKeys --> Secrets2[Add S3 Keys to Secrets]
-    Secrets2 --> Launch[Build & Launch Full Stack]
-    Launch --> Complete((Complete))
+graph LR
+    %% Step 1 Nodes
+    A[Clone & Config] --> B["1. Secrets (Mongo/HF)"]
 
-    classDef setup fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef action fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef storage fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    %% Step 2 Node
+    B --> C["2. Bootstrap Storage"]
 
-    class Clone,EnvSetup,Secrets1,Secrets2 setup
-    class GenKeys action
-    class Bootstrap,Launch storage
+    %% Step 3 Nodes
+    C --> D["3. Secrets (S3)"] --> E[Launch]
+
+    %% Styles corresponding to the 3 text sections
+    classDef step1 fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef step2 fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef step3 fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+
+    %% Apply Classes
+    class A,B step1
+    class C step2
+    class D,E step3
+
 ```
 
----
+### Step 1: Initialize Configuration
 
-## Step 1: Clone Repository
-
-Clone the project repository and navigate into it:
+Clone the repo and create the required environment files.
 
 ```bash
 git clone git@github.com:sdsc-ordes/debates-analytics.git
 cd debates-analytics
+
+# 1. Config for the docker compose
+cp config/.env.tmpl config/.env
+
+# 2. Config for Application Secrets
+cp config/.env.secrets.tmpl config/.env.secrets
+
 ```
+
+**Action:** Open `config/.env.secrets` and fill in the following (leave S3 blank for now):
+
+1. **Mongo Passwords:** Generate random strings (e.g., `openssl rand -hex 4`).
+2. **Hugging Face Token:** Your API token for model access.
 
 ---
 
-## Step 2: Configure Runner Environment
+### Step 2: Bootstrap Storage (Generate Keys)
 
-The `just` command runner requires configuration to locate the API endpoint.
+Start the storage service to generate your S3 credentials.
 
-1. Copy the template environment file:
-
-    ```bash
-    cp .env.local.tmpl .env
-    ```
-
-2. Verify the contents (should already be correct):
-
-    ```ini title=".env"
-    OPENAPI_URL=http://localhost:8082/openapi.json
-    CONTAINER_MGR=docker
-    ```
-
-!!! info "About this file"
-    This `.env` file at the project root configures the `just` task runner, not the application itself.
-
----
-
-## Step 3: Generate Initial Secrets
-
-In this step, you'll create passwords and encryption keys. **Note:** S3 credentials will be added later.
-
-### 3.1 Navigate to Deployment Directory
-
-```bash
-cd deploy/compose/
-```
-
-### 3.2 Initialize Configuration Files
-
-```bash
-cp .env.secrets.tmpl .env.secrets
-cp .env.tmpl .env
-```
-
-### 3.3 Generate Secure Random Keys
-
-Run these commands to generate cryptographically secure keys:
-
-```bash
-# Generate a 32-byte hex string for S3_SECRET_KEY (optional now, can regenerate)
-openssl rand -hex 32
-
-# Generate 4-byte hex strings for MongoDB passwords
-openssl rand -hex 4  # For MONGO_PASSWORD
-openssl rand -hex 4  # For MONGO_EXPRESS_PASSWORD
-```
-
-!!! tip "Save your output"
-    Copy each generated value immediately—you'll need them in the next step.
-
-### 3.4 Update Secrets File (Part 1)
-
-Open `deploy/compose/.env.secrets` in your text editor and add the MongoDB and Hugging Face values.
-
-```ini title="deploy/compose/.env.secrets"
-# --- MongoDB Configuration ---
-MONGO_USER=admin
-MONGO_PASSWORD=
-
-# --- MongoDB Admin Interface ---
-MONGO_EXPRESS_USER=admin
-MONGO_EXPRESS_PASSWORD=
-
-# --- Hugging Face API ---
-HF_TOKEN=
-
-# --- S3 Storage (Leave blank for now) ---
-S3_ACCESS_KEY=
-S3_SECRET_KEY=
-```
-
-!!! warning "S3 Keys"
-    **Do not** fill in `S3_ACCESS_KEY` or `S3_SECRET_KEY` yet. These will be generated in the next step.
-
----
-
-## Step 4: Bootstrap Garage Storage
-
-Garage must be running before it can generate S3 credentials.
-
-### 4.1 Return to Project Root
-
-```bash
-cd ../../  # Back to debates-analytics/
-```
-
-### 4.2 Start Garage Service
-
+1. **Start Garage:**
 ```bash
 just up garage
+
 ```
 
-Wait for the confirmation message: `Container garage Started`
+*(Wait for `Container garage Started`)*
 
-### 4.3 Generate S3 Key Pair
-
-Execute this command to create new S3 credentials:
-
+2. **Generate Credentials:**
 ```bash
 just compose exec garage garage key create app-key
 ```
 
-### 4.4 Capture the Credentials
+3. **Copy the Output:**
+Note the `Key ID` and `Secret key` from the terminal output.
 
-The output will look like this:
 
-```plaintext hl_lines="2 3"
-==== ACCESS KEY INFORMATION ====
-Key ID:              GK8a1b2c3d4e5f...
-Secret key:          123456789abcdef...
-Can access bucket(s):  ALL
-Can perform action(s):  ALL
-Associated user:       -
+### Step 3: Finalize & Launch
+
+1. **Update Secrets:** Open `deploy/compose/.env.secrets` again and paste your keys:
+```ini
+S3_ACCESS_KEY=GK8a...       # Your Key ID
+S3_SECRET_KEY=1234...       # Your Secret Key
+
 ```
 
-!!! important "Copy both values"
-    - **Key ID** → This becomes your `S3_ACCESS_KEY`
-    - **Secret key** → This becomes your `S3_SECRET_KEY`
 
----
-
-## Step 5: Complete Secrets Configuration
-
-### 5.1 Add S3 Credentials
-
-Open `deploy/compose/.env.secrets` again and add the S3 credentials you just generated:
-
-```ini title="deploy/compose/.env.secrets" hl_lines="2-3"
-# --- S3 Storage Configuration ---
-S3_ACCESS_KEY=GK8a1b2c3d4e5f...
-S3_SECRET_KEY=123456789abcdef...
-```
-
-### 5.2 Verify Complete Configuration
-
-Your `.env.secrets` file should now have **all** values filled in:
-
-- [x] `MONGO_USER` and `MONGO_PASSWORD`
-- [x] `MONGO_EXPRESS_USER` and `MONGO_EXPRESS_PASSWORD`
-- [x] `HF_TOKEN`
-- [x] `S3_ACCESS_KEY` and `S3_SECRET_KEY`
-
----
-
-## Step 6: Build and Launch
-
-With all secrets configured, you can now start the complete application stack.
-
-### 6.1 Restart Garage
-
-Restart Garage to ensure it picks up any configuration changes:
-
+2. **Build and Run:**
 ```bash
-just compose restart garage
+just compose restart garage  # Apply config changes
+just build                   # Build images (takes a few mins)
+just up                      # Start full stack
+
 ```
 
-### 6.2 Build Application Images
 
-```bash
-just build
-```
-
-!!! note "First-time build"
-    This step may take several minutes on first run as Docker downloads and builds all required images.
-
-### 6.3 Start All Services
-
-```bash
-just up
-```
-
-### 6.4 Verify Installation
-
-Once all containers are running, verify access to the services:
-
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **Frontend** | [http://localhost:3000](http://localhost:3000) | None |
-| **API Documentation** | [http://localhost:8082/docs](http://localhost:8082/docs) | None |
-| **Application Logs** | [http://localhost:8080/logs](http://localhost:8080/logs) | None |
-| **Solr Admin** | [http://localhost:8983/solr](http://localhost:8983/solr) | None |
-| **MongoDB Admin** | [http://localhost:8081](http://localhost:8081) | See `.env.secrets` |
-| **Documentation** | [http://localhost:8001/sdsc-ordes](http://localhost:8001/sdsc-ordes) | None |
-
-!!! success "Installation Complete!"
-    Your application is now running! Access the frontend at [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## Next Steps
+## Verification
 
-=== "Local Development"
+Once running, access your services:
 
-    You're all set and ready to user the application: go to the [userguide](../userguide/roles.md)
+| Service | URL | Note |
+| --- | --- | --- |
+| **Frontend** | [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000) | Main UI |
+| **API Docs** | [http://localhost:8082/docs](https://www.google.com/search?q=http://localhost:8082/docs) | Backend Swagger |
+| **Logs** | [http://localhost:8080/logs](https://www.google.com/search?q=http://localhost:8080/logs) | Container Logs |
+| **Mongo UI** | [http://localhost:8081](https://www.google.com/search?q=http://localhost:8081) | Use credentials from `.env.secrets` |
 
-=== "Server Deployment"
-
-    Continue to [Server Configuration](server.md) to deploy on a production server.
-
----
-
-## Getting Help
-
-!!! question "Need assistance?"
-
-    - **Issues:** [GitHub Issues](https://github.com/sdsc-ordes/debates-analytics/issues)
-    - **Documentation:** This site you're reading!
+!!! success "Next Steps"
+* **Local Use:** Go to the [User Guide](https://www.google.com/search?q=../userguide/roles.md).
+* **Public Access:** Continue to [Server Configuration](https://www.google.com/search?q=server.md).
