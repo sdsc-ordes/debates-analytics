@@ -28,7 +28,7 @@ services:
     volumes:
       - type: bind
         source: ${SSL_DIR}/fullchain.pem
-        target: /etc/nginx/ssl/debates.swisscustodian.ch.cert
+        target: /etc/nginx/ssl/server.cert
         read_only: true
       - type: bind
         source: ../../components/nginx/nginx.conf
