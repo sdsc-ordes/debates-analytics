@@ -14,7 +14,7 @@ services:
       # Dozzle needs access to the Docker socket
       # to read logs from all other running containers.
       - /var/run/docker.sock:/var/run/docker.sock
-    # This allows Dozzle to restart automatically
+      # This allows Dozzle to restart automatically
     restart: unless-stopped
 
   reverse-proxy:
@@ -27,7 +27,7 @@ services:
       - 80:80
     volumes:
       - type: bind
-        source: /etc/letsencrypt/archive/debates.swisscustodian.ch/cert7.pem
+        source: /etc/letsencrypt/live/debates.swisscustodian.ch/cert.pem
         target: /etc/nginx/ssl/debates.swisscustodian.ch.cert
         read_only: true
       - type: bind
@@ -54,7 +54,7 @@ secrets:
   htpasswd_reader:
     file: /etc/apache2/reader.htpasswd
   ssl_private_key:
-    file: /etc/letsencrypt/archive/debates.swisscustodian.ch/privkey7.pem
+    file: /etc/letsencrypt/live/debates.swisscustodian.ch/privkey.pem
 
 # Global networks used for inter-service communication
 networks:
