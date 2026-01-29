@@ -8,8 +8,11 @@ from services.filesystem import temp_workspace
 from services.mongo import get_mongo_manager
 from services.reporter import JobReporter
 from config.settings import get_settings
+from app.patches import apply_gradio_upload_patch
 
 logger = logging.getLogger(__name__)
+
+apply_gradio_upload_patch()
 
 def process_transcription(s3_key, media_id):
     """
@@ -120,7 +123,8 @@ class WhisperService:
         logger.info(f"media_id={media_id} - Running Whisper Inference. Task={task}, Language={lang} Model={self.hf_model}")
 
         try:
-            result_tuple = self.client.predict(
+            # Use .submit() instead of .predict() to control the timeout
+            job = self.client.submit(
                 audio_file=handle_file(file_path),
                 youtube_link="",
                 model=self.hf_model,
@@ -130,6 +134,10 @@ class WhisperService:
                 api_name="/process_audio",
                 hf_token=self.hf_token,
             )
+
+            # Increase timeout (e.g., 3600 seconds = 1 hour) for large files
+            # This handles both the upload and the waiting for the queue
+            result_tuple = job.result(timeout=3600)
 
             logger.info(f"media_id={media_id} - Whisper {task} completed successfully.")
 
