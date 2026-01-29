@@ -48,11 +48,11 @@ services:
 
 secrets:
   htpasswd_combined:
-    file: ${AUTH_DIR}/.htpasswd_combined
+    file: ${AUTH_DIR}/combined.htpasswd
   htpasswd_editor:
-    file: ${AUTH_DIR}/.htpasswd_editor
+    file: ${AUTH_DIR}/editor.htpasswd
   htpasswd_reader:
-    file: ${AUTH_DIR}/.htpasswd_reader
+    file: ${AUTH_DIR}/reader.htpasswd
   ssl_private_key:
     file: ${SSL_DIR}/privkey.pem
 
