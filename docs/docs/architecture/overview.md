@@ -86,6 +86,18 @@ While the AI provides the text, it cannot know the context (e.g., the specific n
 
 To make this data accessible, the application provides two key views:
 
-* Search Page: Powered by Solr, this allows users to filter statements by metadata tags (e.g., Topic, Date) or search for specific text phrases.
+* [Search Page](../userguide/searchpage.md): Powered by Solr, this allows users to filter statements by metadata tags (e.g., Topic, Date) or search for specific text phrases.
 
-* Media Player: A specialized tool for playback and editing. It allows the Editor to watch the video while simultaneously correcting the transcript and metadata in real-time.
+* [Media Player](../userguide/mediaplayer.md): A specialized tool for playback and editing. It allows the Editor to watch the video while simultaneously correcting the transcript and metadata in real-time.
+
+## Techstack
+
+For the exact techstack see [Installations: Techstack](../installation/overview.md#stack-components).
+
+## Components and Design Principles
+
+* [**Application**](application.md): The Application design follows an API first pattern, where the Frontend is dumb and the API is the interface to processing.
+* [**Datastorage**](datastorage.md): A dual-layer storage system separates long-term storage from a short term storage that can be quickly adapted to application needs.
+* [**Whisper**](whisperx.md): An external AI on hugging face is accessed via API and does the heavy lifting to extract speaker statements, languages and translations form the media inputs.
+* [**Processing Pipeline**](processing.md): Processing is guided by a unique `media_id` that allows to track processing, data and metadata in the various components of the system
+* [**Presigned Urls**](presigned-urls.md): The frontend has no credentials for the primary datastorage on S3 and uses presigned urls to upload, stream and download from there.
