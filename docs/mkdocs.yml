@@ -76,7 +76,6 @@ nav:
       - Core Setup: installation/core.md
       - Server Setup: installation/server.md
   - Development:
-      - Guidelines: development/setup.md
-      - Contributing: development/contributing.md
-      - Code of Conduct: development/code-of-conduct.md
+      - Guidelines: development/development.md
+      - Commandline: development/commandline.md
   - License: LICENSE.md
