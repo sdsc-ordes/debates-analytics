@@ -41,7 +41,7 @@ graph TD
     class Redis,Mongo,Solr,S3 sys;
 ```
 
-## 2. The Processing Pipeline
+## 2. The Processing Pipeline
 
 The pipeline is triggered automatically upon upload. Intermediate results are constantly saved to the S3 "Vault" to prevent data loss, while Redis handles the communication between workers.
 Pipeline Flow Diagram
@@ -51,7 +51,7 @@ graph LR
     %% Nodes
     Upload((User<br>Upload))
     Redis{Redis<br>Queue}
-    
+
     subgraph Workers ["Worker Pool"]
         Register[<b>Registration</b><br>Track in Mongo]
         Convert[<b>Converter</b><br>Video to Audio]
@@ -72,11 +72,11 @@ graph LR
     Upload -->|1. Trigger| Redis
     Redis -->|2. Job| Register
     Register -->|3. Save Raw| S3
-    
+
     Register -->|4. Next| Redis
     Redis -->|5. Job| Convert
     Convert -->|6. Save Audio| S3
-    
+
     Convert -->|7. Next| Redis
     Redis -->|8. Job| Transcribe
     Transcribe -->|9. Save JSON| S3

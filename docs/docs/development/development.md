@@ -40,50 +40,24 @@ The project uses a simplified workflow without dedicated dev containers.
 
 ## 3. Data & Search Management
 
-Since there are no migrations, schema changes often require resetting the data.
+Should you change the metadata structure (adding fields for speaker or debate) the following components need to be adapted:
+
+1. **Backend:** models and service
+2. **Solr:** the managed schema file (add field types)
+3. **Frontend:** components and the mediaplayer page
+
+!!! tip "Reference"
+    Grep for an existing field like `country` for speakers or debate_type for debate to see exactly which files require updates
 
 ### Solr (Search Index)
 
-If you change `schema.xml` or search logic:
+If you change the solr schema you need to do the following:
+- delete the solr volume with `docker volume rm debates_solr`
+- rebuild the solr image with `just up --build solr`
+- after that you need to reindex all media, which can be done either via the [commandline](#commandline.md) or on the [dashboard page](../userguide/dashboard.md)
 
-```bash
-# 1. Reset Solr Volume
-docker volume rm debates_solr
-
-# 2. Restart & Reindex
-just up -d solr
-just compose exec backend python scripts/reindex_solr.py
-```
-
-### MongoDB
-
-If you change the Document Structure:
-
-```bash
-# 1. Reset Mongo Volume (Deletes all data/users!)
-docker volume rm debates-analytics_mongodb_data
-
-# 2. Restart
-just up -d mongo
-
-```
-
----
-
-## 4. Modification Cheatsheet
-
-If you need to add a metadata field (e.g., `author`) in the future, you must update these 4 layers:
-
-1. **Backend Models:** `backend/app/models/` (Pydantic schemas)
-2. **Solr Schema:** `solr/conf/schema.xml` (Add `<field>` definition)
-3. **Frontend Types:** `frontend/src/lib/types/` (Or run `just api` to auto-generate)
-4. **UI Components:** `frontend/src/lib/components/` (To display the new data)
-
-!!! tip "Reference"
-    Grep for an existing field like `title` to see exactly which files require updates:
-    `git grep -n "title" -- backend frontend`
-
----
+!!! warning
+    Don't reset mongodb as all media is registered there.
 
 ## 5. Documentation
 
@@ -92,5 +66,10 @@ The documentation is built with MkDocs.
 ```bash
 just serve-docs   # serve at http://localhost:8001
 just build-docs   # build static site
-
 ```
+
+The documentation is automatically deployed to github pages via a github action.
+
+## Code formatting
+
+Run `just format` to format the code after changes: the ci is set to run that command as github action and will complain about format errors.

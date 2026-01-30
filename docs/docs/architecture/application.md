@@ -42,7 +42,7 @@ graph TD
     end
 
     %% --- Relationships ---
-    
+
     %% API Generation
     FastAPI -.->|Exports| Spec
     Spec -.->|Generates| Gen
