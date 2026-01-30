@@ -69,7 +69,6 @@ nav:
       - Processing: architecture/processing.md
       - Upload/Download: architecture/presigned-urls.md
       - WhisperX: architecture/whisperx.md
-      - WhisperX2: architecture/whisperx2.md
   - API:
       - openapi: api/openapi.md
   - Installation:
@@ -78,5 +77,5 @@ nav:
       - Server Setup: installation/server.md
   - Development:
       - Development: development/development.md
-      - Cli: development/cli.md
+      - Commandline: development/commandline.md
   - License: LICENSE.md

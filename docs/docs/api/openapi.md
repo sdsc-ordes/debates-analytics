@@ -48,4 +48,7 @@ The API routes are structured into groups:
 
 ## API Spec
 
+!!! Hint
+    Please reload page in case API spec is not showing.
+
 <swagger-ui src="./openapi.json"/>

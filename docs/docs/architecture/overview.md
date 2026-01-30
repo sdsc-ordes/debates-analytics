@@ -90,7 +90,7 @@ To make this data accessible, the application provides two key views:
 
 * [Media Player](../userguide/mediaplayer.md): A specialized tool for playback and editing. It allows the Editor to watch the video while simultaneously correcting the transcript and metadata in real-time.
 
-## Techstack
+## Techstack
 
 For the exact techstack see [Installations: Techstack](../installation/overview.md#stack-components).
 

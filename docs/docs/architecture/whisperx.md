@@ -43,8 +43,6 @@ graph LR
 
 ```
 
----
-
 ## Capabilities
 
 WhisperX combines two AI models to provide a complete transcript:
@@ -57,8 +55,6 @@ WhisperX combines two AI models to provide a complete transcript:
 ### Output Format
 
 The result is a standard `.srt` subtitle file containing both the text and the speaker labels (e.g., `[SPEAKER_01]: Hello world`).
-
----
 
 ## Configuration
 
@@ -95,11 +91,20 @@ HF_SPACE_URL=https://katospiegel-odtp-pyannote-whisper.hf.space/
 !!! warning "Model Selection"
     Use only `large-v2` or `large-v3`. Smaller models may cause reindex errors since the output will be of poor quality then.
 
----
-
 ## Advanced Usage
 
-While the application handles processing automatically, you can also process files manually if needed (e.g., for testing or batch imports).
+While the application handles processing on WhisperX per API, you can also upload files that where previously processed on the WhisperX UI.
 
 !!! tip "Manual Upload"
-    You can run WhisperX manually via the [Hugging Face UI](https://katospiegel-odtp-pyannote-whisper.hf.space/) and then import the resulting files using the [CLI](../development/cli.md). But this is not not recommended and involves some manual file renaming at the current time.
+    You can run WhisperX manually via the [Hugging Face UI](https://katospiegel-odtp-pyannote-whisper.hf.space/) and then import the resulting files using the Commandline. But this is not not recommended and involves some manual renaming of your files. See [Commandline](../development/commandline.md)
+
+## WhisperX on Hugging Face
+
+You can directly access [WhisperX on Hugging Face](https://huggingface.co/spaces/katospiegel/odtp-pyannote-whisper)
+To change the settings from CPU to GPU you can clone the space to your own account and then pay for a tier with more efficient processing.
+
+![WhisperX Interactive Interface](../static/content/architecture/whisperx/whisperx-interface.png)
+
+![WhisperX API Interface](../static/content/architecture/whisperx/whisper-api-access.png)
+
+![WhisperX SRT Output](../static/content/architecture/whisperx/srt-output.png)

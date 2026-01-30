@@ -19,7 +19,7 @@ graph TD
 
     %% Path 2: Server
     Local -->|Public Server| Server[<b>Step 2: Server Layer</b><br>Nginx Proxy]
-    Server --> FinishServer(["<b>Ready!</b><br>[https://your-domain.com](https://your-domain.com)<br>SSL + Auth"])
+    Server --> FinishServer(["<b>Ready!</b><br>https://your-domain.com<br>SSL + Auth"])
 
     %% Styling
     classDef core fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
