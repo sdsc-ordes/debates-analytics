@@ -26,7 +26,7 @@ git clone git@github.com:sdsc-ordes/debates-analytics.git
 cd debates-analytics
 
 # 1. Config for the docker compose
-cp config/.env.tmpl config/.env
+cp config/.env.core.tmpl config/.env
 
 # 2. Config for Application Secrets
 cp config/.env.secrets.tmpl config/.env.secrets

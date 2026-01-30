@@ -59,6 +59,14 @@ If you change the solr schema you need to do the following:
 !!! warning
     Don't reset mongodb as all media is registered there.
 
+### API changes
+
+In case of API changes the openapi spec needs to get regenrated for the docs and for the frontend:
+
+```bash title="regenrate api spec in docs and api client for frontend
+just api
+```
+
 ## 5. Documentation
 
 The documentation is built with MkDocs.
