@@ -9,7 +9,7 @@
     * **Filtering:** Filter by metadata criteria, that are added at the mediaplayer page by an editor
     * **Search:** Fulltext search by term in the speaker statements
 
-![Searchpage](../static/content/userguide/searchpage/searchpage.png "Search interface to make speaker statements searchable"){ width="600" }
+![Searchpage](../static/content/userguide/searchpage/searchpage.png "Search interface to make speaker statements searchable"){ width="100%" }
 
 ## Speaker Statements
 
