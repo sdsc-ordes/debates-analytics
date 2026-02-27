@@ -61,7 +61,6 @@ nav:
       - Dashboard: userguide/dashboard.md
       - Search Page: userguide/searchpage.md
       - Media Player: userguide/mediaplayer.md
-      - Advanced CLI: userguide/commandline.md
   - Architecture:
       - Overview: architecture/overview.md
       - Datastorage: architecture/datastorage.md
