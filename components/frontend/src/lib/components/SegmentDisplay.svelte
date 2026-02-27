@@ -43,35 +43,6 @@
     activeSegment?.subtitles_translation.find(s => currentTime >= s.start && currentTime <= s.end)
   );
 
-  async function saveGroup(group: Segment[], type: string) {
-    if (!activeSegment) return;
-
-    const payload = {
-      media_id: mediaId,
-      segment_nr: activeSegment.segment_nr,
-      subtitles: group,
-      subtitle_type: type,
-    };
-
-    errorMessage = null;
-
-    try {
-      const { error: segmentUpdateError } = await client.POST("/db/update-subtitles", {
-          body: payload,
-      });
-
-      if (segmentUpdateError) {
-        throw new Error(`Update of segment for ${type} failed.`);
-      }
-    } catch (err: any) {
-      errorMessage = err.message || 'Unknown error occurred';
-      console.error(err);
-    }
-
-    if (type === typeTranscript) editTranscript = false;
-    if (type === typeTranslation) editTranslation = false;
-  }
-
   function escapeRegExp(string: string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
@@ -87,77 +58,90 @@
       isMatch: part.toLowerCase() === query.toLowerCase()
     })).filter(p => p.text);
   }
+
+  // Store backups separately for original and translation
+  let backups = $state<{ [key: string]: string[] }>({
+    [typeTranscript]: [],
+    [typeTranslation]: []
+  });
+
+  const toggleEditTranscript = (val: boolean) => {
+    if (val) {
+      // Take snapshot
+      backups[typeTranscript] = activeGroupOriginal.map(item => item.text);
+      editTranscript = true;
+    } else {
+      // Revert: Assign the strings back to the reactive array items
+      activeGroupOriginal.forEach((item, i) => {
+        item.text = backups[typeTranscript][i];
+      });
+      editTranscript = false;
+    }
+  };
+
+  const toggleEditTranslation = (val: boolean) => {
+    if (val) {
+      backups[typeTranslation] = activeGroupTranslation.map(item => item.text);
+      editTranslation = true;
+    } else {
+      activeGroupTranslation.forEach((item, i) => {
+        item.text = backups[typeTranslation][i];
+      });
+      editTranslation = false;
+    }
+  };
+
+  async function saveGroup(group: any[], type: string) {
+    if (!activeSegment) return;
+    errorMessage = null;
+
+    try {
+      const payload = {
+        media_id: mediaId,
+        segment_nr: activeSegment.segment_nr,
+        subtitles: group,
+        subtitle_type: type,
+      };
+
+      const { error: segmentUpdateError } = await client.POST("/db/update-subtitles", {
+        body: payload,
+      });
+
+      if (segmentUpdateError) throw new Error(`Update failed: ${segmentUpdateError}`);
+
+      // SUCCESS: Clear backup and close editor
+      backups[type] = [];
+      if (type === typeTranscript) editTranscript = false;
+      if (type === typeTranslation) editTranslation = false;
+
+    } catch (err: any) {
+      errorMessage = err.message || 'Unknown error occurred';
+    }
+  }
 </script>
 
-<div class="side-by-side">
-  {#if activeGroupOriginal.length > 0}
-    <div class="text-block">
-      <div class="header-row">
-        <div class="card-title-small">Transcription</div>
-        {#if auth.canEdit && activeSegment}
-          {#if !editTranscript}
-            <button class="edit-btn" onclick={() => editTranscript = true} title="Edit transcription">
-              <Pencil size={14} />
-            </button>
-          {:else}
-            <div class="edit-actions">
-              <button class="edit-btn cancel" onclick={() => editTranscript = false} title="Cancel">
-                <X size={14} />
-              </button>
-              <button class="edit-btn save" onclick={() => saveGroup(activeGroupOriginal, typeTranscript)} title="Save">
-                <Check size={14} />
-              </button>
-            </div>
-          {/if}
-        {/if}
-      </div>
-
-      <p class="subtitle-content">
-        {#each activeGroupOriginal as item}
-          <span
-            class="subtitle-span {item === currentSubtitle ? 'highlighted' : ''}" 
-            onclick={() => mediaElement && jumpToTime(mediaElement, item.start)}
-            role="button"
-            tabindex="0"
-            onkeydown={() => {}}
-          >
-            {#if editTranscript}
-              <textarea
-                bind:value={item.text}
-                class="editable-textarea"
-                rows="2"
-                onclick={(e) => e.stopPropagation()}
-              ></textarea>
-            {:else}
-              {#each getHighlightedParts(item.text, term) as part}
-                {#if part.isMatch}
-                  <mark class="term-highlight">{part.text}</mark>
-                {:else}
-                  {part.text}
-                {/if}
-              {/each}
-              {" "}
-            {/if}
-          </span>
-        {/each}
-      </p>
-  </div>
-  {/if}
-  {#if activeGroupTranslation.length > 0}
+{#snippet subtitleColumn(
+  title: string,
+  group: any[],
+  isEditing: boolean,
+  type: string,
+  currentSub: any,
+  setEditing: (v: boolean) => void
+)}
   <div class="text-block">
     <div class="header-row">
-      <div class="card-title-small">Translation</div>
+      <div class="card-title-small">{title}</div>
       {#if auth.canEdit && activeSegment}
-        {#if !editTranslation}
-          <button class="edit-btn" onclick={() => editTranslation = true} title="Edit translation">
+        {#if !isEditing}
+          <button class="edit-btn" onclick={() => setEditing(true)} title="Edit {title}">
             <Pencil size={14} />
           </button>
         {:else}
           <div class="edit-actions">
-            <button class="edit-btn cancel" onclick={() => editTranslation = false} title="Cancel">
+            <button class="edit-btn cancel" onclick={() => setEditing(false)} title="Cancel">
               <X size={14} />
             </button>
-            <button class="edit-btn save" onclick={() => saveGroup(activeGroupTranslation, typeTranslation)} title="Save">
+            <button class="edit-btn save" onclick={() => saveGroup(group, type)} title="Save">
               <Check size={14} />
             </button>
           </div>
@@ -166,15 +150,15 @@
     </div>
 
     <p class="subtitle-content">
-      {#each activeGroupTranslation as item}
+      {#each group as item}
         <span
-          class="subtitle-span {item === currentSubtitleEn ? 'highlighted' : ''}"
+          class="subtitle-span {item === currentSub ? 'highlighted' : ''}"
           onclick={() => mediaElement && jumpToTime(mediaElement, item.start)}
           role="button"
           tabindex="0"
           onkeydown={() => {}}
         >
-          {#if editTranscript}
+          {#if isEditing}
             <textarea
               bind:value={item.text}
               class="editable-textarea"
@@ -195,6 +179,15 @@
       {/each}
     </p>
   </div>
+{/snippet}
+
+<div class="side-by-side">
+  {#if activeGroupOriginal.length > 0}
+    {@render subtitleColumn("Transcription", activeGroupOriginal, editTranscript, typeTranscript, currentSubtitle, toggleEditTranscript)}
+  {/if}
+
+  {#if activeGroupTranslation.length > 0}
+    {@render subtitleColumn("Translation", activeGroupTranslation, editTranslation, typeTranslation, currentSubtitleEn, toggleEditTranslation)}
   {/if}
 </div>
 
