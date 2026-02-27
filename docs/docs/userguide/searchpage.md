@@ -17,12 +17,11 @@
 
 ![Searchpage](../static/content/userguide/searchpage/speaker-statement-before-metadata.png "Speaker statement before metadata has been added"){ width="100%" }
 
-!!! failure "Todo"
-    - [ ] Exchange screenshot below to show a statement after metadata has been added
-
 ![Searchpage](../static/content/userguide/searchpage/speaker-statement-after-metadata.png "Speaker statement after metadata has been added"){ width="100%" }
 
-## Filtering
+## Search by term and Filtering
 
-## Search
+* Search results can be filtered by clicking on tags.
+* Additionally a search term can be entered into the search box. The search term is then marked in the search results.
 
+![Searchpage](../static/content/userguide/searchpage/filtering-searchresults.png "Filtering and search by term"){ width="100%" }
