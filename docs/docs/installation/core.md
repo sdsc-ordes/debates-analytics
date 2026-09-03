@@ -9,8 +9,26 @@ This guide sets up the complete stack (Frontend, Backend, Database, Storage) usi
 ## 1. Prerequisites
 
 * **Git** & **Bash** terminal
-* **Docker** & **Docker Compose**
-* **Just** runner ([Installation Guide](https://github.com/casey/just#installation))
+* **Docker Engine** & the **Docker Compose V2 plugin** (the `docker compose`
+  subcommand, *not* the legacy standalone `docker-compose`)
+* **Just** runner, version **1.31 or newer**
+  ([Installation Guide](https://github.com/casey/just#installation))
+
+!!! warning "Check your versions first"
+    Both are common install failures, so verify before you continue:
+
+    ```bash
+    just --version              # must be >= 1.31
+    sudo docker compose version # must print "Docker Compose version v2..."
+    ```
+
+    * Distro packages of `just` are often older than 1.31 and cannot parse
+      this repo's justfile. If `just --version` is too old, install a current
+      binary and make sure it comes **first on your `PATH`**.
+    * On Linux the recipes run `docker` through `sudo`, which is why the check
+      above uses `sudo` too. A Compose plugin installed only under
+      `~/.docker/cli-plugins/` is invisible to `sudo docker`; install it
+      system-wide instead (on Debian/Ubuntu: `sudo apt install docker-compose-v2`).
 
 ## 2. Setup Flow
 
@@ -29,11 +47,11 @@ cd debates-analytics
 cp config/.env.core.tmpl config/.env
 
 # 2. Config for Application Secrets
-cp config/.env.secrets.tmpl config/.env.secrets
+cp config/.env.secret.tmpl config/.env.secret
 
 ```
 
-**Action:** Open `config/.env.secrets` and fill in the following (leave S3 blank for now):
+**Action:** Open `config/.env.secret` and fill in the following (leave S3 blank for now):
 
 1. **Mongo Passwords:** Generate random strings (e.g., `openssl rand -hex 4`).
 2. **Hugging Face Token:** Your API token for model access.
@@ -60,7 +78,7 @@ Note the `Key ID` and `Secret key` from the terminal output.
 
 ### Step 3: Finalize & Launch
 
-1. **Update Secrets:** Open `deploy/compose/.env.secrets` again and paste your keys:
+1. **Update Secrets:** Open `config/.env.secret` again and paste your keys:
 ```ini
 S3_ACCESS_KEY=GK8a...       # Your Key ID
 S3_SECRET_KEY=1234...       # Your Secret Key
@@ -82,8 +100,8 @@ Once running, access your services:
 | **Frontend** | `http://localhost:3000` | Main UI |
 | **API Docs** | `http://localhost:8082/docs` | Backend Swagger |
 | **Logs** | `http://localhost:8080/logs` | Container Logs |
-| **Mongo UI** | `http://localhost:8081` | Use credentials from `.env.
-| **Solr UI** | `http://localhost:8983 | Use credentials from `.env.secrets` |
+| **Mongo UI** | `http://localhost:8081` | Use credentials from `.env` |
+| **Solr UI** | `http://localhost:8983` | Use credentials from `.env.secret` |
 
 !!! success "Next Steps"
     * **Local Use:** Go to the [User Guide](../userguide/roles.md).
