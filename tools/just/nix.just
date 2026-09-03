@@ -2,7 +2,7 @@ set positional-arguments
 set shell := ["bash", "-cue"]
 
 default:
-    just --list --unsorted -f "{{source_file()}}"
+    "{{just_executable()}}" --list --unsorted -f "{{source_file()}}"
 
 # Enter the Nix development shell `$1` and execute the command `${@:2}`.
 [no-cd]

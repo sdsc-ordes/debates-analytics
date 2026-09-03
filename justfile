@@ -24,17 +24,17 @@ default:
     @echo "CONTAINER_MGR=${CONTAINER_MGR}"
     @echo "OPENAPI_URL=${OPENAPI_URL}"
     @echo "COMPOSE_PROFILES=${COMPOSE_PROFILES}"
-    @just --list --unsorted
+    @"{{just_executable()}}" --list --unsorted
 
 # Enter the default Nix development shell and execute the command `"$@`.
 [group('general')]
 develop *args:
-    just nix::develop "default" "$@"
+    "{{just_executable()}}" nix::develop "default" "$@"
 
 # Run commands over the ci development shell.
 [group('general')]
 ci *args:
-    just nix::develop "ci" "$@"
+    "{{just_executable()}}" nix::develop "ci" "$@"
 
 # Format the project files using treefmt.
 [group('general')]
@@ -57,20 +57,20 @@ setup *args:
 [group('deploy')]
 up *args:
     @echo "Starting services..."
-    just compose up -d "$@"
+    "{{just_executable()}}" compose up -d "$@"
 
 # Build the compose setup.
 [group('deploy')]
 build *args:
     @echo "Build compose file..."
-    just compose build "$@"
+    "{{just_executable()}}" compose build "$@"
 
 # Run the compose command.
 [group('deploy')]
 [no-cd]
 compose *args:
     cd deploy/compose && \
-    just container::mgr compose \
+    "{{just_executable()}}" container::mgr compose \
         --env-file {{config_dir}}/.env --env-file {{config_dir}}/.env.secret "$@"
 
 # Update the API client (OpenAPI) in frontend.
@@ -83,13 +83,13 @@ api:
     @curl -s {{OPENAPI_URL}} -o components/docs/docs/api/openapi.json \
         && echo "✅ OpenAPI spec copied to docs." \
         || echo "⚠️ Warning: Fetch failed"
-    just format components/frontend/src/lib/api/schema.d.ts components/docs/docs/api/openapi.json \
+    "{{just_executable()}}" format components/frontend/src/lib/api/schema.d.ts components/docs/docs/api/openapi.json \
     && echo "✅ API client and code formatted updated."
 
 # Load or reindex solr for a media_id
 [group('tools')]
 reindex *args:
-    just container::mgr exec -it backend python cli.py {{args}}
+    "{{just_executable()}}" container::mgr exec -it backend python cli.py {{args}}
 
 # Bulk upload a local folder to S3/Mongo
 # Usage: just upload ./my-videos

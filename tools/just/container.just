@@ -2,7 +2,7 @@ set positional-arguments
 set shell := ["bash", "-cue"]
 
 default:
-    just --list --unsorted -f "{{source_file()}}"
+    "{{just_executable()}}" --list --unsorted -f "{{source_file()}}"
 
 # Run container manager defined in `$CONTAINER_MGR`.
 [no-cd]
