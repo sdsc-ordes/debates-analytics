@@ -106,3 +106,27 @@ Once running, access your services:
 !!! success "Next Steps"
     * **Local Use:** Go to the [User Guide](../userguide/roles.md).
     * **Public Access:** Continue to [Server Configuration](../installation/server.md).
+
+## Troubleshooting
+
+??? failure "`unknown flag: --env-file`"
+    Your Docker has no `compose` subcommand, so it read `--env-file` as one of
+    its own flags. Install the Compose V2 plugin **system-wide**:
+
+    ```bash
+    sudo apt install docker-compose-v2
+    sudo docker compose version   # must work *with* sudo
+    ```
+
+    **The trap:** on Linux these recipes run `docker` as root. If Compose sits
+    only in your own `~/.docker/cli-plugins/`, then `docker compose` works for
+    you but not for `just` — `sudo` looks in root's home directory, not yours.
+    You get this exact error even though Compose "is installed", so always
+    check with `sudo`.
+
+??? failure "`error: Unknown attribute 'group'`"
+    Your `just` is older than 1.31. If you already installed a newer one, make
+    sure it comes first on your `PATH`: `which -a just` should point at the new
+    binary and `just --version` must report 1.31 or newer. Calling a new `just`
+    by its full path is not enough on old versions of this repo, because the
+    recipes call `just` again internally.
