@@ -86,10 +86,16 @@ S3_SECRET_KEY=1234...       # Your Secret Key
 
 2. **Build and Run:**
 ```bash
-just compose restart garage  # Apply config changes
-just build                   # Build images (takes a few mins)
-just up                      # Start full stack
+just build                # Build images (takes a few mins)
+just up --force-recreate  # Recreate every service with the new keys
 ```
+
+!!! warning "Use `--force-recreate`, not `restart`"
+    A container keeps the environment it was **created** with.
+    `just compose restart` stops and starts the same container, so the keys
+    you just pasted are ignored. Garage, the backend and the workers all
+    read `S3_ACCESS_KEY` / `S3_SECRET_KEY`, so all of them must be
+    recreated — which is what `--force-recreate` does.
 
 ## Verification
 
@@ -123,6 +129,47 @@ Once running, access your services:
     you but not for `just` — `sudo` looks in root's home directory, not yours.
     You get this exact error even though Compose "is installed", so always
     check with `sudo`.
+
+??? failure "`AccessDenied ... Forbidden: No such key:` in the backend log"
+    The backend is talking to Garage with empty or unknown S3 credentials,
+    usually because its container was created *before* you pasted the keys
+    into `config/.env.secret`. Restarting does not help — recreate:
+
+    ```bash
+    just up --force-recreate
+    ```
+
+    Media items that already failed keep their error message in MongoDB and
+    stay visible on the dashboard. They are history, not a live failure.
+
+??? failure "The upload fails in the browser, but the backend log looks fine"
+    An upload happens in three steps:
+
+    1. the browser asks the backend for an upload URL
+       (`POST /ingest/get-presigned-post`),
+    2. **the browser sends the file straight to Garage on port 3900**,
+    3. the browser tells the backend the file arrived (`POST /ingest/process`).
+
+    Step 2 never touches the backend. So if the backend log shows step 1
+    succeeding and step 3 never happening, the file transfer itself failed
+    and the backend log cannot tell you why. Check Garage instead:
+
+    ```bash
+    # Did Garage configure browser (CORS) access at startup?
+    just compose logs garage | tail -30
+    # Expect: 🐍 Python: CORS configured successfully.
+
+    # Does Garage allow the browser's origin?
+    curl -i -X OPTIONS http://localhost:3900/debates/ \
+      -H "Origin: http://localhost:3000" \
+      -H "Access-Control-Request-Method: POST"
+    # Expect: HTTP/1.1 200 and an access-control-allow-origin header
+    ```
+
+    Also confirm the browser can reach port 3900 at the same host name you
+    use for the UI. The address handed to the browser is `S3_PUBLIC_URL` in
+    `config/.env`; if you reach the UI through an SSH tunnel, port 3900 has
+    to be forwarded too.
 
 ??? failure "`error: Unknown attribute 'group'`"
     Your `just` is older than 1.31. If you already installed a newer one, make
